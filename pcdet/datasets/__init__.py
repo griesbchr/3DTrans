@@ -14,6 +14,7 @@ from .waymo.waymo_dataset_ada import ActiveWaymoDataset
 from .pandaset.pandaset_dataset import PandasetDataset
 from .lyft.lyft_dataset import LyftDataset
 from .lyft.lyft_dataset_ada import ActiveLyftDataset
+from .avltruck.avl_dataset import AVLDataset
 
 from .once.once_dataset import ONCEDataset
 from .once.once_dataset_ada import ActiveONCEDataset
@@ -28,6 +29,7 @@ __all__ = {
     'ActiveKittiDataset': ActiveKittiDataset,
     'NuScenesDataset': NuScenesDataset,
     'ActiveNuScenesDataset': ActiveNuScenesDataset,
+    'AVLDataset': AVLDataset,
     'WaymoDataset': WaymoDataset,
     'ActiveWaymoDataset': ActiveWaymoDataset,
     'PandasetDataset': PandasetDataset,

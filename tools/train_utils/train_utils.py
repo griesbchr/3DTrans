@@ -9,7 +9,7 @@ from pcdet.utils import common_utils, commu_utils
 
 
 def train_one_epoch(model, optimizer, train_loader, model_func, lr_scheduler, accumulated_iter, optim_cfg,
-                    rank, tbar, total_it_each_epoch, dataloader_iter, tb_log=None, leave_pbar=False):
+                    rank, tbar, total_it_each_epoch, dataloader_iter, tb_log=None, leave_pbar=False, logger=None):
     if total_it_each_epoch == len(train_loader):
         dataloader_iter = iter(train_loader)
 
@@ -23,10 +23,15 @@ def train_one_epoch(model, optimizer, train_loader, model_func, lr_scheduler, ac
         end = time.time()
         try:
             batch = next(dataloader_iter)
-        except StopIteration:
+        except (StopIteration, ValueError):
+            if logger is not None:
+                logger.warning("Skipping batch with sequences:")
+                logger.warning(batch["frame_id"])
+            else:
+                print("[WARNING]Skipping batch with sequences:")
+                print(batch["frame_id"])
             dataloader_iter = iter(train_loader)
             batch = next(dataloader_iter)
-            print('new iters')
         
         data_timer = time.time()
         cur_data_time = data_timer - end
@@ -89,7 +94,7 @@ def train_one_epoch(model, optimizer, train_loader, model_func, lr_scheduler, ac
 def train_model(model, optimizer, train_loader, model_func, lr_scheduler, optim_cfg,
                 start_epoch, total_epochs, start_iter, rank, tb_log, ckpt_save_dir, 
                 source_sampler=None, lr_warmup_scheduler=None, ckpt_save_interval=1,
-                max_ckpt_save_num=50, merge_all_iters_to_one_epoch=False):
+                max_ckpt_save_num=50, merge_all_iters_to_one_epoch=False, logger=None):
     accumulated_iter = start_iter
     with tqdm.trange(start_epoch, total_epochs, desc='epochs', dynamic_ncols=True, leave=(rank == 0)) as tbar:
         total_it_each_epoch = len(train_loader)
@@ -115,7 +120,8 @@ def train_model(model, optimizer, train_loader, model_func, lr_scheduler, optim_
                 rank=rank, tbar=tbar, tb_log=tb_log,
                 leave_pbar=(cur_epoch + 1 == total_epochs),
                 total_it_each_epoch=total_it_each_epoch,
-                dataloader_iter=dataloader_iter
+                dataloader_iter=dataloader_iter,
+                logger=logger
             )
 
             # save trained model
