@@ -34,8 +34,8 @@ class KittiDataset(DatasetTemplate):
         )
         self.split = self.dataset_cfg.DATA_SPLIT[self.mode]
         if self.oss_path is not None:
-            from petrel_client.client import Client
-            self.client = Client('~/.petreloss.conf')
+            #from petrel_client.client import Client
+            #self.client = Client('~/.petreloss.conf')
             if self.split != 'test':
                 self.root_split_path = os.path.join(self.oss_path, 'training')
             else:

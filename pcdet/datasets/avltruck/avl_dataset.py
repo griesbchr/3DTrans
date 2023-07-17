@@ -219,6 +219,58 @@ class AVLDataset(DatasetTemplate):
 
         return len(self.avl_infos)
 
+    '''
+    from openpcdet 
+    '''
+    def generate_prediction_dicts(self, batch_dict, pred_dicts, class_names, output_path=None):
+        """
+        Args:
+            batch_dict:
+                frame_id:
+            pred_dicts: list of pred_dicts
+                pred_boxes: (N, 7 or 9), Tensor
+                pred_scores: (N), Tensor
+                pred_labels: (N), Tensor
+            class_names:
+            output_path:
+
+        Returns:
+
+        """
+        
+        def get_template_prediction(num_samples):
+            box_dim = 9 if self.dataset_cfg.get('TRAIN_WITH_SPEED', False) else 7
+            ret_dict = {
+                'name': np.zeros(num_samples), 'score': np.zeros(num_samples),
+                'boxes_lidar': np.zeros([num_samples, box_dim]), 'pred_labels': np.zeros(num_samples)
+            }
+            return ret_dict
+
+        def generate_single_sample_dict(box_dict):
+            pred_scores = box_dict['pred_scores'].cpu().numpy()
+            pred_boxes = box_dict['pred_boxes'].cpu().numpy()
+            pred_labels = box_dict['pred_labels'].cpu().numpy()
+            pred_dict = get_template_prediction(pred_scores.shape[0])
+            if pred_scores.shape[0] == 0:
+                return pred_dict
+
+            pred_dict['name'] = np.array(class_names)[pred_labels - 1]
+            pred_dict['score'] = pred_scores
+            pred_dict['boxes_lidar'] = pred_boxes
+            pred_dict['pred_labels'] = pred_labels
+
+            return pred_dict
+
+        annos = []
+        for index, box_dict in enumerate(pred_dicts):
+            single_pred_dict = generate_single_sample_dict(box_dict)
+            single_pred_dict['frame_id'] = batch_dict['frame_id'][index]
+            if 'metadata' in batch_dict:
+                single_pred_dict['metadata'] = batch_dict['metadata'][index]
+            annos.append(single_pred_dict)
+
+        return annos
+    
     def evaluation(self, det_annos, class_names, **kwargs):
         if 'annos' not in self.avl_infos[0].keys():
             return 'No ground-truth boxes for evaluation', {}
@@ -239,13 +291,13 @@ class AVLDataset(DatasetTemplate):
 
             return annos
 
-        def kitti_eval(eval_det_annos, eval_gt_annos):
+        def kitti_eval(eval_det_annos, eval_gt_annos, map_class_to_kitti):
             from ..kitti.kitti_object_eval_python import eval as kitti_eval
             from ..kitti import kitti_utils
 
-            kitti_utils.transform_annotations_to_kitti_format(eval_det_annos)
+            kitti_utils.transform_annotations_to_kitti_format(eval_det_annos, map_class_to_kitti)
             kitti_utils.transform_annotations_to_kitti_format(
-                eval_gt_annos,
+                eval_gt_annos, map_class_to_kitti,
                 info_with_fakelidar=self.dataset_cfg.get(
                     'INFO_WITH_FAKELIDAR', False))
             ap_result_str, ap_dict = kitti_eval.get_official_eval_result(
@@ -258,6 +310,12 @@ class AVLDataset(DatasetTemplate):
             from ..waymo.waymo_eval import OpenPCDetWaymoDetectionMetricsEstimator
             eval = OpenPCDetWaymoDetectionMetricsEstimator()
 
+            #get name map from config
+            #get shift coord from config
+            #eval_det_annos = accomodate_eval(eval_det_annos, name_map, shift_coord)
+            #eval_gt_annos = accomodate_eval(eval_gt_annos, name_map, shift_coord)
+            #TODO map avl labels to waymo labels and add shift coord
+            raise NotImplementedError
             ap_dict = eval.waymo_evaluation(eval_det_annos,
                                             eval_gt_annos,
                                             class_name=class_names,
@@ -280,17 +338,16 @@ class AVLDataset(DatasetTemplate):
             eval_gt_annos[-1] = common_utils.drop_info_with_name(
                 eval_gt_annos[-1], name='Dont_Care')
 
-        eval_det_annos = accomodate_eval(
-            eval_det_annos, self.map_class_to_kitti,
-            self.dataset_cfg.get('SHIFT_COOR', None))
-        eval_gt_annos = accomodate_eval(eval_gt_annos, self.map_class_to_kitti)
+        #eval_det_annos = accomodate_eval(eval_det_annos, self.map_class_to_kitti,self.dataset_cfg.get('SHIFT_COOR', None))
+        #eval_gt_annos = accomodate_eval(eval_gt_annos, self.map_class_to_kitti)
         if self.map_class_to_kitti is not None:
             class_names = [self.map_class_to_kitti[x] for x in class_names]
+        map_class_to_kitti = self.dataset_cfg.get('MAP_CLASS_TO_KITTI', None)
 
         if kwargs['eval_metric'] == 'kitti':
-            ap_result_str, ap_dict = kitti_eval(eval_det_annos, eval_gt_annos)
+            ap_result_str, ap_dict = kitti_eval(eval_det_annos, eval_gt_annos, map_class_to_kitti)
         elif kwargs['eval_metric'] == 'waymo':
-            ap_result_str, ap_dict = waymo_eval(eval_det_annos, eval_gt_annos)
+            ap_result_str, ap_dict = waymo_eval(eval_det_annos, eval_gt_annos, map_class_to_kitti)
         else:
             raise NotImplementedError
 
@@ -556,3 +613,33 @@ if __name__ == '__main__':
         convert_json_to_numpy(
             ROOT_DIR / 'data' / 'avl',
             num_workers=int(sys.argv[2]) if sys.argv.__len__() > 2 else 4)
+    elif sys.argv.__len__() > 1 and sys.argv[1] == 'debug_avl_eval':
+        eval_gt_annos = pickle.load(open("eval_gt_annos.pkl", 'rb'))
+        eval_det_annos = pickle.load(open("eval_det_annos.pkl", 'rb'))
+        class_names = ['Vehicle_Drivable_Car', 'Human', 'Vehicle_Ridable_Bicycle']
+        map_classes_to_kitti =   {
+            'Vehicle_Drivable_Car': 'Car',
+            'Vehicle_Drivable_Van': 'Car',
+            'Vehicle_Ridable_Motorcycle': 'Cyclist',
+            'Vehicle_Ridable_Bicycle': 'Cyclist',
+            'Human': 'Pedestrian',
+            'LargeVehicle_Bus': 'DontCare',
+            'LargeVehicle_TruckCab': 'DontCare',
+            'LargeVehicle_Truck': 'DontCare',
+            'Trailer': 'DontCare'
+        }
+        def kitti_eval(eval_det_annos, eval_gt_annos):
+            from ..kitti.kitti_object_eval_python import eval as kitti_eval
+            from ..kitti import kitti_utils
+
+            kitti_utils.transform_annotations_to_kitti_format(eval_det_annos, map_classes_to_kitti)
+            kitti_utils.transform_annotations_to_kitti_format(eval_gt_annos, map_classes_to_kitti)
+            ap_result_str, ap_dict = kitti_eval.get_official_eval_result(
+                gt_annos=eval_gt_annos,
+                dt_annos=eval_det_annos,
+                current_classes=class_names)
+            return ap_result_str, ap_dict
+        if map_classes_to_kitti is not None:
+            class_names = [map_classes_to_kitti[x] for x in class_names]
+        ap_result_str, ap_dict = kitti_eval(eval_det_annos, eval_gt_annos)
+        print(ap_result_str)

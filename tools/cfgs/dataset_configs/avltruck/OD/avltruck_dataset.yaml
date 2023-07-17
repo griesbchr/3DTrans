@@ -14,6 +14,18 @@ INFO_PATH: {
     'test': [avl_infos_val.pkl],
 }
 
+MAP_CLASS_TO_KITTI: {
+            'Vehicle_Drivable_Car': 'Car',
+            'Vehicle_Drivable_Van': 'Car',
+            'Vehicle_Ridable_Motorcycle': 'Cyclist',
+            'Vehicle_Ridable_Bicycle': 'Cyclist',
+            'Human': 'Pedestrian',
+            'LargeVehicle_Bus': 'DontCare',
+            'LargeVehicle_TruckCab': 'DontCare',
+            'LargeVehicle_Truck': 'DontCare',
+            'Trailer': 'DontCare'
+        }
+
 FILTER_EMPTY_BOXES_FOR_TRAIN: True
 DISABLE_NLZ_FLAG_ON_POINTS: True
 
