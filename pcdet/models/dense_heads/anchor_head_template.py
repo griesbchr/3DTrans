@@ -219,7 +219,7 @@ class AnchorHeadTemplate(nn.Module):
         tb_dict.update(tb_dict_box)
         rpn_loss = cls_loss + box_loss
 
-        tb_dict['rpn_loss'] = rpn_loss.item()
+        tb_dict['loss'] = rpn_loss.item()
         return rpn_loss, tb_dict
 
     def generate_predicted_boxes(self, batch_size, cls_preds, box_preds, dir_cls_preds=None):

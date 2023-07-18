@@ -6,18 +6,20 @@ import tqdm
 import time
 from torch.nn.utils import clip_grad_norm_
 from pcdet.utils import common_utils, commu_utils
-
+import copy
+import numpy as np
 
 def train_one_epoch(model, optimizer, train_loader, model_func, lr_scheduler, accumulated_iter, optim_cfg,
-                    rank, tbar, total_it_each_epoch, dataloader_iter, tb_log=None, leave_pbar=False, logger=None):
+                    rank, tbar, total_it_each_epoch, dataloader_iter, tb_log=None, leave_pbar=False, logger=None, log_interval=None):
     if total_it_each_epoch == len(train_loader):
         dataloader_iter = iter(train_loader)
 
     if rank == 0:
-        pbar = tqdm.tqdm(total=total_it_each_epoch, leave=leave_pbar, desc='train', dynamic_ncols=True)
+        pbar = tqdm.tqdm(total=total_it_each_epoch, leave=leave_pbar, desc='train', dynamic_ncols=True, position=0)
         data_time = common_utils.AverageMeter()
         batch_time = common_utils.AverageMeter()
         forward_time = common_utils.AverageMeter()
+        loss_dict_accum = None
 
     for cur_it in range(total_it_each_epoch):
         end = time.time()
@@ -75,6 +77,24 @@ def train_one_epoch(model, optimizer, train_loader, model_func, lr_scheduler, ac
                 'loss': loss.item(), 'lr': cur_lr, 'd_time': f'{data_time.val:.2f}({data_time.avg:.2f})',
                 'f_time': f'{forward_time.val:.2f}({forward_time.avg:.2f})', 'b_time': f'{batch_time.val:.2f}({batch_time.avg:.2f})'
             })
+            
+            if log_interval is not None:
+                if loss_dict_accum is None:
+                    loss_dict_accum = {key: value for key, value in zip(tb_dict.keys(), [copy.deepcopy([]) for i in range(len(tb_dict.keys()))])}
+                for key, value in tb_dict.items():
+                    loss_dict_accum[key].append(value)
+
+                if (cur_it + 1) % log_interval == 0:
+                    loss_dict_avg = {key:np.mean(np.array(val)) for key, val in loss_dict_accum.items()}
+                    loss_dict_std = {key:np.std(np.array(val)) for key, val in loss_dict_accum.items()}
+
+                    disp_string = 'iter: {}, lr: {:.5f}, '.format(cur_it+1 , cur_lr)
+                    for key in loss_dict_avg:
+                        disp_string += key + ': {:.4f}({:.4f}), '.format(loss_dict_avg[key], loss_dict_std[key]) 
+
+                    logger.info(disp_string)
+                    for key in loss_dict_accum: loss_dict_accum[key] = [] 
+                    
 
             pbar.update()
             pbar.set_postfix(dict(total_it=accumulated_iter))
@@ -94,9 +114,9 @@ def train_one_epoch(model, optimizer, train_loader, model_func, lr_scheduler, ac
 def train_model(model, optimizer, train_loader, model_func, lr_scheduler, optim_cfg,
                 start_epoch, total_epochs, start_iter, rank, tb_log, ckpt_save_dir, 
                 source_sampler=None, lr_warmup_scheduler=None, ckpt_save_interval=1,
-                max_ckpt_save_num=50, merge_all_iters_to_one_epoch=False, logger=None):
+                max_ckpt_save_num=50, merge_all_iters_to_one_epoch=False, logger=None, log_interval=None):
     accumulated_iter = start_iter
-    with tqdm.trange(start_epoch, total_epochs, desc='epochs', dynamic_ncols=True, leave=(rank == 0)) as tbar:
+    with tqdm.trange(start_epoch, total_epochs, desc='epochs', dynamic_ncols=True, leave=(rank == 0), position=1) as tbar:
         total_it_each_epoch = len(train_loader)
         if merge_all_iters_to_one_epoch:
             assert hasattr(train_loader.dataset, 'merge_all_iters_to_one_epoch')
@@ -121,7 +141,8 @@ def train_model(model, optimizer, train_loader, model_func, lr_scheduler, optim_
                 leave_pbar=(cur_epoch + 1 == total_epochs),
                 total_it_each_epoch=total_it_each_epoch,
                 dataloader_iter=dataloader_iter,
-                logger=logger
+                logger=logger,
+                log_interval=log_interval
             )
 
             # save trained model

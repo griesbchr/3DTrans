@@ -1,5 +1,5 @@
 import torch
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, Subset
 from torch.utils.data import DistributedSampler as _DistributedSampler
 
 from pcdet.utils import common_utils
@@ -86,9 +86,16 @@ class DistributedSampler(_DistributedSampler):
 
         return iter(indices)
 
+class CustomSubset(Subset):
+    def __init__(self, dataset, indices):
+        super().__init__(dataset, indices)
+
+    def __getattr__(self, name):
+        # Pass attribute access to the underlying dataset
+        return getattr(self.dataset, name)
 
 def build_dataloader(dataset_cfg, class_names, batch_size, dist, root_path=None, workers=4,
-                     logger=None, training=True, merge_all_iters_to_one_epoch=False, total_epochs=0):
+                     logger=None, training=True, merge_all_iters_to_one_epoch=False, total_epochs=0, sub_sample=None):
 
     dataset = __all__[dataset_cfg.DATASET](
         dataset_cfg=dataset_cfg,
@@ -97,6 +104,10 @@ def build_dataloader(dataset_cfg, class_names, batch_size, dist, root_path=None,
         training=training,
         logger=logger,
     )
+
+    if sub_sample is not None:
+        subsamples = list(range(0, len(dataset), sub_sample))
+        dataset =  CustomSubset(dataset, subsamples)
 
     if merge_all_iters_to_one_epoch:
         assert hasattr(dataset, 'merge_all_iters_to_one_epoch')

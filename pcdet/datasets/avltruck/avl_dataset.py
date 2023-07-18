@@ -49,8 +49,7 @@ class AVLDataset(DatasetTemplate):
         self.avl_infos = [ai for ai in self.avl_infos
                           if 'annos' in ai]  # filter out frames wituoht labels
 
-        self.map_class_to_kitti = self.dataset_cfg.get('MAP_CLASS_TO_KITTI',
-                                                       None)
+        self.map_class_to_kitti = self.dataset_cfg.get('MAP_CLASS_TO_KITTI',None)
         if self.dataset_cfg.get('MAP_MERGE_CLASS', None) is not None:
             for infos_idx in range(self.avl_infos.__len__()):
                 if 'annos' not in self.avl_infos[infos_idx]:
@@ -235,7 +234,6 @@ class AVLDataset(DatasetTemplate):
             output_path:
 
         Returns:
-
         """
         
         def get_template_prediction(num_samples):

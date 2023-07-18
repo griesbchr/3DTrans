@@ -208,7 +208,7 @@ class AnchorHeadSingle_TQS(AnchorHeadTemplate):
         tb_dict.update(tb_dict_2)
         box_loss, tb_dict_box = self.get_box_reg_layer_loss()
         tb_dict.update(tb_dict_box)
-        if mode is 'train_detector':
+        if mode == 'train_detector':
             rpn_loss = cls_loss + box_loss + cls_loss_1 + cls_loss_2
         elif mode == 'train_mul_cls':
             rpn_loss = cls_loss_1 + cls_loss_2

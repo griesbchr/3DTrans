@@ -44,6 +44,8 @@ def parse_config():
     parser.add_argument('--start_epoch', type=int, default=0, help='')
     parser.add_argument('--num_epochs_to_eval', type=int, default=0, help='number of checkpoints to be evaluated')
     parser.add_argument('--save_to_file', action='store_true', default=False, help='')
+    parser.add_argument('--subsample', type=int, default=None, required=False , help='selects every nth sample for training')
+    parser.add_argument('--log_interval', type=int, default=50, required=False , help='logs every nth iteration')
 
     args = parser.parse_args()
 
@@ -111,7 +113,8 @@ def main():
         logger=logger,
         training=True,
         merge_all_iters_to_one_epoch=args.merge_all_iters_to_one_epoch,
-        total_epochs=args.epochs
+        total_epochs=args.epochs,
+        sub_sample=args.subsample
     )
 
     model = build_network(model_cfg=cfg.MODEL, num_class=len(cfg.CLASS_NAMES), dataset=train_set)
@@ -126,13 +129,16 @@ def main():
     last_epoch = -1
     if args.pretrained_model is not None:
         model.load_params_from_file(filename=args.pretrained_model, to_cpu=dist_train, logger=logger)
+        logger.info('**********************Loading pretrained model**********************')
 
     if args.ckpt is not None:
         it, start_epoch = model.load_params_with_optimizer(args.ckpt, to_cpu=dist_train, optimizer=optimizer, logger=logger)
+        logger.info('**********************Loading pretrained model**********************')
         last_epoch = start_epoch + 1
     else:
         ckpt_list = glob.glob(str(ckpt_dir / '*checkpoint_epoch_*.pth'))
         if len(ckpt_list) > 0:
+            logger.info('**********************Loading pretrained model**********************')
             ckpt_list.sort(key=os.path.getmtime)
             it, start_epoch = model.load_params_with_optimizer(
                 ckpt_list[-1], to_cpu=dist_train, optimizer=optimizer, logger=logger
@@ -170,7 +176,8 @@ def main():
         ckpt_save_interval=args.ckpt_save_interval,
         max_ckpt_save_num=args.max_ckpt_save_num,
         merge_all_iters_to_one_epoch=args.merge_all_iters_to_one_epoch,
-        logger=logger
+        logger=logger,
+        log_interval = args.log_interval
     )
 
     if hasattr(train_set, 'use_shared_memory') and train_set.use_shared_memory:
