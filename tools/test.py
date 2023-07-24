@@ -83,21 +83,30 @@ def get_no_evaluated_ckpt(ckpt_dir, ckpt_record_file, args):
     return -1, None
 
 
-def repeat_eval_ckpt(model, test_loader, args, eval_output_dir, logger, ckpt_dir, dist_test=False):
+def repeat_eval_ckpt(model, test_loader, args, eval_output_dir, logger, ckpt_dir, dist_test=False, eval_latest=False):
     # evaluated ckpt record
     ckpt_record_file = eval_output_dir / ('eval_list_%s.txt' % cfg.DATA_CONFIG.DATA_SPLIT['test'])
     with open(ckpt_record_file, 'a'):
         pass
 
     # tensorboard log
-    if cfg.LOCAL_RANK == 0:
-        tb_log = SummaryWriter(log_dir=str(eval_output_dir / ('tensorboard_%s' % cfg.DATA_CONFIG.DATA_SPLIT['test'])))
+    #if cfg.LOCAL_RANK == 0:
+        #tb_log = SummaryWriter(log_dir=str(eval_output_dir / ('tensorboard_%s' % cfg.DATA_CONFIG.DATA_SPLIT['test'])))
     total_time = 0
     first_eval = True
 
     while True:
-        # check whether there is checkpoint which is not evaluated
-        cur_epoch_id, cur_ckpt = get_no_evaluated_ckpt(ckpt_dir, ckpt_record_file, args)
+        if eval_latest:
+            # get the latest checkpoint, doesnt matter whether it is evaluated
+            ckpt_list = glob.glob(os.path.join(ckpt_dir, '*checkpoint_epoch_*.pth'))
+            ckpt_list.sort(key=os.path.getmtime)
+            ckpt = ckpt_list[-1]
+            cur_epoch_id = re.findall('checkpoint_epoch_(.*).pth', ckpt)[-1]
+            cur_ckpt = ckpt
+        else:
+            # check whether there is checkpoint which is not evaluated
+            cur_epoch_id, cur_ckpt = get_no_evaluated_ckpt(ckpt_dir, ckpt_record_file, args)
+
         if cur_epoch_id == -1 or int(float(cur_epoch_id)) < args.start_epoch:
             wait_second = 30
             if cfg.LOCAL_RANK == 0:
@@ -122,9 +131,9 @@ def repeat_eval_ckpt(model, test_loader, args, eval_output_dir, logger, ckpt_dir
             result_dir=cur_result_dir, save_to_file=args.save_to_file
         )
 
-        if cfg.LOCAL_RANK == 0:
-            for key, val in tb_dict.items():
-                tb_log.add_scalar(key, val, cur_epoch_id)
+        #if cfg.LOCAL_RANK == 0:
+            #for key, val in tb_dict.items():
+                #tb_log.add_scalar(key, val, cur_epoch_id)
 
         # record this epoch which has been evaluated
         with open(ckpt_record_file, 'a') as f:

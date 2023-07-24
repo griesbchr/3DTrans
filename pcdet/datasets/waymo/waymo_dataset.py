@@ -616,7 +616,8 @@ if __name__ == '__main__':
         except:
             yaml_config = yaml.safe_load(open(args.cfg_file))
         dataset_cfg = EasyDict(yaml_config)
-        ROOT_DIR = (Path(__file__).resolve().parent / '../../../').resolve()
+        #ROOT_DIR = (Path(__file__).resolve().parent / '../../../').resolve()
+        ROOT_DIR = Path("/")
         dataset_cfg.PROCESSED_DATA_TAG = args.processed_data_tag
         create_waymo_infos(
             dataset_cfg=dataset_cfg,

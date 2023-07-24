@@ -2,7 +2,11 @@ DATASET: 'AVLDataset'
 DATA_PATH: '/data/AVLTruck'
 PROCESSED_DATA_TAG: 'avl_processed_data_v0_5_0'
 
-POINT_CLOUD_RANGE: [-75.2, -75.2, -2, 75.2, 75.2, 4]
+
+#{x, y}/0.1 range need to be divisible by voxel size and anchor stride (8)
+POINT_CLOUD_RANGE: [-50, -76, -5, 150, 76, 1]         # old AVLTruck 
+#POINT_CLOUD_RANGE: [-75.2, -75.2, -5, 150, 75.2, 1]         # AVLTruck 
+
 
 DATA_SPLIT: {
     'train': train,
@@ -20,10 +24,10 @@ MAP_CLASS_TO_KITTI: {
             'Vehicle_Ridable_Motorcycle': 'Cyclist',
             'Vehicle_Ridable_Bicycle': 'Cyclist',
             'Human': 'Pedestrian',
-            'LargeVehicle_Bus': 'DontCare',
-            'LargeVehicle_TruckCab': 'DontCare',
-            'LargeVehicle_Truck': 'DontCare',
-            'Trailer': 'DontCare'
+            'LargeVehicle_Bus': 'Other',
+            'LargeVehicle_TruckCab': 'Other',
+            'LargeVehicle_Truck': 'Other',
+            'Trailer': 'Other',
         }
 
 FILTER_EMPTY_BOXES_FOR_TRAIN: True
@@ -33,7 +37,8 @@ USE_SHARED_MEMORY: False  # it will load the data to shared memory to speed up (
 SHARED_MEMORY_FILE_LIMIT: 35000  # set it based on the size of your shared memory
 
 DATA_AUGMENTOR:
-    DISABLE_AUG_LIST: ['random_world_flip', 'random_world_rotation', 'random_world_scaling']
+    DISABLE_AUG_LIST: ['placeholder']
+    #DISABLE_AUG_LIST: ['gt_sampling', 'random_world_flip', 'random_world_rotation', 'random_world_scaling']
     AUG_CONFIG_LIST:
         - NAME: gt_sampling
           USE_ROAD_PLANE: False
@@ -46,10 +51,11 @@ DATA_AUGMENTOR:
               'Trailer:5'],
           }
 
-          SAMPLE_GROUPS: ['Vehicle_Drivable_Car:10', 'Vehicle_Drivable_Van:10',
-              'Human:10', 'Vehicle_Ridable_Motorcycle:10', 'Vehicle_Ridable_Bicycle:10',
-              'LargeVehicle_Bus:10', 'LargeVehicle_Truck:10', 'LargeVehicle_TruckCab:10',
-              'Trailer:10']
+          SAMPLE_GROUPS: ['Vehicle_Drivable_Car:20', 'Vehicle_Drivable_Van:10',
+              'Human:15', 'Vehicle_Ridable_Motorcycle:10', 'Vehicle_Ridable_Bicycle:10',
+              'LargeVehicle_Bus:0', 'LargeVehicle_Truck:0', 'LargeVehicle_TruckCab:0',
+              'Trailer:0']
+
           NUM_POINT_FEATURES: 4
           DATABASE_WITH_FAKELIDAR: False
           REMOVE_EXTRA_WIDTH: [0.0, 0.0, 0.0]
@@ -79,13 +85,13 @@ DATA_PROCESSOR:
     - NAME: shuffle_points
       SHUFFLE_ENABLED: {
         'train': True,
-        'test': True
+        'test': False
       }
 
     - NAME: transform_points_to_voxels
       VOXEL_SIZE: [0.1, 0.1, 0.15]
-      MAX_POINTS_PER_VOXEL: 20
+      MAX_POINTS_PER_VOXEL: 5
       MAX_NUMBER_OF_VOXELS: {
         'train': 150000,
-        'test': 250000
+        'test': 150000
       }

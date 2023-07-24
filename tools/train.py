@@ -45,7 +45,7 @@ def parse_config():
     parser.add_argument('--num_epochs_to_eval', type=int, default=0, help='number of checkpoints to be evaluated')
     parser.add_argument('--save_to_file', action='store_true', default=False, help='')
     parser.add_argument('--subsample', type=int, default=None, required=False , help='selects every nth sample for training')
-    parser.add_argument('--log_interval', type=int, default=50, required=False , help='logs every nth iteration')
+    parser.add_argument('--log_interval', type=int, default=10, required=False , help='logs every nth iteration')
 
     args = parser.parse_args()
 
@@ -177,7 +177,8 @@ def main():
         max_ckpt_save_num=args.max_ckpt_save_num,
         merge_all_iters_to_one_epoch=args.merge_all_iters_to_one_epoch,
         logger=logger,
-        log_interval = args.log_interval
+        log_interval = args.log_interval,
+        total_gpus=total_gpus
     )
 
     if hasattr(train_set, 'use_shared_memory') and train_set.use_shared_memory:
@@ -192,8 +193,12 @@ def main():
         dataset_cfg=cfg.DATA_CONFIG,
         class_names=cfg.CLASS_NAMES,
         batch_size=args.batch_size,
-        dist=dist_train, workers=args.workers, logger=logger, training=False
+        dist=dist_train,
+        workers=args.workers, 
+        logger=logger, 
+        training=False,
     )
+
     eval_output_dir = output_dir / 'eval' / 'eval_with_train'
     eval_output_dir.mkdir(parents=True, exist_ok=True)
     args.start_epoch = max(args.epochs - args.num_epochs_to_eval, 0)  # Only evaluate the last args.num_epochs_to_eval epochs
@@ -201,7 +206,8 @@ def main():
     repeat_eval_ckpt(
         model.module if dist_train else model,
         test_loader, args, eval_output_dir, logger, ckpt_dir,
-        dist_test=dist_train
+        dist_test=dist_train,
+        eval_latest=True
     )
     logger.info('**********************End evaluation %s/%s(%s)**********************' %
                 (cfg.EXP_GROUP_PATH, cfg.TAG, args.extra_tag))

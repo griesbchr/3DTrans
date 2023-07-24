@@ -16,9 +16,9 @@ def transform_annotations_to_kitti_format(annos, map_name_to_kitti=None, info_wi
         if 'name' not in anno:
             anno['name'] = anno['gt_names']
             anno.pop('gt_names')
-
-        for k in range(anno['name'].shape[0]):
-            anno['name'][k] = map_name_to_kitti[anno['name'][k]]
+        if map_name_to_kitti is not None:   
+            for k in range(anno['name'].shape[0]):
+                anno['name'][k] = map_name_to_kitti[anno['name'][k]]
 
         anno['bbox'] = np.zeros((len(anno['name']), 4))
         anno['bbox'][:, 2:4] = 50  # [0, 0, 50, 50]

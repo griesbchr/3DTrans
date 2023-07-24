@@ -5,12 +5,10 @@ import pickle
 import orjson
 from scipy.spatial.transform import Rotation
 
-import open3d
+import open3d 
 from tools.visual_utils import open3d_vis_utils as vis
 
 import numpy as np
-
-
 
 def get_lidar(root_path, idx):
     lidar_file = root_path / idx
@@ -76,7 +74,7 @@ def get_labels(root_path, idx):
 
 def main():
     parser = argparse.ArgumentParser(description='arg parser')
-    parser.add_argument('--dataset', type=str, default="avltruck", help='the data path')
+    parser.add_argument('--dataset', type=str, default="avltruck", help='the dataset name')
     parser.add_argument('--frame_idx', type=str, default="sequences/CityStreet_dgt_2021-07-08-15-32-17_0_s0/dataset/logical_frame_000020", help='the frame_idx in form "sequences/SEQUENCENAME/dataset/logical_frame_FRAMEID"')
     args = parser.parse_args()
 
@@ -87,24 +85,26 @@ def main():
     
     #load eval data
     #eval_det_annos = pickle.load(open("/home/cgriesbacher/thesis/3DTrans/output/avltruck_models/second/default/eval/epoch_30/val/default/result.pkl", 'rb'))
-    eval_gt_annos = pickle.load(open("3DTrans/tools/eval_gt_annos.pkl", 'rb'))
-    eval_det_annos = pickle.load(open("3DTrans/tools/eval_det_annos.pkl", 'rb'))
+    # eval_gt_annos = pickle.load(open("3DTrans/tools/eval_gt_annos.pkl", 'rb'))
+    # eval_det_annos = pickle.load(open("3DTrans/tools/eval_det_annos.pkl", 'rb'))
 
     #get frame with corresponding idx from eval_det_annos
-    found = False
-    for lst_idx, frame in enumerate(eval_det_annos):
-        if frame["frame_id"].__str__().split(".")[0] == args.frame_idx:
-            frame_det_annos = frame
-            found = True
-            break
+    #found = False
+    #for lst_idx, frame in enumerate(eval_det_annos):
+    #    if frame["frame_id"].__str__().split(".")[0] == args.frame_idx:
+    #        frame_det_annos = frame
+    #        found = True
+    #        break
+    #
+    #if (not found):
+    #    raise ValueError("frame_idx not found in eval_det_annos")
     
-    if (not found):
-        raise ValueError("frame_idx not found in eval_det_annos")
-    
-    frame_gt_annos = eval_gt_annos[lst_idx]
+    #frame_gt_annos = eval_gt_annos[lst_idx]
+
     points = get_lidar(rootpath, args.frame_idx)
     #labels = get_labels(rootpath, args.frame_idx)
-    vis.draw_scenes(points, frame_gt_annos["gt_boxes_lidar"], frame_det_annos["boxes_lidar"])
+
+    vis.draw_scenes(points, fit_ground_plane=True)
 
     return
 

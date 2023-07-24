@@ -209,7 +209,10 @@ class DataBaseSampler(object):
                     
                     if obj_points.shape[0] != info['num_points_in_gt']:
                         obj_points = np.fromfile(str(file_path), dtype=np.float64).reshape(-1, self.sampler_cfg.NUM_POINT_FEATURES)
-                        
+                        obj_points = obj_points.astype(np.float32)
+                    
+                    assert obj_points.shape[0] == info['num_points_in_gt'], f"{file_path} {obj_points.shape[0]} != {info['num_points_in_gt']}"
+            
             obj_points[:, :3] += info['box3d_lidar'][:3]
 
             if self.sampler_cfg.get('USE_ROAD_PLANE', False):

@@ -27,4 +27,7 @@ class SECONDNet(Detector3DTemplate):
         loss_rpn, tb_dict = self.dense_head.get_loss()
 
         loss = loss_rpn
+        tb_dict.update({
+            'loss': loss.item()
+        })
         return loss, tb_dict, disp_dict

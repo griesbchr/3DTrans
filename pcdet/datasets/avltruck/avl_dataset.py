@@ -268,7 +268,7 @@ class AVLDataset(DatasetTemplate):
             annos.append(single_pred_dict)
 
         return annos
-    
+    '''
     def evaluation(self, det_annos, class_names, **kwargs):
         if 'annos' not in self.avl_infos[0].keys():
             return 'No ground-truth boxes for evaluation', {}
@@ -340,12 +340,89 @@ class AVLDataset(DatasetTemplate):
         #eval_gt_annos = accomodate_eval(eval_gt_annos, self.map_class_to_kitti)
         if self.map_class_to_kitti is not None:
             class_names = [self.map_class_to_kitti[x] for x in class_names]
-        map_class_to_kitti = self.dataset_cfg.get('MAP_CLASS_TO_KITTI', None)
 
         if kwargs['eval_metric'] == 'kitti':
-            ap_result_str, ap_dict = kitti_eval(eval_det_annos, eval_gt_annos, map_class_to_kitti)
+            ap_result_str, ap_dict = kitti_eval(eval_det_annos, eval_gt_annos, self.map_class_to_kitti)
         elif kwargs['eval_metric'] == 'waymo':
-            ap_result_str, ap_dict = waymo_eval(eval_det_annos, eval_gt_annos, map_class_to_kitti)
+            #TODO map classes to waymo
+            ap_result_str, ap_dict = waymo_eval(eval_det_annos, eval_gt_annos, self.map_class_to_kitti)
+        else:
+            raise NotImplementedError
+
+        return ap_result_str, ap_dict
+    '''
+    def evaluation(self, det_annos, class_names, **kwargs):
+        if 'annos' not in self.avl_infos[0].keys():
+            return 'No ground-truth boxes for evaluation', {}
+
+        def accomodate_eval(annos, name_map=None, shift_coord=None):
+            for anno in annos:
+                if name_map is not None:
+                    for k in range(anno['name'].shape[0]):
+                        anno['name'][k] = name_map[anno['name'][k]]
+
+                if shift_coord is not None:
+                    if 'boxes_lidar' in anno:
+                        anno['boxes_lidar'][:, 0:3] -= shift_coord
+                    else:
+                        anno['gt_boxes_lidar'][:, 0:3] -= shift_coord
+
+                anno['difficulty'] = np.ones(anno['name'].shape[0])
+
+            return annos
+
+        def kitti_eval(eval_det_annos, eval_gt_annos, map_class_to_kitti):
+            from ..kitti.kitti_object_eval_python import eval as kitti_eval
+            from ..kitti import kitti_utils
+
+            kitti_utils.transform_annotations_to_kitti_format(eval_det_annos, map_name_to_kitti=map_class_to_kitti)
+            kitti_utils.transform_annotations_to_kitti_format(
+                eval_gt_annos, map_name_to_kitti=map_class_to_kitti,
+                info_with_fakelidar=self.dataset_cfg.get(
+                    'INFO_WITH_FAKELIDAR', False))
+            ap_result_str, ap_dict = kitti_eval.get_official_eval_result(
+                gt_annos=eval_gt_annos,
+                dt_annos=eval_det_annos,
+                current_classes=class_names)
+            return ap_result_str, ap_dict
+
+        def waymo_eval(eval_det_annos, eval_gt_annos):
+            from ..waymo.waymo_eval import OpenPCDetWaymoDetectionMetricsEstimator
+            eval = OpenPCDetWaymoDetectionMetricsEstimator()
+
+            ap_dict = eval.waymo_evaluation(eval_det_annos,
+                                            eval_gt_annos,
+                                            class_name=class_names,
+                                            distance_thresh=1000,
+                                            fake_gt_infos=self.dataset_cfg.get(
+                                                'INFO_WITH_FAKELIDAR', False))
+            ap_result_str = '\n'
+            for key in ap_dict:
+                ap_dict[key] = ap_dict[key][0]
+                ap_result_str += '%s: %.4f \n' % (key, ap_dict[key])
+
+            return ap_result_str, ap_dict
+
+        eval_det_annos = copy.deepcopy(det_annos)
+        eval_gt_annos = []
+        for info in self.avl_infos:
+            eval_gt_annos.append(copy.deepcopy(info['annos']))
+            eval_gt_annos[-1] = common_utils.drop_info_with_name(
+                eval_gt_annos[-1], name='Other')
+            eval_gt_annos[-1] = common_utils.drop_info_with_name(
+                eval_gt_annos[-1], name='Dont_Care')
+
+        #eval_det_annos = accomodate_eval(
+        #    eval_det_annos, self.map_class_to_kitti,
+        #    self.dataset_cfg.get('SHIFT_COOR', None))
+        #eval_gt_annos = accomodate_eval(eval_gt_annos, self.map_class_to_kitti)
+        if self.map_class_to_kitti is not None:
+            class_names = [self.map_class_to_kitti[x] for x in class_names]
+
+        if kwargs['eval_metric'] == 'kitti':
+            ap_result_str, ap_dict = kitti_eval(eval_det_annos, eval_gt_annos, self.map_class_to_kitti)
+        elif kwargs['eval_metric'] == 'waymo':
+            ap_result_str, ap_dict = waymo_eval(eval_det_annos, eval_gt_annos)
         else:
             raise NotImplementedError
 
@@ -417,6 +494,7 @@ class AVLDataset(DatasetTemplate):
             pickle.dump(all_db_infos, f)
 
     def __getitem__(self, index):
+        #index = 4850
         if self._merge_all_iters_to_one_epoch:
             index = index % len(self.avl_infos)
 
@@ -591,7 +669,8 @@ def convert_json_to_numpy(data_path, num_workers=4):
 if __name__ == '__main__':
     import sys
     from pathlib import Path
-    ROOT_DIR = (Path(__file__).resolve().parent / '../../../').resolve()
+    #ROOT_DIR = (Path(__file__).resolve().parent / '../../../').resolve()
+    ROOT_DIR = Path("/")
     if sys.argv.__len__() > 1 and sys.argv[1] == 'create_avl_infos':
         import yaml
         from easydict import EasyDict
@@ -604,12 +683,12 @@ if __name__ == '__main__':
                 'LargeVehicle_Bus', 'LargeVehicle_TruckCab',
                 'LargeVehicle_Truck', 'Trailer'
             ],
-            data_path=ROOT_DIR / 'data' / 'avl',
-            save_path=ROOT_DIR / 'data' / 'avl',
+            data_path=ROOT_DIR / 'data' / 'AVLTruck',
+            save_path=ROOT_DIR / 'data' / 'AVLTruck',
             workers=int(sys.argv[3]) if sys.argv.__len__() > 3 else 4)
     elif sys.argv.__len__() > 1 and sys.argv[1] == 'json2np':
         convert_json_to_numpy(
-            ROOT_DIR / 'data' / 'avl',
+            ROOT_DIR / 'data' / 'AVLTruck',
             num_workers=int(sys.argv[2]) if sys.argv.__len__() > 2 else 4)
     elif sys.argv.__len__() > 1 and sys.argv[1] == 'debug_avl_eval':
         eval_gt_annos = pickle.load(open("eval_gt_annos.pkl", 'rb'))

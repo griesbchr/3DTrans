@@ -10,7 +10,8 @@ import copy
 import numpy as np
 
 def train_one_epoch(model, optimizer, train_loader, model_func, lr_scheduler, accumulated_iter, optim_cfg,
-                    rank, tbar, total_it_each_epoch, dataloader_iter, tb_log=None, leave_pbar=False, logger=None, log_interval=None):
+                    rank, tbar, total_it_each_epoch, dataloader_iter, tb_log=None, leave_pbar=False,
+                    logger=None, log_interval=None, total_gpus=None):
     if total_it_each_epoch == len(train_loader):
         dataloader_iter = iter(train_loader)
 
@@ -45,8 +46,6 @@ def train_one_epoch(model, optimizer, train_loader, model_func, lr_scheduler, ac
         except:
             cur_lr = optimizer.param_groups[0]['lr']
 
-        if tb_log is not None:
-            tb_log.add_scalar('meta_data/learning_rate', cur_lr, accumulated_iter)
 
         model.train()
         optimizer.zero_grad()
@@ -102,10 +101,12 @@ def train_one_epoch(model, optimizer, train_loader, model_func, lr_scheduler, ac
             tbar.refresh()
 
             if tb_log is not None:
-                tb_log.add_scalar('train/loss', loss, accumulated_iter)
-                tb_log.add_scalar('meta_data/learning_rate', cur_lr, accumulated_iter)
+                total_frames =  accumulated_iter * total_gpus * train_loader.batch_size
+                #tb_log.add_scalar('train/loss', loss.item(), total_frames) #already included in tb dict for second
+                tb_log.add_scalar('meta_data/learning_rate', cur_lr, total_frames)
+
                 for key, val in tb_dict.items():
-                    tb_log.add_scalar('train/' + key, val, accumulated_iter)
+                    tb_log.add_scalar('train/' + key, val, total_frames)
     if rank == 0:
         pbar.close()
     return accumulated_iter
@@ -114,7 +115,8 @@ def train_one_epoch(model, optimizer, train_loader, model_func, lr_scheduler, ac
 def train_model(model, optimizer, train_loader, model_func, lr_scheduler, optim_cfg,
                 start_epoch, total_epochs, start_iter, rank, tb_log, ckpt_save_dir, 
                 source_sampler=None, lr_warmup_scheduler=None, ckpt_save_interval=1,
-                max_ckpt_save_num=50, merge_all_iters_to_one_epoch=False, logger=None, log_interval=None):
+                max_ckpt_save_num=50, merge_all_iters_to_one_epoch=False, logger=None,
+                log_interval=None, total_gpus=None):
     accumulated_iter = start_iter
     with tqdm.trange(start_epoch, total_epochs, desc='epochs', dynamic_ncols=True, leave=(rank == 0), position=1) as tbar:
         total_it_each_epoch = len(train_loader)
@@ -142,7 +144,8 @@ def train_model(model, optimizer, train_loader, model_func, lr_scheduler, optim_
                 total_it_each_epoch=total_it_each_epoch,
                 dataloader_iter=dataloader_iter,
                 logger=logger,
-                log_interval=log_interval
+                log_interval=log_interval,
+                total_gpus=total_gpus
             )
 
             # save trained model
