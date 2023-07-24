@@ -4,8 +4,8 @@ PROCESSED_DATA_TAG: 'avl_processed_data_v0_5_0'
 
 
 #{x, y}/0.1 range need to be divisible by voxel size and anchor stride (8)
-POINT_CLOUD_RANGE: [-50, -76, -5, 150, 76, 1]         # old AVLTruck 
-#POINT_CLOUD_RANGE: [-75.2, -75.2, -5, 150, 75.2, 1]         # AVLTruck 
+#POINT_CLOUD_RANGE: [-50, -76, -5, 150, 76, 1]         # old AVLTruck 
+POINT_CLOUD_RANGE: [-75.2, -75.2, -5, 123.2, 75.2, 1]         # AVLTruck 
 
 
 DATA_SPLIT: {
