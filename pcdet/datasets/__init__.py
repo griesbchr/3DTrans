@@ -15,13 +15,13 @@ from .pandaset.pandaset_dataset import PandasetDataset
 from .lyft.lyft_dataset import LyftDataset
 from .lyft.lyft_dataset_ada import ActiveLyftDataset
 from .avltruck.avl_dataset import AVLDataset
+from .zod.zod_dataset import ZODDataset
 
 from .once.once_dataset import ONCEDataset
 from .once.once_dataset_ada import ActiveONCEDataset
 from .once.once_semi_dataset import ONCEPretrainDataset, ONCELabeledDataset, ONCEUnlabeledDataset, ONCETestDataset, ONCEUnlabeledPairDataset, split_once_semi_data
 from .nuscenes.nuscenes_semi_dataset import NuScenesPretrainDataset, NuScenesLabeledDataset, NuScenesUnlabeledDataset, NuScenesTestDataset, split_nuscenes_semi_data
 from .kitti.kitti_semi_dataset import KittiPretrainDataset, KittiLabeledDataset, KittiUnlabeledDataset, KittiTestDataset, split_kitti_semi_data
-
 
 __all__ = {
     'DatasetTemplate': DatasetTemplate,
@@ -37,6 +37,7 @@ __all__ = {
     'ONCEDataset': ONCEDataset,
     'ActiveLyftDataset': ActiveLyftDataset,
     'ActiveONCEDataset': ActiveONCEDataset,
+    'ZODDataset': ZODDataset,
 }
 
 _semi_dataset_dict = {
@@ -95,7 +96,7 @@ class CustomSubset(Subset):
         return getattr(self.dataset, name)
 
 def build_dataloader(dataset_cfg, class_names, batch_size, dist, root_path=None, workers=4,
-                     logger=None, training=True, merge_all_iters_to_one_epoch=False, total_epochs=0, sub_sample=None):
+                     logger=None, training=True, merge_all_iters_to_one_epoch=False, total_epochs=0, sub_sample=None, detector_cfg=None):
 
     dataset = __all__[dataset_cfg.DATASET](
         dataset_cfg=dataset_cfg,

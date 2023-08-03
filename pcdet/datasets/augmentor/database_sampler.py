@@ -14,15 +14,21 @@ import io
 class DataBaseSampler(object):
     def __init__(self, root_path, sampler_cfg, class_names, logger=None, client=None, oss_flag=False):
         self.root_path = root_path
-        self.class_names = class_names
+        #self.class_names = class_names
         self.sampler_cfg = sampler_cfg
         self.logger = logger
         self.client = client
         self.oss_flag = oss_flag
         self.db_infos = {}
-        for class_name in class_names:
+
+        #overwrite class_names from detector_cfg with class names from sample groups in dataset_cfg
+        class_names = []
+        for x in sampler_cfg.SAMPLE_GROUPS:
+            class_name, sample_num = x.split(':')
+            class_names.append(class_name)
             self.db_infos[class_name] = []
-            
+        self.class_names = class_names
+
         self.use_shared_memory = sampler_cfg.get('USE_SHARED_MEMORY', False)
         
         self.logger.info(f"*************root_path***********: {root_path}")

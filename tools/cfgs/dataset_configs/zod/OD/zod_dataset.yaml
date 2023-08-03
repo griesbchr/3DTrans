@@ -1,0 +1,102 @@
+#classes in this dataset are: 
+# ["Vehicle_Car", "Vehicle_Van", "Vehicle_Truck", "Vehicle_Trailer", 
+#  "Vehicle_Bus", "Vehicle_HeavyEquip", "Vehicle_TramTrain",
+#  "VulnerableVehicle_Bicycle", "VulnereableVehicle_Motorcycle",
+#  "Pedestrian"]
+DATASET: 'ZODDataset'
+DATA_PATH: '/data/zod'
+
+VERSION: 'mini' # 'mini' or 'full'    #dont forget to change info paths below!
+
+#maps the classes form the dataset info files to classes from the detector
+#the right-hand names need to match the class names in the detector config
+#waymo-like mapping
+MAP_MERGE_CLASS: {  
+    'Vehicle_Car': 'Vehicle',
+    'Vehicle_Van': 'Vehicle',
+    'Vehicle_Truck': 'Vehicle',
+    'Vehicle_Trailer': 'Vehicle',
+    'Vehicle_Bus': 'Vehicle',
+    'Vehicle_HeavyEquip': 'Vehicle',
+    'Vehicle_TramTrain': 'Vehicle',
+    'VulnereableVehicle_Motorcycle': 'Vehicle',
+    'VulnerableVehicle_Bicycle': 'Cyclist',
+    'Pedestrian': 'Pedestrian',
+    #'Placeholder': 'DontCare',
+}
+
+#ZOD supports up to range 245m
+#POINT_CLOUD_RANGE: [-75.2, -75.2, -5, 123.2, 75.2, 1]         # AVLTruck 
+POINT_CLOUD_RANGE: [0, -40, -3, 70.4, 40, 1]                   # KITTI
+
+FOV_POINTS_ONLY: True
+
+DATA_SPLIT: {
+    'train': train,
+    'test': val
+}
+
+INFO_PATH: {
+    'train': zod_infos_train_mini.pkl,
+    'test': zod_infos_val_mini.pkl,
+}
+
+POINT_FEATURE_ENCODING: {
+    encoding_type: absolute_coordinates_encoding,
+    used_feature_list: ['x', 'y', 'z', 'intensity'],
+    src_feature_list: ['x', 'y', 'z', 'intensity'],
+}
+
+DATA_AUGMENTOR:
+    #DISABLE_AUG_LIST: ['placeholder']
+    DISABLE_AUG_LIST: ['random_world_flip', 'random_world_rotation', 'random_world_scaling']
+    AUG_CONFIG_LIST:
+        - NAME: gt_sampling
+          USE_ROAD_PLANE: False
+          DB_INFO_PATH:
+              - zod_dbinfos_train_mini.pkl
+          PREPARE: {
+             filter_by_min_points: ['Vehicle_Car:5', Vehicle_Van:5, 'VulnerableVehicle_Bicycle:5', 'Pedestrian:5'],
+          }
+
+          SAMPLE_GROUPS: ['Vehicle_Car:18', Vehicle_Van:2, 'VulnerableVehicle_Bicycle:10', 'Pedestrian:20']
+          NUM_POINT_FEATURES: 4
+          DATABASE_WITH_FAKELIDAR: False
+          REMOVE_EXTRA_WIDTH: [0.0, 0.0, 0.0]
+          LIMIT_WHOLE_SCENE: True
+
+        - NAME: random_world_flip
+          ALONG_AXIS_LIST: ['x']
+
+        - NAME: random_world_rotation
+          WORLD_ROT_ANGLE: [-0.78539816, 0.78539816]
+
+        - NAME: random_world_scaling
+          WORLD_SCALE_RANGE: [0.95, 1.05]
+
+DATA_PROCESSOR:
+    - NAME: mask_points_and_boxes_outside_range
+      REMOVE_OUTSIDE_BOXES: True
+
+    - NAME: shuffle_points
+      SHUFFLE_ENABLED: {
+        'train': True,
+        'test': False
+      }
+
+#    - NAME: transform_points_to_voxels
+#      VOXEL_SIZE: [0.1, 0.1, 0.15]
+#      MAX_POINTS_PER_VOXEL: 5
+#      MAX_NUMBER_OF_VOXELS: {
+#        'train': 150000,
+#        'test': 150000
+#      }
+
+    #kitti
+    - NAME: transform_points_to_voxels
+      VOXEL_SIZE: [0.05, 0.05, 0.1]
+      MAX_POINTS_PER_VOXEL: 5
+      MAX_NUMBER_OF_VOXELS: {
+        'train': 16000,
+        'test': 40000
+      }

@@ -48,18 +48,18 @@ class AVLDataset(DatasetTemplate):
 
         self.avl_infos = [ai for ai in self.avl_infos
                           if 'annos' in ai]  # filter out frames wituoht labels
-
-        self.map_class_to_kitti = self.dataset_cfg.get('MAP_CLASS_TO_KITTI',None)
+        
         if self.dataset_cfg.get('MAP_MERGE_CLASS', None) is not None:
             for infos_idx in range(self.avl_infos.__len__()):
                 if 'annos' not in self.avl_infos[infos_idx]:
                     continue
-                for name_idx in range(
-                        self.avl_infos[infos_idx]['annos']['name'].shape[0]):
+                for name_idx in range(self.avl_infos[infos_idx]['annos']['name'].shape[0]):
                     self.avl_infos[infos_idx]['annos']['name'][
                         name_idx] = self.dataset_cfg.MAP_MERGE_CLASS[
                             self.avl_infos[infos_idx]['annos']['name']
                             [name_idx]]
+
+        self.map_class_to_kitti = self.dataset_cfg.get('MAP_CLASS_TO_KITTI',None)
 
     def include_avl_data(self, mode):
         if self.logger is not None:
@@ -380,7 +380,7 @@ class AVLDataset(DatasetTemplate):
                 eval_gt_annos, map_name_to_kitti=map_class_to_kitti,
                 info_with_fakelidar=self.dataset_cfg.get(
                     'INFO_WITH_FAKELIDAR', False))
-            ap_result_str, ap_dict = kitti_eval.get_official_eval_result(
+            ap_result_str, ap_dict = kitti_eval.get_custom_eval_result(
                 gt_annos=eval_gt_annos,
                 dt_annos=eval_det_annos,
                 current_classes=class_names)

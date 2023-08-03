@@ -51,7 +51,7 @@ def parse_config():
 
     cfg_from_yaml_file(args.cfg_file, cfg)
     cfg.TAG = Path(args.cfg_file).stem
-    cfg.EXP_GROUP_PATH = '/'.join(args.cfg_file.split('/')[1:-1])  # remove 'cfgs' and 'xxxx.yaml'
+    cfg.EXP_GROUP_PATH = '/'.join(args.cfg_file.split('/')[-2:-1])  # remove 'cfgs' and 'xxxx.yaml'
 
     if args.set_cfgs is not None:
         cfg_from_list(args.set_cfgs, cfg)
@@ -207,7 +207,7 @@ def main():
         model.module if dist_train else model,
         test_loader, args, eval_output_dir, logger, ckpt_dir,
         dist_test=dist_train,
-        eval_latest=True
+        eval_latest=False
     )
     logger.info('**********************End evaluation %s/%s(%s)**********************' %
                 (cfg.EXP_GROUP_PATH, cfg.TAG, args.extra_tag))

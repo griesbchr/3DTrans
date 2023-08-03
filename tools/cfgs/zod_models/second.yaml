@@ -1,15 +1,17 @@
-# CLASS_NAMES: [  'Vehicle_Drivable_Car', 'Vehicle_Drivable_Van', 
-#                 'Human',
-#                 'Vehicle_Ridable_Motorcycle', 'Vehicle_Ridable_Bicycle',
-#                 'LargeVehicle_Bus', 'LargeVehicle_TruckCab','LargeVehicle_Truck', 'Trailer'
-#             ]
+#TODO
+#MAP_CLASS_TO_KITTI: {
+#    'Vehicle': 'Car',
+#    'Pedestrian': 'Pedestrian',
+#    'Cyclist': 'Cyclist',
+#}
 
-#anything not in class_names will be treated as background
-CLASS_NAMES: ['Vehicle_Drivable_Car', Vehicle_Drivable_Van, 'Human',  'Vehicle_Ridable_Bicycle', Vehicle_Ridable_Motorcycle]
+#detector classes: anything not in class_names will be treated as background
+#need to match names in dataset config class mapping (or classes if no mapping)
+CLASS_NAMES: ['Vehicle', 'Cyclist', 'Pedestrian']
 
 
 DATA_CONFIG:
-    _BASE_CONFIG_: cfgs/dataset_configs/avltruck/OD/avltruck_dataset.yaml
+    _BASE_CONFIG_: cfgs/dataset_configs/zod/OD/zod_dataset.yaml
 
 
 MODEL:
@@ -45,55 +47,36 @@ MODEL:
 
         ANCHOR_GENERATOR_CONFIG: [
             {
-                'class_name': 'Vehicle_Drivable_Car',
+                'class_name': 'Vehicle',
                 'anchor_sizes': [[4.0, 1.9, 1.5]],
                 'anchor_rotations': [0, 1.57],
-                'anchor_bottom_heights': [-2.7],
+                'anchor_bottom_heights': [-1.3],
                 'align_center': False,
                 'feature_map_stride': 8,
                 'matched_threshold': 0.55,
                 'unmatched_threshold': 0.4
             },
             {
-                'class_name': 'Vehicle_Drivable_Van',
-                'anchor_sizes': [[4.7, 2.1, 2]],
+                'class_name': 'Cyclist',
+                'anchor_sizes': [[1.86, 0.745, 1.89]],
                 'anchor_rotations': [0, 1.57],
-                'anchor_bottom_heights': [-2.3],
+                'anchor_bottom_heights': [-1.06],
                 'align_center': False,
                 'feature_map_stride': 8,
                 'matched_threshold': 0.55,
                 'unmatched_threshold': 0.4
             },
             {
-                'class_name': 'Human',
+                'class_name': 'Pedestrian',
                 'anchor_sizes': [[0.76, 0.72, 1.65]],
                 'anchor_rotations': [0, 1.57],
-                'anchor_bottom_heights': [-2.5],
+                'anchor_bottom_heights': [-1.16],
                 'align_center': False,
                 'feature_map_stride': 8,
                 'matched_threshold': 0.5,
                 'unmatched_threshold': 0.35
             },
-            {
-                'class_name': 'Vehicle_Ridable_Bicycle',
-                'anchor_sizes': [[1.80, 0.61, 1.10]],
-                'anchor_rotations': [0, 1.57],
-                'anchor_bottom_heights': [-2.81],
-                'align_center': False,
-                'feature_map_stride': 8,
-                'matched_threshold': 0.5,
-                'unmatched_threshold': 0.35
-            },
-            {
-                'class_name': 'Vehicle_Ridable_Motorcycle',
-                'anchor_sizes': [[2.03, 0.61, 1.19]],
-                'anchor_rotations': [0, 1.57],
-                'anchor_bottom_heights': [-2.80],
-                'align_center': False,
-                'feature_map_stride': 8,
-                'matched_threshold': 0.5,
-                'unmatched_threshold': 0.35
-            }
+         
         ]
 
         TARGET_ASSIGNER_CONFIG:
