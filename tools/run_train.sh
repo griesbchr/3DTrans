@@ -3,14 +3,14 @@
 #CONFIG_FILE=kitti_models/second.yaml
 #CONFIG_FILE=avltruck_models/IA-SSD.yaml
 #CONFIG_FILE=avltruck_models/second.yaml
-DATASET=avltruck
+DATASET=zod
 #MODEL=IA-SSD
-#MODEL=second
-MODEL=pointpillar_1x
-EXTRA_TAG=D5_1epochs
-EPOCHS=1
-SUBSAMPLE=5
-CKPT_SAVE_INTERVAL=1
+MODEL=second
+#MODEL=pointpillar_1x
+EXTRA_TAG=small_10epochs_ada_range
+EPOCHS=10
+SUBSAMPLE=1
+CKPT_SAVE_INTERVAL=10
 
 CONFIG_FILE=${DATASET}_models/$MODEL.yaml
 

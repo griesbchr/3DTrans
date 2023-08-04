@@ -35,21 +35,22 @@ df.rename(columns={'name':'class'}, inplace=True)
 # "image_idx" contains 'sequences/CityStreet_dgt_2021-07-08-15-24-00_0_s0/dataset/logical_frame_000020.json', please make a col containing CityStreet_dgt_2021-07-08-15-24-00_0_s0
 df['sequence'] = df['image_idx'].str.split('/').str[1]
 
+#rename image_idx to frame_idx
+df.rename(columns={'image_idx':'frame_idx'}, inplace=True)
+
 print("Number of instances per class:")
 print(df.groupby('class')['num_points_in_gt'].count())
 #%% load pickle file "zod_dbinfos.pkl" which is in zod folder
 
-with open('/data/zod/zod_dbinfos_train_mini.pkl', 'rb') as f:
+with open('/data/zod/zod_dbinfos_train_small.pkl', 'rb') as f:
     #store as dataframe
     zod_dbinfos = pickle.load(f)
 
 classes =  ["Vehicle_Car", "Vehicle_Van", "Vehicle_Truck", "Vehicle_Trailer", 
             "Vehicle_Bus", "Vehicle_HeavyEquip", "Vehicle_TramTrain",
-            "VulnerableVehicle_Bicycle", "VulnereableVehicle_Motorcycle",
+            "VulnerableVehicle_Bicycle", "VulnerableVehicle_Motorcycle",
             "Pedestrian"]
-classes =  ["Vehicle_Car", "Vehicle_Van", "Vehicle_Truck", "Vehicle_Bus", 
-            "VulnerableVehicle_Bicycle",
-            "Pedestrian"]
+
 # create empty dataframe
 gt_df = pd.DataFrame()
 
@@ -157,7 +158,7 @@ sns.set_style("darkgrid")
 sns.set_context("paper")
 sns.set(font_scale=1.5)
 plt.figure(figsize=(20, 10))
-plt.hist(df['image_idx'].value_counts(), bins=100)
+plt.hist(df['frame_idx'].value_counts(), bins=100)
 plt.title('Number of instances per frame')
 plt.xlabel('number of instances')
 plt.ylabel('count')
@@ -184,7 +185,7 @@ for metric in metrics:
         plt.hist(df[df['class'] == classes[i]][metric], bins=100)
         plt.title(classes[i])
         plt.xlabel(metric)
-        plt.ylabel('count')
+        plt.ylabel('count')        
     plt.suptitle(metric + ' Histogram')
     plt.tight_layout()
     plt.show()
@@ -194,7 +195,7 @@ for metric in metrics:
 lidar_idx = "sequences/CityThoroughfare_dgt_2021-07-15-12-21-17_0_s0/dataset/logical_frame_000009.json"
 #number of rows with scene name
 print("Number of rows with scene name:")
-print(df[df['image_idx'] == lidar_idx].shape[0])
+print(df[df['frame_idx'] == lidar_idx].shape[0])
 
 
 #%% load pickle file "avl_dbinfos.pkl" which is in AVLTruck folder
@@ -219,17 +220,17 @@ scene_df = avl_train_df[avl_train_df['lidar_idx'] == lidar_idx]
 
 # %% given limits for x, y and z, calculate the percentage of rowss per class (from df) that are outside the limits for each class
 #limits
-x_min = -50
+x_min = 0
 x_max = 125
 y_min = -75
 y_max = 75
-z_min = -5
-z_max = 1
+z_min = -4.5
+z_max = 1.5
 
 #calculate percentage of classes that are outside the limits for each class
 print("Percentage of classes that are outside the limits for each class:")
 for i in range(len(classes)):
-    print(classes[i],"\t\t" ,df[(df['class'] == classes[i]) & ((df['x'] < x_min) | (df['x'] > x_max) | (df['y'] < y_min) | (df['y'] > y_max) | (df['z'] < z_min) | (df['z'] > z_max))].shape[0] / df[df['class'] == classes[i]].shape[0])
+    print(classes[i],"\t\t\t" ,df[(df['class'] == classes[i]) & ((df['x'] < x_min) | (df['x'] > x_max) | (df['y'] < y_min) | (df['y'] > y_max) | (df['z'] < z_min) | (df['z'] > z_max))].shape[0] / df[df['class'] == classes[i]].shape[0])
 
 # %% print the total number of instances that are inside the limits for every frame
 

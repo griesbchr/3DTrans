@@ -18,7 +18,7 @@ from zod.data_classes import LidarData
 
 # NOTE! Set the path to dataset and choose a version
 dataset_root = "/data/zod/"
-version = "mini"  # "mini" or "full"
+version = "full"  # "mini" or "full"
 
 # initialize ZodFrames
 zod_frames = ZodFrames(dataset_root=dataset_root, version=version)

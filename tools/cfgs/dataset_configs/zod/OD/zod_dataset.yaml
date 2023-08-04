@@ -1,12 +1,12 @@
 #classes in this dataset are: 
 # ["Vehicle_Car", "Vehicle_Van", "Vehicle_Truck", "Vehicle_Trailer", 
 #  "Vehicle_Bus", "Vehicle_HeavyEquip", "Vehicle_TramTrain",
-#  "VulnerableVehicle_Bicycle", "VulnereableVehicle_Motorcycle",
+#  "VulnerableVehicle_Bicycle", "VulnerableVehicle_Motorcycle",
 #  "Pedestrian"]
 DATASET: 'ZODDataset'
 DATA_PATH: '/data/zod'
 
-VERSION: 'mini' # 'mini' or 'full'    #dont forget to change info paths below!
+VERSION: 'small' # 'mini', 'small' or 'full'    #dont forget to change info paths below!
 
 #maps the classes form the dataset info files to classes from the detector
 #the right-hand names need to match the class names in the detector config
@@ -19,15 +19,22 @@ MAP_MERGE_CLASS: {
     'Vehicle_Bus': 'Vehicle',
     'Vehicle_HeavyEquip': 'Vehicle',
     'Vehicle_TramTrain': 'Vehicle',
-    'VulnereableVehicle_Motorcycle': 'Vehicle',
+    'VulnerableVehicle_Motorcycle': 'Vehicle',
     'VulnerableVehicle_Bicycle': 'Cyclist',
     'Pedestrian': 'Pedestrian',
     #'Placeholder': 'DontCare',
 }
 
+MAP_CLASS_TO_KITTI: {
+  'Vehicle': 'Car',
+  'Pedestrian': 'Pedestrian',
+  'Cyclist': 'Cyclist',
+}
+
 #ZOD supports up to range 245m
-#POINT_CLOUD_RANGE: [-75.2, -75.2, -5, 123.2, 75.2, 1]         # AVLTruck 
-POINT_CLOUD_RANGE: [0, -40, -3, 70.4, 40, 1]                   # KITTI
+#POINT_CLOUD_RANGE: [-75.2, -75.2, -5, 123.2, 75.2, 1]            # AVLTruck 
+POINT_CLOUD_RANGE: [0, -75.2, -5, 123.2, 75.2, 1]                 # ZOD
+#POINT_CLOUD_RANGE: [0, -40, -3, 70.4, 40, 1]                     # KITTI
 
 FOV_POINTS_ONLY: True
 
@@ -37,8 +44,8 @@ DATA_SPLIT: {
 }
 
 INFO_PATH: {
-    'train': zod_infos_train_mini.pkl,
-    'test': zod_infos_val_mini.pkl,
+    'train': zod_infos_train_small.pkl,
+    'test': zod_infos_val_small.pkl,
 }
 
 POINT_FEATURE_ENCODING: {
@@ -48,13 +55,13 @@ POINT_FEATURE_ENCODING: {
 }
 
 DATA_AUGMENTOR:
-    #DISABLE_AUG_LIST: ['placeholder']
-    DISABLE_AUG_LIST: ['random_world_flip', 'random_world_rotation', 'random_world_scaling']
+    DISABLE_AUG_LIST: ['placeholder']
+    #DISABLE_AUG_LIST: ['random_world_flip', 'random_world_rotation', 'random_world_scaling']
     AUG_CONFIG_LIST:
         - NAME: gt_sampling
           USE_ROAD_PLANE: False
           DB_INFO_PATH:
-              - zod_dbinfos_train_mini.pkl
+              - zod_dbinfos_train_small.pkl
           PREPARE: {
              filter_by_min_points: ['Vehicle_Car:5', Vehicle_Van:5, 'VulnerableVehicle_Bicycle:5', 'Pedestrian:5'],
           }
@@ -69,7 +76,7 @@ DATA_AUGMENTOR:
           ALONG_AXIS_LIST: ['x']
 
         - NAME: random_world_rotation
-          WORLD_ROT_ANGLE: [-0.78539816, 0.78539816]
+          WORLD_ROT_ANGLE: [-0.78539816, 0.78539816]      # -45, 45 degrees
 
         - NAME: random_world_scaling
           WORLD_SCALE_RANGE: [0.95, 1.05]
@@ -84,19 +91,19 @@ DATA_PROCESSOR:
         'test': False
       }
 
-#    - NAME: transform_points_to_voxels
-#      VOXEL_SIZE: [0.1, 0.1, 0.15]
-#      MAX_POINTS_PER_VOXEL: 5
-#      MAX_NUMBER_OF_VOXELS: {
-#        'train': 150000,
-#        'test': 150000
-#      }
-
-    #kitti
     - NAME: transform_points_to_voxels
-      VOXEL_SIZE: [0.05, 0.05, 0.1]
+      VOXEL_SIZE: [0.1, 0.1, 0.15]
       MAX_POINTS_PER_VOXEL: 5
       MAX_NUMBER_OF_VOXELS: {
-        'train': 16000,
-        'test': 40000
+        'train': 150000,
+        'test': 150000
       }
+
+    #kitti
+#    - NAME: transform_points_to_voxels
+#      VOXEL_SIZE: [0.05, 0.05, 0.1]
+#      MAX_POINTS_PER_VOXEL: 5
+#      MAX_NUMBER_OF_VOXELS: {
+#        'train': 16000,
+#        'test': 40000
+#      }

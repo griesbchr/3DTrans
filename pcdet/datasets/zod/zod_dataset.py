@@ -14,7 +14,7 @@ from zod.constants import AnnotationProject, TRAIN, VAL
 
 
 class ZODDataset(DatasetTemplate):
-    def __init__(self, dataset_cfg, class_names, training=True, root_path=None, logger=None):
+    def __init__(self, dataset_cfg, class_names, training=True, root_path=None, logger=None, creating_infos=False):
         """
         Args:
             root_path: data(set) root path
@@ -34,7 +34,7 @@ class ZODDataset(DatasetTemplate):
 
         self.data_split = self.dataset_cfg.DATA_SPLIT[self.mode]
         self.version = self.dataset_cfg.VERSION
-
+        self.creating_infos = creating_infos
         self.set_split(self.data_split, self.version)
         
         self.zod_infos = []
@@ -43,14 +43,15 @@ class ZODDataset(DatasetTemplate):
         self.num_point_features = len(self.dataset_cfg.POINT_FEATURE_ENCODING["used_feature_list"])
         self.fov_points_only = self.dataset_cfg.FOV_POINTS_ONLY
         
-        self.zod_frames = ZodFrames(dataset_root=self.data_root, version=self.version)
+        self.load_version = 'mini' if self.version == 'mini' else 'full'
+        self.zod_frames = ZodFrames(dataset_root=self.data_root, version=self.load_version)
  
         # Transformation from zod lidar frame to waymo lidar frame
         self.T_zod_lidar_to_waymo_lidar = np.array([[0, -1, 0],
                                                   [1,  0, 0],
                                                   [0,  0, 1]])
 
-        #self.map_class_to_kitti = self.dataset_cfg.MAP_CLASS_TO_KITTI
+        self.map_class_to_kitti = self.dataset_cfg.get('MAP_CLASS_TO_KITTI',None)
 
     def map_merge_classes(self):
         if self.dataset_cfg.get('MAP_MERGE_CLASS', None) is None:
@@ -61,7 +62,7 @@ class ZODDataset(DatasetTemplate):
         for info in self.zod_infos:
             if 'annos' not in info:
                 continue
-            info['annos']['name'] = np.vectorize(lambda name: map_merge_class[name])(info['annos']['name'])
+            info['annos']['name'] = np.vectorize(lambda name: map_merge_class[name], otypes=[np.str])(info['annos']['name'])
         
         if self.data_augmentor is None:
             return
@@ -119,7 +120,8 @@ class ZODDataset(DatasetTemplate):
         if self.logger is not None:
             self.logger.info('Total samples for ZOD dataset: %d' % (len(zod_infos)))
 
-        self.map_merge_classes()
+        if not self.creating_infos:
+            self.map_merge_classes()
 
     def get_fov_points_only(self, lidar_data, calib):
         from zod.constants import Camera, Lidar
@@ -188,12 +190,17 @@ class ZODDataset(DatasetTemplate):
         if class_names is not None:
             #filter out objects that are not in class_names
             obj_annos = [obj for obj in obj_annos if obj.subclass in class_names]
-
+            
         annotations = {}
         annotations['name'] = np.array([obj.subclass for obj in obj_annos])
         annotations['dimensions'] = np.array([obj.box3d.size for obj in obj_annos])
         annotations['location'] = np.array([obj.box3d.center for obj in obj_annos])
         annotations['yaw'] = np.array([obj.box3d.orientation.yaw_pitch_roll[0] for obj in obj_annos])
+
+        if len(obj_annos) == 0:
+            annotations['gt_boxes_lidar'] = np.zeros((0,7))
+            annotations['obj_annos'] = obj_annos
+            return annotations
 
         #rotate coordinate system to match waymo (90 deg around z axis)
         annotations['location'] = annotations['location'] @ self.T_zod_lidar_to_waymo_lidar
@@ -261,6 +268,57 @@ class ZODDataset(DatasetTemplate):
 
         return data_dict
 
+    '''
+    from openpcdet 
+    '''
+    def generate_prediction_dicts(self, batch_dict, pred_dicts, class_names, output_path=None):
+        """
+        Args:
+            batch_dict:
+                frame_id:
+            pred_dicts: list of pred_dicts
+                pred_boxes: (N, 7 or 9), Tensor
+                pred_scores: (N), Tensor
+                pred_labels: (N), Tensor
+            class_names:
+            output_path:
+
+        Returns:
+        """
+        
+        def get_template_prediction(num_samples):
+            box_dim = 9 if self.dataset_cfg.get('TRAIN_WITH_SPEED', False) else 7
+            ret_dict = {
+                'name': np.zeros(num_samples), 'score': np.zeros(num_samples),
+                'boxes_lidar': np.zeros([num_samples, box_dim]), 'pred_labels': np.zeros(num_samples)
+            }
+            return ret_dict
+
+        def generate_single_sample_dict(box_dict):
+            pred_scores = box_dict['pred_scores'].cpu().numpy()
+            pred_boxes = box_dict['pred_boxes'].cpu().numpy()
+            pred_labels = box_dict['pred_labels'].cpu().numpy()
+            pred_dict = get_template_prediction(pred_scores.shape[0])
+            if pred_scores.shape[0] == 0:
+                return pred_dict
+
+            pred_dict['name'] = np.array(class_names)[pred_labels - 1]
+            pred_dict['score'] = pred_scores
+            pred_dict['boxes_lidar'] = pred_boxes
+            pred_dict['pred_labels'] = pred_labels
+
+            return pred_dict
+
+        annos = []
+        for index, box_dict in enumerate(pred_dicts):
+            single_pred_dict = generate_single_sample_dict(box_dict)
+            single_pred_dict['frame_id'] = batch_dict['frame_id'][index]
+            if 'metadata' in batch_dict:
+                single_pred_dict['metadata'] = batch_dict['metadata'][index]
+            annos.append(single_pred_dict)
+
+        return annos
+    
     def evaluation(self, det_annos, class_names, **kwargs):
         if 'annos' not in self.zod_infos[0].keys():
             return 'No ground-truth boxes for evaluation', {}
@@ -298,6 +356,7 @@ class ZODDataset(DatasetTemplate):
         class_names: list of classes (for zod they are called subclasses) that are contained in the info files
         '''
         import concurrent.futures as futures
+        import time
 
         def process_single_scene(sample_idx):
             print('%s sample_idx: %s' % (self.split, sample_idx))
@@ -309,29 +368,6 @@ class ZODDataset(DatasetTemplate):
                 return info
 
             annotations = self.get_label(sample_idx, class_names)            
-            # zod_frame = self.zod_frames[sample_idx]
-            # obj_annos = zod_frame.get_annotation(AnnotationProject.OBJECT_DETECTION)
-            # #filter out objects without 3d anno
-            # obj_annos = [obj for obj in obj_annos if obj.box3d is not None]     
-            # #filter out objects that are not in class_names
-            # obj_annos = [obj for obj in obj_annos if obj.subclass in class_names]
-
-            # if obj_annos.__len__() < 0:
-            #     return info
-
-            # annotations = {}
-            # annotations['name'] = np.array([obj.subclass for obj in obj_annos])
-            # annotations['dimensions'] = np.array([obj.box3d.size for obj in obj_annos])
-            # annotations['location'] = np.array([obj.box3d.center for obj in obj_annos])
-            # annotations['yaw'] = np.array([obj.box3d.orientation.yaw_pitch_roll[0] for obj in obj_annos])
-
-            # loc = annotations['location']
-            # dims = annotations['dimensions']
-            # rots = annotations['yaw']
-            # l, w, h = dims[:, 0:1], dims[:, 1:2], dims[:, 2:3]
-            # gt_boxes_lidar = np.concatenate(
-            #     [loc, l, w, h, rots[..., np.newaxis]], axis=1)
-            # annotations['gt_boxes_lidar'] = gt_boxes_lidar
 
             if count_inside_pts:   
                 obj_annos = annotations.pop("obj_annos")            
@@ -352,13 +388,18 @@ class ZODDataset(DatasetTemplate):
 
             return info
         
-        self.zod_frames = ZodFrames(dataset_root=self.data_root, version=self.version)
+        load_version = "mini" if self.version == 'mini' else 'full'
+        self.zod_frames = ZodFrames(dataset_root=self.data_root, version=load_version)
         sample_id_list = sample_id_list if sample_id_list is not None else self.sample_id_list
 
         # create a thread pool to improve the velocity
+        start_time = time.time()
         with futures.ThreadPoolExecutor(num_workers) as executor:
             infos = executor.map(process_single_scene, sample_id_list)
-        
+        end_time = time.time()
+        print("Total time for loading infos: ", end_time - start_time, "s")
+        print("Loading speed for infos: ", len(sample_id_list) / (end_time - start_time), "sample/s")
+
         return list(infos)
 
     def create_groundtruth_database(self, info_path=None, version="full", used_classes=None, split='train', num_point_features=4):
@@ -429,11 +470,18 @@ class ZODDataset(DatasetTemplate):
 def split_zod_data(data_path, versions):
 
     for version in versions:
+        
+        load_version = "mini" if version == 'mini' else 'full'
+        
         zod_frames = ZodFrames(dataset_root=data_path, 
-                                        version=version)
+                                            version=load_version)
+        
         train_id_list = zod_frames.get_split(TRAIN)
         valid_list = zod_frames.get_split(VAL)
         
+        if version == 'small':
+            train_id_list = set(list(train_id_list)[::100])
+            valid_list = set(list(valid_list)[::100])
         with open(str(data_path) + '/train'+"_"+version+'.txt', 'w') as f:
             for item in train_id_list:
                 f.write(item + '\n')
@@ -449,14 +497,14 @@ def split_zod_data(data_path, versions):
 def create_zod_infos(dataset_cfg, class_names, data_path, save_path, workers=4):
 
     splits = ['train', 'val']
-    #versions = ['full', 'mini']
-    versions = ['mini']
+    #versions = ['full', 'mini', 'small']
+    versions = ['small']
 
     split_zod_data(data_path, versions)
 
     dataset = ZODDataset(
         dataset_cfg=dataset_cfg, class_names=None, root_path=data_path,
-        training=False, logger=common_utils.create_logger()
+        training=False, logger=common_utils.create_logger(), creating_infos=True
     )
 
     num_features = len(dataset_cfg.POINT_FEATURE_ENCODING.src_feature_list)
@@ -481,7 +529,7 @@ def create_zod_infos(dataset_cfg, class_names, data_path, save_path, workers=4):
     
     print('------------------------Data preparation done------------------------')
 
-
+#  ~/thesis/3DTrans
 # python -m pcdet.datasets.zod.zod_dataset debug tools/cfgs/dataset_configs/zod/OD/zod_dataset.yaml
 # python -m pcdet.datasets.zod.zod_dataset create_zod_infos tools/cfgs/dataset_configs/zod/OD/zod_dataset.yaml
 if __name__ == '__main__':
@@ -517,7 +565,7 @@ if __name__ == '__main__':
                        "Vehicle_HeavyEquip", 
                        "Vehicle_TramTrain",
                        "VulnerableVehicle_Bicycle",
-                       "VulnereableVehicle_Motorcycle",
+                       "VulnerableVehicle_Motorcycle",
                        "Pedestrian"]
         
         create_zod_infos(
