@@ -6,7 +6,12 @@
 DATASET: 'ZODDataset'
 DATA_PATH: '/data/zod'
 
-VERSION: 'small' # 'mini', 'small' or 'full'    #dont forget to change info paths below!
+VERSION: 'full' # 'mini', 'small' or 'full'    #dont forget to change info paths below!
+
+INFO_PATH: {
+    'train': zod_infos_train_full.pkl,
+    'test': zod_infos_val_full.pkl,
+}
 
 #maps the classes form the dataset info files to classes from the detector
 #the right-hand names need to match the class names in the detector config
@@ -33,20 +38,18 @@ MAP_CLASS_TO_KITTI: {
 
 #ZOD supports up to range 245m
 #POINT_CLOUD_RANGE: [-75.2, -75.2, -5, 123.2, 75.2, 1]            # AVLTruck 
-POINT_CLOUD_RANGE: [0, -75.2, -5, 123.2, 75.2, 1]                 # ZOD
+POINT_CLOUD_RANGE: [0, -75.2, -2, 123.2, 75.2, 4]                 # ZOD
 #POINT_CLOUD_RANGE: [0, -40, -3, 70.4, 40, 1]                     # KITTI
 
 FOV_POINTS_ONLY: True
+
+LIDAR_Z_SHIFT: -2.08702246    #used to shift data to the ground plane
 
 DATA_SPLIT: {
     'train': train,
     'test': val
 }
 
-INFO_PATH: {
-    'train': zod_infos_train_small.pkl,
-    'test': zod_infos_val_small.pkl,
-}
 
 POINT_FEATURE_ENCODING: {
     encoding_type: absolute_coordinates_encoding,
@@ -61,7 +64,7 @@ DATA_AUGMENTOR:
         - NAME: gt_sampling
           USE_ROAD_PLANE: False
           DB_INFO_PATH:
-              - zod_dbinfos_train_small.pkl
+              - zod_dbinfos_train_full.pkl
           PREPARE: {
              filter_by_min_points: ['Vehicle_Car:5', Vehicle_Van:5, 'VulnerableVehicle_Bicycle:5', 'Pedestrian:5'],
           }

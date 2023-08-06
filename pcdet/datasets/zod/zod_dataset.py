@@ -50,6 +50,7 @@ class ZODDataset(DatasetTemplate):
         self.T_zod_lidar_to_waymo_lidar = np.array([[0, -1, 0],
                                                   [1,  0, 0],
                                                   [0,  0, 1]])
+        self.lidar_z_shift = self.dataset_cfg.get('LIDAR_Z_SHIFT', 0.0)
 
         self.map_class_to_kitti = self.dataset_cfg.get('MAP_CLASS_TO_KITTI',None)
 
@@ -171,12 +172,9 @@ class ZODDataset(DatasetTemplate):
             raise NotImplementedError
         
 
-        #from zod.visualization.lidar_on_image import project_lidar_to_image
-        ##get points in camera fov
-        #_, mask = project_lidar_to_image(pc, zod_frame.calibration)
-        #points = points[mask]
 
         points[:,:3] = points[:,:3] @ self.T_zod_lidar_to_waymo_lidar
+        points[:,2] -= self.lidar_z_shift
 
 
         return points
@@ -202,8 +200,10 @@ class ZODDataset(DatasetTemplate):
             annotations['obj_annos'] = obj_annos
             return annotations
 
-        #rotate coordinate system to match waymo (90 deg around z axis)
+        #rotate and shift coordinate system to match waymo (90 deg around z axis and shift to ground plane)
         annotations['location'] = annotations['location'] @ self.T_zod_lidar_to_waymo_lidar
+        annotations['location'][:,2] -= self.lidar_z_shift
+
         annotations['yaw'] = annotations['yaw'] + np.pi/2
 
         loc = annotations['location']
@@ -468,7 +468,8 @@ class ZODDataset(DatasetTemplate):
     #            f.write(line)
 
 def split_zod_data(data_path, versions):
-
+    faulty_train_frames = ['097451', '062073', '008896', '046291', '020452', '026378', '000410', '001554', '057300', '004782', '058043', '002639', '061077', '059396', '062628', '063518', '090283', '069293', '044369', '056545', '030924', '052151', '057144', '052749', '028087', '024391', '027256', '016020', '024304', '056158', '012439', '056269', '003027', '072719', '005912', '053347', '054192', '057435', '070476', '014942', '028927', '052528', '049713', '006494', '009277', '009608']
+    faulty_val_frames = ['050949', '081704', '058346', '063667']
     for version in versions:
         
         load_version = "mini" if version == 'mini' else 'full'
@@ -477,17 +478,19 @@ def split_zod_data(data_path, versions):
                                             version=load_version)
         
         train_id_list = zod_frames.get_split(TRAIN)
-        valid_list = zod_frames.get_split(VAL)
+        train_id_list = {s for s in train_id_list if not any(exclude_frames in s for exclude_frames in faulty_train_frames)}
+        valid_id_list = zod_frames.get_split(VAL)
+        valid_id_list = {s for s in valid_id_list if not any(exclude_frames in s for exclude_frames in faulty_val_frames)}
         
         if version == 'small':
             train_id_list = set(list(train_id_list)[::100])
-            valid_list = set(list(valid_list)[::100])
+            valid_id_list = set(list(valid_id_list)[::100])
         with open(str(data_path) + '/train'+"_"+version+'.txt', 'w') as f:
             for item in train_id_list:
                 f.write(item + '\n')
         print('saved train split to %s' % str(data_path) + '/train'+"_"+version+'.txt')
         with open(str(data_path) + '/val'+"_"+version+'.txt', 'w') as f:
-            for item in valid_list:
+            for item in valid_id_list:
                 f.write(item + '\n')
         print('saved val split to %s' % str(data_path) + '/val'+"_"+version+'.txt')
         
@@ -497,8 +500,8 @@ def split_zod_data(data_path, versions):
 def create_zod_infos(dataset_cfg, class_names, data_path, save_path, workers=4):
 
     splits = ['train', 'val']
-    #versions = ['full', 'mini', 'small']
-    versions = ['small']
+    versions = ['full', 'mini', 'small']
+    #versions = ['full']
 
     split_zod_data(data_path, versions)
 

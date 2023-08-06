@@ -52,6 +52,8 @@ def parse_config():
 
     return args, cfg
 
+def eval_latest_chkt(model, test_loader, args, eval_output_dir, logger, dist_test=False):
+    pass
 
 def eval_single_ckpt(model, test_loader, args, eval_output_dir, logger, epoch_id, dist_test=False):
     # load checkpoint

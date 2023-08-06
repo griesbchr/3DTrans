@@ -87,7 +87,7 @@ print(f"Intensity: {pc.intensity.shape}")
 from fit_ground_plane import fit_ground_plane 
 from tqdm import tqdm
 
-n_samples = 200
+n_samples = 500
 sample_list = np.random.choice(list(training_frames), n_samples, replace=False)
 
 z_offsets = []
@@ -170,4 +170,20 @@ bev_image = bev(
         np.array([obj.box3d.orientation for obj in object_annotations if obj.box3d]),
     ),
 )
+# %%  open all frames to check if they can be loaded
+from tqdm import tqdm
+
+faulty_frames = []
+for frame_id in tqdm(validation_frames, desc="Loading frames..."):
+    zod_frame = zod_frames[frame_id]
+    lidar_core_frame = zod_frame.info.get_key_lidar_frame()
+    try:
+        pc = lidar_core_frame.read()
+    except:
+        print("could not load frame: ", frame_id)
+        faulty_frames.append(frame_id)
+        continue
+
+print("faulty frames: ", faulty_frames)
+
 # %%

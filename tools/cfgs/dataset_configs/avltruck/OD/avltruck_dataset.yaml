@@ -30,6 +30,8 @@ MAP_CLASS_TO_KITTI: {
             'Trailer': 'Other',
         }
 
+LIDAR_Z_SHIFT: 
+
 FILTER_EMPTY_BOXES_FOR_TRAIN: True
 DISABLE_NLZ_FLAG_ON_POINTS: True
 

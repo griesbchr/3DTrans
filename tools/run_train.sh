@@ -7,10 +7,10 @@ DATASET=zod
 #MODEL=IA-SSD
 MODEL=second
 #MODEL=pointpillar_1x
-EXTRA_TAG=small_10epochs_ada_range
+EXTRA_TAG=full_10epochs
 EPOCHS=10
 SUBSAMPLE=1
-CKPT_SAVE_INTERVAL=10
+CKPT_SAVE_INTERVAL=5
 
 CONFIG_FILE=${DATASET}_models/$MODEL.yaml
 

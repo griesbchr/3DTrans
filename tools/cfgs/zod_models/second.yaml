@@ -13,6 +13,7 @@ CLASS_NAMES: ['Vehicle', 'Cyclist', 'Pedestrian']
 DATA_CONFIG:
     _BASE_CONFIG_: cfgs/dataset_configs/zod/OD/zod_dataset.yaml
 
+EVAL_Z_SHIFT: 0.0   
 
 MODEL:
     NAME: SECONDNet
@@ -50,7 +51,7 @@ MODEL:
                 'class_name': 'Vehicle',
                 'anchor_sizes': [[4.0, 1.841, 1.500]],
                 'anchor_rotations': [0, 1.57],
-                'anchor_bottom_heights': [-1.286],
+                'anchor_bottom_heights': [0.810],
                 'align_center': False,
                 'feature_map_stride': 8,
                 'matched_threshold': 0.55,
@@ -60,7 +61,7 @@ MODEL:
                 'class_name': 'Cyclist',
                 'anchor_sizes': [[1.800, 0.681, 1.750]],
                 'anchor_rotations': [0, 1.57],
-                'anchor_bottom_heights': [-1.208],
+                'anchor_bottom_heights': [0.926],
                 'align_center': False,
                 'feature_map_stride': 8,
                 'matched_threshold': 0.55,
@@ -70,7 +71,7 @@ MODEL:
                 'class_name': 'Pedestrian',
                 'anchor_sizes': [[0.600, 0.645, 1.708]],
                 'anchor_rotations': [0, 1.57],
-                'anchor_bottom_heights': [-1.110],
+                'anchor_bottom_heights': [1.001],
                 'align_center': False,
                 'feature_map_stride': 8,
                 'matched_threshold': 0.5,
@@ -111,7 +112,7 @@ MODEL:
 
 
 OPTIMIZATION:
-    BATCH_SIZE_PER_GPU: 4
+    BATCH_SIZE_PER_GPU: 6
 
     OPTIMIZER: adam_onecycle
     LR: 0.003

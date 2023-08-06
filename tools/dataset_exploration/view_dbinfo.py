@@ -42,7 +42,7 @@ print("Number of instances per class:")
 print(df.groupby('class')['num_points_in_gt'].count())
 #%% load pickle file "zod_dbinfos.pkl" which is in zod folder
 
-with open('/data/zod/zod_dbinfos_train_small.pkl', 'rb') as f:
+with open('/data/zod/zod_dbinfos_train_full.pkl', 'rb') as f:
     #store as dataframe
     zod_dbinfos = pickle.load(f)
 
@@ -224,8 +224,8 @@ x_min = 0
 x_max = 125
 y_min = -75
 y_max = 75
-z_min = -4.5
-z_max = 1.5
+z_min = -2
+z_max = 4
 
 #calculate percentage of classes that are outside the limits for each class
 print("Percentage of classes that are outside the limits for each class:")
