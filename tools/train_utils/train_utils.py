@@ -103,10 +103,10 @@ def train_one_epoch(model, optimizer, train_loader, model_func, lr_scheduler, ac
             if tb_log is not None:
                 total_frames =  accumulated_iter * total_gpus * train_loader.batch_size
                 tb_log.add_scalar('meta_data/learning_rate', cur_lr, total_frames)
-                tb_log.add_scalar('train/loss', loss.item(), total_frames) 
+                #tb_log.add_scalar('train/loss', loss.item(), total_frames) #included in tb_log
 
-                for key, val in tb_dict.items():
-                    tb_log.add_scalar('train/' + key, val, total_frames)
+                for key, value in tb_dict.items():
+                    tb_log.add_scalar('train/' + key, value, total_frames)
     if rank == 0:
         pbar.close()
     return accumulated_iter

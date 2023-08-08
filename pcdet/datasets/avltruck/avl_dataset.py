@@ -43,11 +43,13 @@ class AVLDataset(DatasetTemplate):
         split_dir = self.root_path / (self.split + '.txt')
         self.sample_id_list = [x.strip() for x in open(split_dir).readlines()
                                ] if split_dir.exists() else None
+
         self.avl_infos = []
         self.include_avl_data(self.mode)
-
         self.avl_infos = [ai for ai in self.avl_infos
                           if 'annos' in ai]  # filter out frames wituoht labels
+
+        self.lidar_z_shift = self.dataset_cfg.get('LIDAR_Z_SHIFT', 0.0)
         
         if self.dataset_cfg.get('MAP_MERGE_CLASS', None) is not None:
             for infos_idx in range(self.avl_infos.__len__()):
@@ -102,7 +104,7 @@ class AVLDataset(DatasetTemplate):
         label_file = label_file[0]
 
         with open(str(self.root_path / idx), 'r') as f:
-            data = orjson.loads(f.read())
+            data = orjson.loads(f.read())                       #lidar data needs to be in json format, not npy
         dev_loc, dev_rot = data['device_position'], data['device_heading']
         dev_loc = np.array([dev_loc['x'], dev_loc['y'], dev_loc['z']])
         dev_q = Rotation.from_quat(
@@ -123,6 +125,7 @@ class AVLDataset(DatasetTemplate):
                     np.array([q['x'], q['y'], q['z'], q['w']]))
                 loc = (np.array([bb['cx'], bb['cy'], bb['cz']]) -
                        dev_loc) @ dev_q.as_matrix()
+                loc[:,2] -= self.lidar_z_shift
                 yaw = (dev_q.inv() * yaw_q).as_euler('xyz', degrees=False)[-1]
                 avl_labels.append(
                     AvlObject(name, *loc, bb['l'], bb['w'], bb['h'], yaw))
@@ -153,6 +156,8 @@ class AVLDataset(DatasetTemplate):
             points[:, 0:3] = points[:, 0:3] @ rot_matrix
 
         points[:, -1] = np.clip(points[:, -1], a_min=0, a_max=1.)
+        points[:,2] -= self.lidar_z_shift
+
         return points
 
     def get_infos(self,
@@ -355,22 +360,22 @@ class AVLDataset(DatasetTemplate):
         if 'annos' not in self.avl_infos[0].keys():
             return 'No ground-truth boxes for evaluation', {}
 
-        def accomodate_eval(annos, name_map=None, shift_coord=None):
-            for anno in annos:
-                if name_map is not None:
-                    for k in range(anno['name'].shape[0]):
-                        anno['name'][k] = name_map[anno['name'][k]]
+        # def accomodate_eval(annos, name_map=None, shift_coord=None):
+        #     for anno in annos:
+        #         if name_map is not None:
+        #             for k in range(anno['name'].shape[0]):
+        #                 anno['name'][k] = name_map[anno['name'][k]]
 
-                if shift_coord is not None:
-                    if 'boxes_lidar' in anno:
-                        anno['boxes_lidar'][:, 0:3] -= shift_coord
-                    else:
-                        anno['gt_boxes_lidar'][:, 0:3] -= shift_coord
+        #         if shift_coord is not None:
+        #             if 'boxes_lidar' in anno:
+        #                 anno['boxes_lidar'][:, 0:3] -= shift_coord 
+        #             else:
+        #                 anno['gt_boxes_lidar'][:, 0:3] -= shift_coord
 
-                anno['difficulty'] = np.ones(anno['name'].shape[0])
+        #         anno['difficulty'] = np.ones(anno['name'].shape[0])
 
-            return annos
-
+        #     return annos
+                                                                                        
         def kitti_eval(eval_det_annos, eval_gt_annos, map_class_to_kitti):
             from ..kitti.kitti_object_eval_python import eval as kitti_eval
             from ..kitti import kitti_utils
@@ -412,10 +417,11 @@ class AVLDataset(DatasetTemplate):
             eval_gt_annos[-1] = common_utils.drop_info_with_name(
                 eval_gt_annos[-1], name='Dont_Care')
 
-        #eval_det_annos = accomodate_eval(
-        #    eval_det_annos, self.map_class_to_kitti,
-        #    self.dataset_cfg.get('SHIFT_COOR', None))
-        #eval_gt_annos = accomodate_eval(eval_gt_annos, self.map_class_to_kitti)
+        # z_shift = self.dataset_cfg.get('TRAINING_Z_SHIFT', None)
+        # if z_shift is not None:
+        #     for anno in eval_det_annos:
+        #         anno['boxes_lidar'][:, 2] += z_shift
+        
         if self.map_class_to_kitti is not None:
             class_names = [self.map_class_to_kitti[x] for x in class_names]
 
@@ -518,8 +524,9 @@ class AVLDataset(DatasetTemplate):
                 [loc, dims, rots[..., np.newaxis]
                  ],  # watch out on order of dims!
                 axis=1).astype(np.float32)
-            if self.dataset_cfg.get('SHIFT_COOR', None):
-                gt_boxes_lidar[:, 0:3] += self.dataset_cfg.SHIFT_COOR
+            #if self.dataset_cfg.get('SHIFT_COOR', None):
+            #    gt_boxes_lidar[:, 0:3] += self.dataset_cfg.SHIFT_COOR
+
 
             input_dict.update({
                 'gt_names': gt_names,
@@ -529,13 +536,20 @@ class AVLDataset(DatasetTemplate):
         if "points" in get_item_list:
             points = self.get_lidar(sample_idx)
 
-            if self.dataset_cfg.get('SHIFT_COOR', None):
-                points[:, 0:3] += np.array(self.dataset_cfg.SHIFT_COOR,
-                                           dtype=np.float32)
+            #if self.dataset_cfg.get('SHIFT_COOR', None):
+            #    points[:, 0:3] += np.array(self.dataset_cfg.SHIFT_COOR,dtype=np.float32)
 
             input_dict['points'] = points
 
         data_dict = self.prepare_data(data_dict=input_dict)
+
+        #do z shift after data preparation to be able to use pc range and anchor sizes for unified coordinate system
+        #z_shift = self.dataset_cfg.get('TRAINING_Z_SHIFT', None)
+        #if z_shift is not None:
+        #    if 'annos' in info:
+        #        gt_boxes_lidar[:, 2] -= z_shift
+        #    if "points" in get_item_list:
+        #        points[:, 2] -= np.array(z_shift, dtype=np.float64)
 
         return data_dict
 

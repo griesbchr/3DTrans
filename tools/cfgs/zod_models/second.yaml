@@ -13,8 +13,6 @@ CLASS_NAMES: ['Vehicle', 'Cyclist', 'Pedestrian']
 DATA_CONFIG:
     _BASE_CONFIG_: cfgs/dataset_configs/zod/OD/zod_dataset.yaml
 
-EVAL_Z_SHIFT: 0.0   
-
 MODEL:
     NAME: SECONDNet
 
@@ -76,7 +74,7 @@ MODEL:
                 'feature_map_stride': 8,
                 'matched_threshold': 0.5,
                 'unmatched_threshold': 0.35
-            },
+            }
          
         ]
 

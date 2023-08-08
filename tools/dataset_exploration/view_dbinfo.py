@@ -42,7 +42,7 @@ print("Number of instances per class:")
 print(df.groupby('class')['num_points_in_gt'].count())
 #%% load pickle file "zod_dbinfos.pkl" which is in zod folder
 
-with open('/data/zod/zod_dbinfos_train_full.pkl', 'rb') as f:
+with open('/data/zod/zod_dbinfos_train_small.pkl', 'rb') as f:
     #store as dataframe
     zod_dbinfos = pickle.load(f)
 
@@ -220,7 +220,7 @@ scene_df = avl_train_df[avl_train_df['lidar_idx'] == lidar_idx]
 
 # %% given limits for x, y and z, calculate the percentage of rowss per class (from df) that are outside the limits for each class
 #limits
-x_min = 0
+x_min = -75
 x_max = 125
 y_min = -75
 y_max = 75

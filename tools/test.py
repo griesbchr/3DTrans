@@ -42,9 +42,10 @@ def parse_config():
     args = parser.parse_args()
 
     cfg_from_yaml_file(args.cfg_file, cfg)
-    cfg.TAG = Path(args.cfg_file).stem
-    cfg.EXP_GROUP_PATH = '/'.join(args.cfg_file.split('/')[-2:-1])  # remove 'cfgs' and 'xxxx.yaml'
-
+    path_list = args.ckpt.split("/")
+    cfg.extra_tag = path_list[-3] 
+    cfg.TAG =  path_list[-4]
+    cfg.EXP_GROUP_PATH = path_list[-5]
     np.random.seed(1024)
 
     if args.set_cfgs is not None:

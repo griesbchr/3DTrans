@@ -3,6 +3,7 @@ from pathlib import Path
 import glob
 import pickle
 import orjson
+import copy
 from scipy.spatial.transform import Rotation
 import yaml
 from easydict import EasyDict
@@ -16,7 +17,7 @@ import numpy as np
 def main():
     parser = argparse.ArgumentParser(description='arg parser')
     parser.add_argument('--dataset', type=str, default="avltruck", help='the dataset name')
-    parser.add_argument('--frame-idx', type=str, default="sequences/CityStreet_dgt_2021-11-09-09-08-59_0_s0/dataset/logical_frame_000016", help='the frame_idx in form "sequences/SEQUENCENAME/dataset/logical_frame_FRAMEID.json"')
+    parser.add_argument('--frame-idx', type=str, default="sequences/CityStreet_dgt_2021-11-09-09-08-59_0_s0/dataset/logical_frame_000016.json", help='the frame_idx in form "sequences/SEQUENCENAME/dataset/logical_frame_FRAMEID.json"')
     args = parser.parse_args()
 
     if (args.dataset == "avltruck"):
@@ -26,24 +27,13 @@ def main():
         data_dir = Path("/") / 'data' / 'AVLTruck'
 
         dataset = AVLDataset(dataset_cfg, class_names=None)
-        #obj_list = dataset.get_label(args.frame_idx)
-        #if obj_list.__len__() > 0:
-        #    annotations = {}
-        #    annotations['name'] = np.array(
-        #        [obj.name for obj in obj_list])
-        #    annotations['dimensions'] = np.array(
-        #        [[obj.l, obj.w, obj.h] for obj in obj_list])
-        #    annotations['location'] = np.array([[obj.x, obj.y, obj.z]
-        #                                        for obj in obj_list])
-        #    annotations['yaw'] = np.array(
-        #        [obj.yaw for obj in obj_list])
-#
-        #    loc = annotations['location']
-        #    dims = annotations['dimensions']
-        #    rots = annotations['yaw']
-        #    l, w, h = dims[:, 0:1], dims[:, 1:2], dims[:, 2:3]
-        #    gt_boxes_lidar = np.concatenate(
-        #        [loc, l, w, h, rots[..., np.newaxis]], axis=1)
+        #get annos from info files
+        dataset.set_split('train')
+        sample_id_list = dataset.sample_id_list
+        list_index = sample_id_list.index(args.frame_idx)
+        info = copy.deepcopy(dataset.avl_infos[list_index])
+
+        gt_boxes_lidar = info["annos"]['gt_boxes_lidar']  
 
     elif (args.dataset == "zod"):
         from pcdet.datasets.zod.zod_dataset import ZODDataset
@@ -54,7 +44,15 @@ def main():
 
         dataset = ZODDataset(dataset_cfg, class_names=class_names)
         annos = dataset.get_label(args.frame_idx)
-        gt_boxes_lidar = annos['gt_boxes_lidar']  
+        gt_boxes_lidar = annos['gt_boxes_lidar'] 
+
+        #get annos from info files
+        #dataset.set_split('train')
+        #sample_id_list = dataset.sample_id_list
+        #list_index = sample_id_list.index(args.frame_idx)
+        #info = copy.deepcopy(dataset.avl_infos[list_index])
+        #gt_boxes_lidar = info["annos"]['gt_boxes_lidar']   
+        
     else:
         raise NotImplementedError("Please specify the dataset path")
     

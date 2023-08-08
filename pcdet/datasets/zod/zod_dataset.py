@@ -266,6 +266,12 @@ class ZODDataset(DatasetTemplate):
 
         data_dict = self.prepare_data(data_dict=input_dict)
 
+        #do z shift after data preparation to be able to use pc range and anchor sizes for unified coordinate system
+        # z_shift = self.dataset_cfg.get('TRAINING_Z_SHIFT', None)
+        # if z_shift is not None:
+        #         data_dict["gt_boxes"][:,2] -= z_shift
+        #         data_dict['points'][:,2] -= np.array(z_shift, dtype=np.float64)
+
         return data_dict
 
     '''
@@ -342,6 +348,11 @@ class ZODDataset(DatasetTemplate):
 
         eval_det_annos = copy.deepcopy(det_annos)
         eval_gt_annos = [copy.deepcopy(info['annos']) for info in self.zod_infos]
+        
+        # z_shift = self.dataset_cfg.get('TRAINING_Z_SHIFT', None)
+        # if z_shift is not None:
+        #     for anno in eval_det_annos:
+        #         anno['boxes_lidar'][:, 2] += z_shift
 
         if kwargs['eval_metric'] == 'kitti':
             ap_result_str, ap_dict = kitti_eval(eval_det_annos, eval_gt_annos, 
