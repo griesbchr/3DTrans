@@ -8,7 +8,7 @@
 CLASS_NAMES: ["Vehicle", "Cyclist", "Pedestrian"]
 
 DATA_CONFIG:
-  _BASE_CONFIG_: cfgs/dataset_configs/avltruck/OD/avltruck_dataset.yaml
+  _BASE_CONFIG_: cfgs/dataset_configs/avlrooftop/OD/avlrooftop_dataset.yaml
 
 MODEL:
   NAME: SECONDNet
@@ -44,8 +44,8 @@ MODEL:
     ANCHOR_GENERATOR_CONFIG:
       [
         {
-          "class_name": "Vehicle_Drivable_Car",
-          "anchor_sizes": [[4.0, 1.8683, 1.5227]],
+          "class_name": "Vehicle",
+          "anchor_sizes": [[4.306662, 2.030000, 1.600000]],
           "anchor_rotations": [0, 1.57],
           "anchor_bottom_heights": [0],
           "align_center": False,
@@ -54,8 +54,8 @@ MODEL:
           "unmatched_threshold": 0.4,
         },
         {
-          "class_name": "Vehicle_Drivable_Van",
-          "anchor_sizes": [[4.7985, 2.0630, 2.00]],
+          "class_name": "Cyclist",
+          "anchor_sizes": [[2.002945, 0.768056, 1.093788]],
           "anchor_rotations": [0, 1.57],
           "anchor_bottom_heights": [0],
           "align_center": False,
@@ -64,28 +64,8 @@ MODEL:
           "unmatched_threshold": 0.4,
         },
         {
-          "class_name": "Human",
-          "anchor_sizes": [[0.7690, 0.7185, 1.651]],
-          "anchor_rotations": [0, 1.57],
-          "anchor_bottom_heights": [0],
-          "align_center": False,
-          "feature_map_stride": 8,
-          "matched_threshold": 0.5,
-          "unmatched_threshold": 0.35,
-        },
-        {
-          "class_name": "Vehicle_Ridable_Bicycle",
-          "anchor_sizes": [[1.8147, 0.6060, 1.0907]],
-          "anchor_rotations": [0, 1.57],
-          "anchor_bottom_heights": [0],
-          "align_center": False,
-          "feature_map_stride": 8,
-          "matched_threshold": 0.5,
-          "unmatched_threshold": 0.35,
-        },
-        {
-          "class_name": "Vehicle_Ridable_Motorcycle",
-          "anchor_sizes": [[2.0258, 0.8208, 1.1918]],
+          "class_name": "Pedestrian",
+          "anchor_sizes": [[0.916108, 0.876412, 1.732892]],
           "anchor_rotations": [0, 1.57],
           "anchor_bottom_heights": [0],
           "align_center": False,

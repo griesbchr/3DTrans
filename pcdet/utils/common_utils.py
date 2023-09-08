@@ -14,6 +14,26 @@ from torch.autograd import Variable,Function
 
 from ..utils.spconv_utils import spconv
 
+def plane_coefficients_to_euler(coefficients):
+    A, B, C, _ = coefficients
+
+    # Extract the normal vector from plane coefficients
+    normal_vector = np.array([A, B, C])
+
+    # Normalize the normal vector to get unit normal
+    normal_vector = normal_vector / np.linalg.norm(normal_vector)
+
+    # Calculate roll, pitch, and yaw angles
+    roll = np.arctan2(normal_vector[1], normal_vector[2])  # Rotation around x-axis
+    pitch = np.arctan2(-normal_vector[0], np.sqrt(normal_vector[1]**2 + normal_vector[2]**2))  # Rotation around y-axis
+    yaw = 0  # We assume yaw to be 0, as the ground plane does not have a rotation around the z-axis
+
+    return np.degrees(roll), np.degrees(pitch), np.degrees(yaw)
+
+def plane_coefficients_to_z_offset(coefficients):
+    A, B, C, D = coefficients
+    return -D/C
+
 def check_numpy_to_torch(x):
     if isinstance(x, np.ndarray):
         return torch.from_numpy(x).float(), True

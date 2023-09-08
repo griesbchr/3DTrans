@@ -8,8 +8,6 @@ DATA_PATH: "/data/zod"
 
 VERSION: "full" # 'mini', 'small' or 'full'    #dont forget to change info paths below!
 
-INFO_PATH: { "train": zod_infos_train_full.pkl, "test": zod_infos_val_full.pkl }
-
 #maps the classes form the dataset info files to classes from the detector
 #the right-hand names need to match the class names in the detector config
 #waymo-like mapping
@@ -32,7 +30,7 @@ MAP_CLASS_TO_KITTI:
 
 #ZOD supports up to range 245m
 #POINT_CLOUD_RANGE: [-75.2, -75.2, -5, 123.2, 75.2, 1]            # AVLTruck
-POINT_CLOUD_RANGE: [0, -75.2, -2, 123.2, 75.2, 4] # ZOD
+POINT_CLOUD_RANGE: [-75.2, -75.2, -2, 123.2, 75.2, 4] # ZOD
 #POINT_CLOUD_RANGE: [0, -40, -3, 70.4, 40, 1]                     # KITTI
 
 FOV_POINTS_ONLY: True
@@ -54,9 +52,11 @@ POINT_FEATURE_ENCODING:
     src_feature_list: ["x", "y", "z", "intensity"],
   }
 
+INFO_PATH: { "train": zod_infos_train_full.pkl, "test": zod_infos_val_full.pkl }
+
 DATA_AUGMENTOR:
   DISABLE_AUG_LIST: ["placeholder"]
-  #DISABLE_AUG_LIST: ['random_world_flip', 'random_world_rotation', 'random_world_scaling']
+  #DISABLE_AUG_LIST: ["random_world_flip", "random_world_rotation", "random_world_scaling"]
   AUG_CONFIG_LIST:
     - NAME: gt_sampling
       USE_ROAD_PLANE: False
@@ -65,28 +65,18 @@ DATA_AUGMENTOR:
       PREPARE:
         {
           filter_by_min_points:
-            [
-              Vehicle_Car:5,
-              Vehicle_Van:5,
-              VulnerableVehicle_Bicycle:5,
-              Pedestrian:5,
-            ],
+            [Vehicle_Car:5, Vehicle_Van:5, VulnerableVehicle_Bicycle:5, Pedestrian:5],
         }
 
       SAMPLE_GROUPS:
-        [
-          Vehicle_Car:18,
-          Vehicle_Van:2,
-          VulnerableVehicle_Bicycle:10,
-          Pedestrian:20,
-        ]
+        [Vehicle_Car:18, Vehicle_Van:2, VulnerableVehicle_Bicycle:10, Pedestrian:20]
       NUM_POINT_FEATURES: 4
       DATABASE_WITH_FAKELIDAR: False
       REMOVE_EXTRA_WIDTH: [0.0, 0.0, 0.0]
       LIMIT_WHOLE_SCENE: True
 
     - NAME: random_world_flip
-      ALONG_AXIS_LIST: ["x"]
+      ALONG_AXIS_LIST: ["x", "y"]
 
     - NAME: random_world_rotation
       WORLD_ROT_ANGLE: [-0.78539816, 0.78539816] # -45, 45 degrees

@@ -1,20 +1,20 @@
-#AVL truck dataset classes
-# 'Vehicle_Drivable_Car'
-# 'Vehicle_Drivable_Van'
-# 'Vehicle_Ridable_Motorcycle'
-# 'Vehicle_Ridable_Bicycle'
-# 'Human'
-# 'LargeVehicle_Bus'
-# 'LargeVehicle_TruckCab'
-# 'LargeVehicle_Truck'
-# 'Trailer'
+# Vehicle_Drivable_Car
+# Vehicle_Drivable_Van
+# LargeVehicle_Truck
+# LargeVehicle_TruckCab
+# LargeVehicle_Bus
+# LargeVehicle_Bus_Bendy
+# Trailer
+# Vehicle_Ridable_Motorcycle
+# Vehicle_Ridable_Bicycle
+# Human
+# PPObject_Stroller
+# Dont_care
 
-DATASET: "AVLTruckDataset"
-DATA_PATH: "/data/AVLTruck"
-PROCESSED_DATA_TAG: "avl_processed_data_v0_5_0"
+DATASET: "AVLRooftopDataset"
+DATA_PATH: "/data/AVLRooftop"
 
 #{x, y}/0.1 range need to be divisible by voxel size and anchor stride (8)
-#POINT_CLOUD_RANGE: [-50, -76, -5, 150, 76, 1]         # old AVLTruck
 POINT_CLOUD_RANGE: [-75.2, -75.2, -2, 123.2, 75.2, 4] # AVLTruck
 
 DATA_SPLIT: { "train": train, "test": val }
@@ -22,20 +22,23 @@ DATA_SPLIT: { "train": train, "test": val }
 INFO_PATH: { "train": [avl_infos_train.pkl], "val": [avl_infos_val.pkl] }
 
 #maps the classes form the dataset info files to classes from the detector
+
 #the right-hand names need to match the class names in the detector config
 #waymo-like mapping
 MAP_MERGE_CLASS: {
     "Vehicle_Drivable_Car": "Vehicle",
     "Vehicle_Drivable_Van": "Vehicle",
+    "LargeVehicle_Truck": "Vehicle",
+    "LargeVehicle_TruckCab": "Vehicle",
+    "LargeVehicle_Bus": "Vehicle",
+    "LargeVehicle_Bus_Bendy": "Vehicle",
+    "Trailer": "Vehicle",
     "Vehicle_Ridable_Motorcycle": "Vehicle",
     "Vehicle_Ridable_Bicycle": "Cyclist",
     "Human": "Pedestrian",
-    "LargeVehicle_Bus": "Vehicle",
-    "LargeVehicle_TruckCab": "Vehicle",
-    "LargeVehicle_Truck": "Vehicle",
-    "Trailer": "Vehicle",
-    "Dont_Care": "DontCare",
-    "Other": "DontCare",
+    "PPObject": "DontCare",
+    "PPObject_Stroller": "DontCare",
+    "Dont_care": "DontCare",
     #'Placeholder': 'DontCare',
   }
 
@@ -43,22 +46,10 @@ MAP_MERGE_CLASS: {
 MAP_CLASS_TO_KITTI:
   { "Vehicle": "Car", "Pedestrian": "Pedestrian", "Cyclist": "Cyclist" }
 
-  # {
-  #   "Vehicle_Drivable_Car": "Vehicle",
-  #   "Vehicle_Drivable_Van": "Vehicle",
-  #   "Vehicle_Ridable_Motorcycle": "Vehicle",
-  #   "Vehicle_Ridable_Bicycle": "Cyclist",
-  #   "Human": "Pedestrian",
-  #   "LargeVehicle_Bus": "Vehicle",
-  #   "LargeVehicle_TruckCab": "Vehicle",
-  #   "LargeVehicle_Truck": "Vehicle",
-  #   "Trailer": "Vehicle",
-  # }
-
 #position of the groundplane relative to data origin (usually lidar sensor)
 #negative z value means the ground plane is below the sensor
 #used to shift data to the ground plane when generating infos and at training time (get_lidar)
-LIDAR_Z_SHIFT: -3.4097
+LIDAR_Z_SHIFT: -1.7715138
 
 #height of the data origin above ground plane during detector training, should be at 0.0 if trained correctly
 #positive z value means the data origin is above the ground plane
@@ -97,11 +88,11 @@ DATA_AUGMENTOR:
 
       SAMPLE_GROUPS:
         [
-          "Vehicle_Drivable_Car:20",
-          "Vehicle_Drivable_Van:10",
+          "Vehicle_Drivable_Car:12",
+          "Vehicle_Drivable_Van:5",
           "Human:15",
-          "Vehicle_Ridable_Motorcycle:10",
-          "Vehicle_Ridable_Bicycle:10",
+          "Vehicle_Ridable_Motorcycle:2",
+          "Vehicle_Ridable_Bicycle:15",
           "LargeVehicle_Bus:0",
           "LargeVehicle_Truck:0",
           "LargeVehicle_TruckCab:0",

@@ -65,7 +65,7 @@ class ZODDataset(DatasetTemplate):
                 continue
             info['annos']['name'] = np.vectorize(lambda name: map_merge_class[name], otypes=[np.str])(info['annos']['name'])
         
-        if self.data_augmentor is None:
+        if not(hasattr(self, 'data_augmentor')) or self.data_augmentor is None:
             return
         if self.dataset_cfg.get('DATA_AUGMENTOR', None) is None:
             return
@@ -151,6 +151,14 @@ class ZODDataset(DatasetTemplate):
         final_mask[positive_depth] = mask
 
         return final_mask
+    
+    def get_object_truncation(self, objs, calib):
+        #calc corner points from objs
+        #from zod.utils.geometry import get_3d_box_corners
+        #check if all corners are in fov
+        #if not, set truncation to 1
+        pass
+
     
     def get_lidar(self, idx, num_features=4):
 

@@ -25,6 +25,8 @@ class DataBaseSampler(object):
         class_names = []
         for x in sampler_cfg.SAMPLE_GROUPS:
             class_name, sample_num = x.split(':')
+            if sample_num == '0':
+                continue
             class_names.append(class_name)
             self.db_infos[class_name] = []
         self.class_names = class_names

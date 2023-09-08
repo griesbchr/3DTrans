@@ -1,5 +1,5 @@
 #%% imports
-from pcdet.datasets.avltruck.avl_dataset import AVLDataset
+from pcdet.datasets.avltruck.avltruck_dataset import AVLDataset
 import yaml
 from easydict import EasyDict
 from pathlib import Path

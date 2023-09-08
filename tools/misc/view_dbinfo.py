@@ -40,6 +40,44 @@ df.rename(columns={'image_idx':'frame_idx'}, inplace=True)
 
 print("Number of instances per class:")
 print(df.groupby('class')['num_points_in_gt'].count())
+
+#%% load pickle file "avl_dbinfos.pkl" which is in AVLRooftop folder
+#load pickle file "avl_dbinfos.pkl" which is in AVLRooftop folder
+with open('/data/AVLRooftop/avl_dbinfos_train.pkl', 'rb') as f:
+    #store as dataframe
+    avl_dbinfos = pickle.load(f)
+
+classes = ['Vehicle_Ridable_Bicycle', 'Vehicle_Ridable_Motorcycle', 
+             'LargeVehicle_Truck', 'LargeVehicle_TruckCab', 
+             'Trailer', 'LargeVehicle_Bus', 'LargeVehicle_Bus_Bendy', 
+             'Vehicle_Drivable_Van', 'Vehicle_Drivable_Car', 
+             'Human', 
+             'PPObject_Stroller']
+
+# create empty dataframe
+gt_df = pd.DataFrame()
+
+#loop over all classes and store in dataframe
+for i in range(len(classes)):
+    gt_df = pd.concat([gt_df, pd.DataFrame(avl_dbinfos[classes[i]])], ignore_index=True)
+
+# Split the 'box3d_lidar' column into separate columns
+gt_df[['x', 'y', 'z', 'l', 'w', 'h', 'theta']] = pd.DataFrame(gt_df['box3d_lidar'].tolist())
+
+# Drop the original 'box3d_lidar' column
+df = gt_df.drop('box3d_lidar', axis=1)
+
+# rename col name to class
+df.rename(columns={'name':'class'}, inplace=True)
+
+# "image_idx" contains 'sequences/CityStreet_dgt_2021-07-08-15-24-00_0_s0/dataset/logical_frame_000020.json', please make a col containing CityStreet_dgt_2021-07-08-15-24-00_0_s0
+df['sequence'] = df['image_idx'].str.split('/').str[1]
+
+#rename image_idx to frame_idx
+df.rename(columns={'image_idx':'frame_idx'}, inplace=True)
+
+print("Number of instances per class:")
+print(df.groupby('class')['num_points_in_gt'].count())
 #%% load pickle file "zod_dbinfos.pkl" which is in zod folder
 
 with open('/data/zod/zod_dbinfos_train_small.pkl', 'rb') as f:
@@ -167,12 +205,13 @@ plt.show()
 
 #%% print median value for {'l', 'w', 'h', 'theta'} and all the classes
 print("Median value for {'l', 'w', 'h', 'theta'} and all the classes:")
-print(df.groupby('class')['l', 'w', 'h', 'theta'].median())
+print(df.groupby('class')['l', 'w', 'h', 'theta'].mean())
 
 # print median value for {'x', 'y', 'z',} and all the classes
 print("Median value for {'x', 'y', 'z',} and all the classes:")
-print(df.groupby('class')['x', 'y', 'z'].median())
+print(df.groupby('class')['x', 'y', 'z'].mean())
 
+# %%print distr
 metrics = ['l', 'w', 'h', 'theta', 'x', 'y', 'z']
 
 for metric in metrics:

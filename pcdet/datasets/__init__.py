@@ -14,7 +14,9 @@ from .waymo.waymo_dataset_ada import ActiveWaymoDataset
 from .pandaset.pandaset_dataset import PandasetDataset
 from .lyft.lyft_dataset import LyftDataset
 from .lyft.lyft_dataset_ada import ActiveLyftDataset
-from .avltruck.avl_dataset import AVLDataset
+from .avldataset.avl_dataset import AVLDataset
+from .avltruck.avltruck_dataset import AVLTruckDataset
+from .avlrooftop.avlrooftop_dataset import AVLRooftopDataset
 from .zod.zod_dataset import ZODDataset
 
 from .once.once_dataset import ONCEDataset
@@ -30,6 +32,8 @@ __all__ = {
     'NuScenesDataset': NuScenesDataset,
     'ActiveNuScenesDataset': ActiveNuScenesDataset,
     'AVLDataset': AVLDataset,
+    'AVLTruckDataset':AVLTruckDataset,
+    'AVLRooftopDataset':AVLRooftopDataset,
     'WaymoDataset': WaymoDataset,
     'ActiveWaymoDataset': ActiveWaymoDataset,
     'PandasetDataset': PandasetDataset,
@@ -96,7 +100,7 @@ class CustomSubset(Subset):
         return getattr(self.dataset, name)
 
 def build_dataloader(dataset_cfg, class_names, batch_size, dist, root_path=None, workers=4,
-                     logger=None, training=True, merge_all_iters_to_one_epoch=False, total_epochs=0, sub_sample=None, detector_cfg=None):
+                     logger=None, training=True, merge_all_iters_to_one_epoch=False, total_epochs=0, sub_sample=None, prefetch_factor=2):
 
     dataset = __all__[dataset_cfg.DATASET](
         dataset_cfg=dataset_cfg,
@@ -125,7 +129,7 @@ def build_dataloader(dataset_cfg, class_names, batch_size, dist, root_path=None,
     dataloader = DataLoader(
         dataset, batch_size=batch_size, pin_memory=True, num_workers=workers,
         shuffle=(sampler is None) and training, collate_fn=dataset.collate_batch,
-        drop_last=False, sampler=sampler, timeout=0
+        drop_last=False, sampler=sampler, timeout=0, prefetch_factor=prefetch_factor
     )
 
     return dataset, dataloader, sampler
