@@ -54,6 +54,10 @@ class ZODDataset(DatasetTemplate):
 
         self.map_class_to_kitti = self.dataset_cfg.get('MAP_CLASS_TO_KITTI',None)
 
+        self.disregard_truncated = self.dataset_cfg.get('DISREGARD_TRUNCATED',False)
+
+        self.remove_truncated_gtsampling = self.dataset_cfg.get('REMOVE_TRUNCATED_GTSAMPLING',False)
+
     def map_merge_classes(self):
         if self.dataset_cfg.get('MAP_MERGE_CLASS', None) is None:
             return
@@ -124,7 +128,7 @@ class ZODDataset(DatasetTemplate):
         if not self.creating_infos:
             self.map_merge_classes()
 
-    def get_fov_points_only(self, lidar_data, calib):
+    def get_fov_points_only(self, points, calib):
         from zod.constants import Camera, Lidar
         from zod.utils.geometry import get_points_in_camera_fov, transform_points
         from zod.data_classes.geometry import Pose
@@ -139,7 +143,7 @@ class ZODDataset(DatasetTemplate):
         t_from_frame_to_frame = Pose(t_from_frame_refframe.transform @ t_refframe_to_frame.transform)
 
 
-        camera_data = transform_points(lidar_data.points, t_from_frame_to_frame.transform)
+        camera_data = transform_points(points, t_from_frame_to_frame.transform)
         positive_depth = camera_data[:, 2] > 0
         camera_data = camera_data[positive_depth]
         if not camera_data.any():
@@ -152,13 +156,21 @@ class ZODDataset(DatasetTemplate):
 
         return final_mask
     
-    def get_object_truncation(self, objs, calib):
-        #calc corner points from objs
-        #from zod.utils.geometry import get_3d_box_corners
+    def get_object_truncation(self, corners, calib): 
+        corners_flat = corners.reshape(-1,3)
+        
         #check if all corners are in fov
-        #if not, set truncation to 1
-        pass
+        #points in camera mask
+        mask = self.get_fov_points_only(corners_flat, calib)
 
+        #respahe mask to per box shape
+        mask = mask.reshape(-1,8)
+
+        #if all corners are in fov, object is not truncated
+        truncated = np.zeros(mask.shape[0], dtype=np.bool)
+        truncated[mask.sum(axis=1) < 8] = 1
+
+        return truncated
     
     def get_lidar(self, idx, num_features=4):
 
@@ -168,7 +180,7 @@ class ZODDataset(DatasetTemplate):
         pc = lidar_core_frame.read()
 
         if self.fov_points_only:
-            mask = self.get_fov_points_only(pc, zod_frame.calibration)
+            mask = self.get_fov_points_only(pc.points, zod_frame.calibration)
             pc.points = pc.points[mask]
             pc.intensity = pc.intensity[mask]
         
@@ -187,7 +199,7 @@ class ZODDataset(DatasetTemplate):
 
         return points
     
-    def get_label(self, sample_idx, class_names=None):
+    def get_label(self, sample_idx=123456, class_names=None):
         zod_frame = self.zod_frames[sample_idx]
         obj_annos = zod_frame.get_annotation(AnnotationProject.OBJECT_DETECTION)
         #filter out objects without 3d anno
@@ -223,8 +235,11 @@ class ZODDataset(DatasetTemplate):
 
         annotations['gt_boxes_lidar'] = gt_boxes_lidar       
         annotations['obj_annos'] = obj_annos
-        #print("Found %d objects" % annotations['name'].shape[0])
-        #print("shape of gt_boxes_lidar: ", gt_boxes_lidar.shape)
+
+        #calculate truncation
+        corners = np.array([obj.box3d.corners for obj in obj_annos])
+        annotations['truncated'] = self.get_object_truncation(corners, zod_frame.calibration)
+        
         return annotations
 
     #re-initialize dataset with different split
@@ -265,11 +280,10 @@ class ZODDataset(DatasetTemplate):
         if 'annos' in info:
             annos = info['annos']
             annos = common_utils.drop_info_with_name(annos, name='DontCare')
-            gt_names = annos['name']
-            gt_boxes_lidar = annos['gt_boxes_lidar']
             input_dict.update({
-                'gt_names': gt_names,
-                'gt_boxes': gt_boxes_lidar
+                'gt_names': annos['name'],
+                'gt_boxes': annos['gt_boxes_lidar'],
+#                'gt_truncation': annos['truncated'],
             })
 
         data_dict = self.prepare_data(data_dict=input_dict)
@@ -279,6 +293,16 @@ class ZODDataset(DatasetTemplate):
         # if z_shift is not None:
         #         data_dict["gt_boxes"][:,2] -= z_shift
         #         data_dict['points'][:,2] -= np.array(z_shift, dtype=np.float64)
+
+        #if self.disregard_truncated:            
+        #    gt_boxes = data_dict['gt_boxes']
+        #    
+        #    #set truncated gt boxes to label (last entry) to -1
+        #    #XXX or do i need to set them to label*-1?
+        #    corners = box_utils.boxes_to_corners_3d(gt_boxes)
+        #    truncated = self.get_object_truncation(corners, self.zod_frames[index].calibration)
+        #    gt_boxes[truncated, -1] = -1
+        #    data_dict['gt_boxes'] = gt_boxes
 
         return data_dict
 
@@ -389,7 +413,9 @@ class ZODDataset(DatasetTemplate):
             annotations = self.get_label(sample_idx, class_names)            
 
             if count_inside_pts:   
-                obj_annos = annotations.pop("obj_annos")            
+                obj_annos = annotations.pop("obj_annos")
+                
+                # use truncated pc to get points in gt boxes
                 points = self.get_lidar(sample_idx, num_features=num_features)
 
                 corners_lidar = np.array([obj.box3d.corners for obj in obj_annos])
@@ -429,6 +455,9 @@ class ZODDataset(DatasetTemplate):
 
         database_save_path.mkdir(parents=True, exist_ok=True)
         all_db_infos = {}
+
+        #make sure we dont use truncated gt boxes for gt sampling
+        self.fov_points_only = False
 
         with open(info_path, 'rb') as f:
             infos = pickle.load(f)
@@ -518,9 +547,10 @@ def split_zod_data(data_path, versions):
 
 def create_zod_infos(dataset_cfg, class_names, data_path, save_path, workers=4):
 
-    splits = ['train', 'val']
-    versions = ['full', 'mini', 'small']
-    #versions = ['full']
+    #splits = ['train', 'val']
+    splits = ['train']
+    #versions = ['full', 'mini', 'small']
+    versions = ['small']
 
     split_zod_data(data_path, versions)
 
@@ -534,16 +564,16 @@ def create_zod_infos(dataset_cfg, class_names, data_path, save_path, workers=4):
 
     for split in splits:
         for version in versions:
-            print('------------------------generating infos for version %s ,split %s------------------------' % (version, split))
-            dataset.set_split(split, version)
-            zod_infos = dataset.get_infos(
-                class_names, num_workers=workers, has_label=True, 
-                num_features=num_features, count_inside_pts=True
-            )
+            #print('------------------------generating infos for version %s ,split %s------------------------' % (version, split))
+            #dataset.set_split(split, version)
+            #zod_infos = dataset.get_infos(
+            #    class_names, num_workers=workers, has_label=True, 
+            #    num_features=num_features, count_inside_pts=True
+            #)
             filename = save_path / ('zod_infos_%s_%s.pkl' % (split ,version))
-            with open(filename, 'wb') as f:
-                pickle.dump(zod_infos, f)
-            print('ZOD info train file is saved to %s' % filename)
+            #with open(filename, 'wb') as f:
+            #    pickle.dump(zod_infos, f)
+            #print('ZOD info train file is saved to %s' % filename)
 
             if split == 'train':
                 print('------------------------generating gt db for version %s------------------------' % version)
@@ -568,6 +598,7 @@ if __name__ == '__main__':
             dataset_cfg=dataset_cfg, class_names=['Vehicle', 'Pedestrian', 'Cyclist'],
             root_path=data_dir, training=True, logger=common_utils.create_logger()
         )
+        labels = dataset.get_label("000000")
 
     if sys.argv.__len__() > 1 and sys.argv[1] == 'create_zod_infos':
         import yaml
@@ -575,7 +606,7 @@ if __name__ == '__main__':
         from easydict import EasyDict
 
         dataset_cfg = EasyDict(yaml.safe_load(open(sys.argv[2])))
-        ROOT_DIR = Path("/")
+        ROOT_DIR = (Path(__file__).resolve().parent / '../../../').resolve()
         
         #class names included in the dataset info files and gt database
         #in zod subclass names are composed of the class name and the subclass name 

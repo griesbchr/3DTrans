@@ -10,7 +10,7 @@
 # 'Trailer'
 
 DATASET: "AVLTruckDataset"
-DATA_PATH: "/data/AVLTruck"
+DATA_PATH: "../data/avltruck"
 PROCESSED_DATA_TAG: "avl_processed_data_v0_5_0"
 
 #{x, y}/0.1 range need to be divisible by voxel size and anchor stride (8)

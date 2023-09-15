@@ -44,8 +44,8 @@ MODEL:
     ANCHOR_GENERATOR_CONFIG:
       [
         {
-          "class_name": "Vehicle_Drivable_Car",
-          "anchor_sizes": [[4.0, 1.8683, 1.5227]],
+          "class_name": "Vehicle",
+          "anchor_sizes": [[4.083542, 1.868335, 1.544695]],
           "anchor_rotations": [0, 1.57],
           "anchor_bottom_heights": [0],
           "align_center": False,
@@ -54,8 +54,8 @@ MODEL:
           "unmatched_threshold": 0.4,
         },
         {
-          "class_name": "Vehicle_Drivable_Van",
-          "anchor_sizes": [[4.7985, 2.0630, 2.00]],
+          "class_name": "Cyclist",
+          "anchor_sizes": [[1.805135, 0.620556, 1.095964]],
           "anchor_rotations": [0, 1.57],
           "anchor_bottom_heights": [0],
           "align_center": False,
@@ -64,28 +64,8 @@ MODEL:
           "unmatched_threshold": 0.4,
         },
         {
-          "class_name": "Human",
-          "anchor_sizes": [[0.7690, 0.7185, 1.651]],
-          "anchor_rotations": [0, 1.57],
-          "anchor_bottom_heights": [0],
-          "align_center": False,
-          "feature_map_stride": 8,
-          "matched_threshold": 0.5,
-          "unmatched_threshold": 0.35,
-        },
-        {
-          "class_name": "Vehicle_Ridable_Bicycle",
-          "anchor_sizes": [[1.8147, 0.6060, 1.0907]],
-          "anchor_rotations": [0, 1.57],
-          "anchor_bottom_heights": [0],
-          "align_center": False,
-          "feature_map_stride": 8,
-          "matched_threshold": 0.5,
-          "unmatched_threshold": 0.35,
-        },
-        {
-          "class_name": "Vehicle_Ridable_Motorcycle",
-          "anchor_sizes": [[2.0258, 0.8208, 1.1918]],
+          "class_name": "Pedestrian",
+          "anchor_sizes": [[0.782185, 0.726423, 1.628466]],
           "anchor_rotations": [0, 1.57],
           "anchor_bottom_heights": [0],
           "align_center": False,

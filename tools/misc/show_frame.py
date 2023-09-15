@@ -29,14 +29,18 @@ def main():
         data_dir = Path("/") / 'data' / 'AVLTruck'
 
         if args.frame_idx is None:
-            args.frame_idx = "sequences/CityStreet_dgt_2021-11-09-09-08-59_0_s0/dataset/logical_frame_000016.json"
-        dataset = AVLTruckDataset(dataset_cfg, class_names=None)
-        #get annos from info files
-        sample_id_list = dataset.sample_id_list
-        list_index = sample_id_list.index(args.frame_idx)
-        info = copy.deepcopy(dataset.avl_infos[list_index])
+            #args.frame_idx = "sequences/CityStreet_dgt_2021-07-06-09-56-53_0_s0/dataset/logical_frame_000006.json"
+            args.frame_idx = "sequences/CityStreet_dgt_2021-07-12-11-45-52_0_s0/dataset/logical_frame_000006.json"
+        dataset = AVLTruckDataset(dataset_cfg, class_names=None, training=False)
+        
+        annos = dataset.get_label(args.frame_idx)
+        gt_boxes_lidar = annos['gt_boxes_lidar'] 
 
-        gt_boxes_lidar = info["annos"]['gt_boxes_lidar']  
+        ##get annos from info files
+        #sample_id_list = dataset.sample_id_list
+        #list_index = sample_id_list.index(args.frame_idx)
+        #info = copy.deepcopy(dataset.avl_infos[list_index])
+        #gt_boxes_lidar = info["annos"]['gt_boxes_lidar']  
 
     elif (args.dataset == "zod"):
         from pcdet.datasets.zod.zod_dataset import ZODDataset
@@ -45,7 +49,7 @@ def main():
         data_dir = Path("/") / 'data' / 'zod'
 
         if args.frame_idx is None:
-            args.frame_idx = "012345"
+            args.frame_idx = "055820"
         class_names = None
 
         dataset = ZODDataset(dataset_cfg, class_names=class_names)
@@ -65,12 +69,12 @@ def main():
         data_dir = Path("/") / 'data' / 'AVLRooftop'
         
         if args.frame_idx is None:
-            args.frame_idx = "sequences/INTERURBAN_Normal_roundabout_20200505103429/unpacked/lidar/0007.pkl"
+            args.frame_idx = "sequences/CITY_Sunny_junction_20200319140600/unpacked/lidar/0026.pkl"
         class_names = None
 
         dataset = AVLRooftopDataset(dataset_cfg, 
                                     class_names=class_names, 
-                                    training=False)
+                                    training=True)
         gt_boxes_lidar = dataset.get_label(args.frame_idx)['gt_boxes_lidar']
         
         #get annos from info files
@@ -102,7 +106,7 @@ def main():
 
         #parse config
         cfg_from_yaml_file(cfg_path, cfg)
-        dataset, train_loader, train_sampler = build_dataloader(dataset_cfg=cfg.DATA_CONFIG,
+        dataset, train_loader, train_sampler = build_dataloader(dataset_cfg=dataset_cfg,
                                         class_names=cfg.CLASS_NAMES,
                                         batch_size=1,
                                         dist=False,

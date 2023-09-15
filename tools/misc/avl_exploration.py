@@ -7,7 +7,7 @@ from tqdm import tqdm
 import numpy as np
 import matplotlib.pyplot as plt
 
-#%% import avl dataset 
+#%% import avl truck dataset 
 dataset_path = '/home/cgriesbacher/thesis/3DTrans/tools/cfgs/dataset_configs/avltruck/OD/avltruck_dataset.yaml'
 dataset_cfg = EasyDict(yaml.safe_load(open(dataset_path)))
 
@@ -84,3 +84,117 @@ frame_path = "/data/AVLTruck/sequences/CityStreet_dgt_2021-07-07-13-20-04_0_s0/d
 #load npy frame
 frame = np.load(frame_path, allow_pickle=True)
 
+#%% find frames that contain cyclists in avl rooftopbox dataset
+from pcdet.datasets.avlrooftop.avlrooftop_dataset import AVLRooftopDataset
+from pcdet.datasets.avltruck.avltruck_dataset import AVLTruckDataset
+from pcdet.datasets.zod.zod_dataset import ZODDataset
+
+from easydict import EasyDict
+import yaml        
+
+#%% 
+#cfg_path =  "/home/cgriesbacher/thesis/3DTrans/tools/cfgs/dataset_configs/avltruck/OD/avltruck_dataset.yaml"
+cfg_path =  "/home/cgriesbacher/thesis/3DTrans/tools/cfgs/dataset_configs/zod/OD/zod_dataset.yaml"
+dataset_cfg = EasyDict(yaml.safe_load(open(cfg_path)))
+class_names = None
+dataset = ZODDataset(dataset_cfg, 
+                                    class_names=class_names, 
+                                    training=False)
+sample_id_list = dataset.sample_id_list
+cyclist_frames = []
+num_cyclists = 0
+max_cyclists_frame = None
+max_cyclists = 0
+from tqdm import tqdm
+max_iter = 300
+for i, sample in tqdm(enumerate(sample_id_list)):
+    if i > max_iter:
+        break
+    #store frame id if it contains a cyclist
+    names = dataset.get_label(sample)['name']
+    if 'VulnerableVehicle_Bicycle' in names:
+        cyclist_frames.append(sample)
+        #for each occurance of a cyclist, count the number of cyclists
+        num_cyclists += np.sum(names == 'VulnerableVehicle_Bicycle')
+        if np.sum(names == 'VulnerableVehicle_Bicycle') > max_cyclists:
+            max_cyclists = np.sum(names == 'VulnerableVehicle_Bicycle')
+            max_cyclists_frame = sample
+
+print("number of cyclists in dataset: ", num_cyclists)
+print("frame with most cyclists: ", max_cyclists_frame)
+print("number of cyclists in frame with most cyclists: ", max_cyclists)
+print("number of frames with cyclists: ", len(cyclist_frames))
+print(cyclist_frames)
+# %% same for avl truck dataset
+#%% 
+import copy
+cfg_path =  "/home/cgriesbacher/thesis/3DTrans/tools/cfgs/dataset_configs/avltruck/OD/avltruck_dataset.yaml"
+dataset_cfg = EasyDict(yaml.safe_load(open(cfg_path)))
+class_names = None
+dataset = AVLTruckDataset(dataset_cfg, 
+                                    class_names=class_names, 
+                                    training=False)
+sample_id_list = dataset.sample_id_list
+
+
+cyclist_frames = []
+num_cyclists = 0
+max_cyclists_frame = None
+max_cyclists = 0
+from tqdm import tqdm
+max_iter = 300
+for i, sample in tqdm(enumerate(sample_id_list)):
+    if i > max_iter:
+        break
+    list_index = sample_id_list.index(sample)
+    info = copy.deepcopy(dataset.avl_infos[list_index])
+    names = info["annos"]['name']  
+    if 'Cyclist' in names:
+        cyclist_frames.append(sample)
+        #for each occurance of a cyclist, count the number of cyclists
+        num_cyclists += np.sum(names == 'Cyclist')
+        if np.sum(names == 'Cyclist') > max_cyclists:
+            max_cyclists = np.sum(names == 'Cyclist')
+            max_cyclists_frame = sample
+
+print("number of cyclists in dataset: ", num_cyclists)
+print("frame with most cyclists: ", max_cyclists_frame)
+print("number of cyclists in frame with most cyclists: ", max_cyclists)
+print("number of frames with cyclists: ", len(cyclist_frames))
+print(cyclist_frames)
+
+# %% avl rooftop
+import copy
+cfg_path =  "/home/cgriesbacher/thesis/3DTrans/tools/cfgs/dataset_configs/avlrooftop/OD/avlrooftop_dataset.yaml"
+dataset_cfg = EasyDict(yaml.safe_load(open(cfg_path)))
+class_names = None
+dataset = AVLRooftopDataset(dataset_cfg, 
+                                    class_names=class_names, 
+                                    training=True)
+sample_id_list = dataset.sample_id_list
+
+
+cyclist_frames = []
+num_cyclists = 0
+max_cyclists_frame = None
+max_cyclists = 0
+from tqdm import tqdm
+for i, sample in tqdm(enumerate(sample_id_list)):
+
+    list_index = sample_id_list.index(sample)
+    info = copy.deepcopy(dataset.avl_infos[list_index])
+    names = info["annos"]['name']  
+    if 'Cyclist' in names:
+        cyclist_frames.append(sample)
+        #for each occurance of a cyclist, count the number of cyclists
+        num_cyclists += np.sum(names == 'Cyclist')
+        if np.sum(names == 'Cyclist') > max_cyclists:
+            max_cyclists = np.sum(names == 'Cyclist')
+            max_cyclists_frame = sample
+
+print("number of cyclists in dataset: ", num_cyclists)
+print("frame with most cyclists: ", max_cyclists_frame)
+print("number of cyclists in frame with most cyclists: ", max_cyclists)
+print("number of frames with cyclists: ", len(cyclist_frames))
+print(cyclist_frames)
+# %%

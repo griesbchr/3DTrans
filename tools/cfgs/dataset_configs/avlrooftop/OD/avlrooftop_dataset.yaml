@@ -12,7 +12,7 @@
 # Dont_care
 
 DATASET: "AVLRooftopDataset"
-DATA_PATH: "/data/AVLRooftop"
+DATA_PATH: "../data/avlrooftop"
 
 #{x, y}/0.1 range need to be divisible by voxel size and anchor stride (8)
 POINT_CLOUD_RANGE: [-75.2, -75.2, -2, 123.2, 75.2, 4] # AVLTruck

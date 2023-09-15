@@ -30,3 +30,13 @@ tools/update_reminder.txt
 
 tools/train_random_source_target.py
 */logs/*
+data/avlrooftop/gt_database
+data/avlrooftop/sequences
+
+data/avltruck/gt_database
+data/avltruck/sequences
+
+data/zod/gt_database_full
+data/zod/gt_database_mini
+data/zod/gt_database_small
+data/zod/single_frames

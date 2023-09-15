@@ -8,9 +8,8 @@ from scipy.spatial.transform import Rotation
 import numpy as np
 
 from ..dataset import DatasetTemplate
-from ...utils import box_utils, common_utils
+from ...utils import box_utils, common_utils 
 from ...ops.roiaware_pool3d import roiaware_pool3d_utils
-
 
 
 class AVLDataset(DatasetTemplate):
@@ -400,3 +399,153 @@ class AVLDataset(DatasetTemplate):
         #        points[:, 2] -= np.array(z_shift, dtype=np.float64)
 
         return data_dict
+
+
+    def merge_labels(self, labels):
+        '''
+        The AVL datasets are seperately labels bikes (bicycles and motorbiles) and their riders. To achieve a unified
+        label format, we merge the bike and rider labels into the bike label.
+        '''
+
+        #get label indices of Vehicle_Ridable_Bicycle and Vehicle_Ridable_Motorcycle
+        #for each label, find the corresponding human label index. 
+        #assert check if it exists
+        #overwrite bike label dimenstions with merges dimenstions
+        #delete human label
+
+        #get indices of bike and human labels
+        label_categories = np.array([label['label_category_id'] for label in labels])
+        bike_indices = np.where(np.logical_or(label_categories == 'Vehicle_Ridable_Bicycle', label_categories == 'Vehicle_Ridable_Motorcycle'))[0]
+        
+        if len(bike_indices) == 0:
+            return labels
+        
+        delete_indices = []
+
+        for bike_label_idx in bike_indices:
+            
+            bike_label = labels[bike_label_idx]
+            
+            human_label_exists = True
+            
+            #check if "attributes" attribute exists
+            #if not, keep bike label and continue
+            if 'attributes' not in bike_label.keys():
+                print("No 'attributes' attribute found in sequence", bike_label["dataset_name"])
+                human_label_exists = False
+            
+            #check if "with-rider" attribute exists
+            #if not, keep bike label and continue
+            elif 'with-rider' not in bike_label['attributes'].keys():
+                print("No 'with-rider' attribute found in sequence", bike_label["dataset_name"])
+                human_label_exists = False
+
+
+            #check if "Connected_to" attribute exists
+            #if not, keep bike label and continue
+            elif 'Connected_to' not in bike_label['attributes'].keys():
+                print("No 'Connected_to' attribute found in sequence", bike_label["dataset_name"])
+                human_label_exists = False
+
+            #check if "with-rider" attribute is true, of not delete bike label and continue
+            if human_label_exists:
+                if bike_label['attributes']['with-rider'] != "yes":
+                    delete_indices.append(bike_label_idx)
+                    continue
+                else:                 
+                    human_id = bike_label['attributes']["Connected_to"]
+                    
+                    #find human label index
+                    label_ids = np.array([label['label_id'] for label in labels])
+                    human_index = np.where(label_ids == human_id)[0]
+                    
+                    #assert that human label exists
+                    if (len(human_index) == 0 or len(human_index) > 1):
+                        print("No or multiple human label found for bike label in sequence", bike_label["dataset_name"])
+                        continue
+                    
+                    human_index = human_index[0]
+                    human_label = labels[human_index]
+
+            else:
+                human_labels = [label for label in labels if label['label_category_id'] == 'Human'] 
+                try:  
+                    human_label, dist = self.get_closest_bbox(bike_label, human_labels)
+                except:
+                    continue
+                human_index = labels.index(human_label)
+                #check if human belongs to bike 
+                #center of bboxes must be within 0.7 meters of each other
+                if dist > 0.7:
+                    delete_indices.append(bike_label_idx)
+                    continue
+            
+            #merge bike and human bbox dimenstions
+            bbox = self.merge_boxes(bike_label["three_d_bbox"], human_label["three_d_bbox"])
+            labels[bike_label_idx]["three_d_bbox"] = bbox
+
+            #remove human label
+            delete_indices.append(human_index)
+
+        #delete labels from label list
+        labels = [label for i, label in enumerate(labels) if i not in delete_indices]
+
+        return labels
+    @staticmethod
+    def get_closest_bbox(target_label, labels):
+        '''
+        Returns the index of the closest label to the target label
+        '''
+        #get target label center
+        target_center = np.array((target_label['three_d_bbox']['cx'], target_label['three_d_bbox']['cy'], target_label['three_d_bbox']['cz']))
+        #get label centers
+        label_centers = np.array([(label['three_d_bbox']['cx'], label['three_d_bbox']['cy'], label['three_d_bbox']['cz']) for label in labels])
+        #calculate distances
+        distances = np.linalg.norm(label_centers - target_center, axis=1)
+        #get index of closest label
+        closest_index = np.argmin(distances)
+
+        return labels[closest_index], distances[closest_index]
+    
+    @staticmethod
+    def merge_boxes(box_bike, box_human):
+        # Compute corners of the first and second box
+        bbox_bike_np = np.array((box_bike['cx'], box_bike['cy'], box_bike['cz'], 
+                                box_bike['l'], box_bike['w'], box_bike['h'], 
+                                box_bike['rot_z']))[np.newaxis, :]
+        bbox_human_np = np.array((box_human['cx'], box_human['cy'], box_human['cz'],
+                                box_human['l'], box_human['w'], box_human['h'],
+                                box_human['rot_z']))[np.newaxis, :]
+        
+        corners_bike = box_utils.boxes_to_corners_3d(bbox_bike_np)[0]
+        corners_human = box_utils.boxes_to_corners_3d(bbox_human_np)[0]
+
+        # Find the min and max coordinates for the new box
+        #min_x = min(min(corners_bike[:, 0]), min(corners_human[:, 0]))
+        #max_x = max(max(corners_bike[:, 0]), max(corners_human[:, 0]))
+        #min_y = min(min(corners_bike[:, 1]), min(corners_human[:, 1]))
+        #max_y = max(max(corners_bike[:, 1]), max(corners_human[:, 1]))
+        min_z = min(min(corners_bike[:, 2]), min(corners_human[:, 2]))
+        max_z = max(max(corners_bike[:, 2]), max(corners_human[:, 2]))
+
+        # Calculate new box center and dimensions
+        cx = box_bike['cx']  
+        cy = box_bike['cy']
+        cz = (min_z + max_z) / 2
+        l = box_bike['l']  
+        w =  box_bike['w'] 
+        h = max_z - min_z
+
+        # keep rotation of bike
+        rot_z = box_bike['rot_z']
+
+        # if quaternion is given, use it
+        if 'quaternion' in box_bike.keys():
+            quaternion = box_bike['quaternion']
+            new_box = {'cx': cx, 'cy': cy, 'cz': cz, 'h': h, 'l': l, 'w': w, 'rot_z': rot_z, 'quaternion': quaternion}
+            return new_box
+        
+        # Create and return new box
+        new_box = {'cx': cx, 'cy': cy, 'cz': cz, 'h': h, 'l': l, 'w': w, 'rot_z': rot_z}
+
+        return new_box
