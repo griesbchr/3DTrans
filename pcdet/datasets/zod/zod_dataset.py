@@ -339,10 +339,12 @@ class ZODDataset(DatasetTemplate):
             gt_boxes[truncated, -1] = -1
             data_dict['gt_boxes'] = gt_boxes
 
-            num_truncated = truncated.sum()
-            print("%d/%d gt boxes truncated" % (num_truncated, len(annos['name']))) 
-            print("%d/%d gt+sampled boxes truncated" % (num_truncated, len(truncated)))
-
+            #debug outputs
+            #num_truncated = truncated.sum()
+            #print("%d/%d gt boxes truncated" % (num_truncated, len(annos['name']))) 
+            #print("%d/%d gt+sampled boxes truncated" % (num_truncated, len(truncated)))
+            
+            data_dict.pop('truncated')
 
         return data_dict
 
