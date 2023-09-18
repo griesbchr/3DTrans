@@ -232,6 +232,8 @@ class DatasetTemplate(torch_data.Dataset):
             if 'gt_classes' in data_dict:
                 data_dict['gt_classes'] = data_dict['gt_classes'][mask]
                 data_dict['gt_scores'] = data_dict['gt_scores'][mask]
+            if 'truncated' in data_dict:
+                data_dict['truncated'] = data_dict['truncated'][mask]
 
             assert 'gt_boxes' in data_dict, 'gt_boxes should be provided for training'
             gt_boxes_mask = np.array([n in self.class_names for n in data_dict['gt_names']], dtype=np.bool_)

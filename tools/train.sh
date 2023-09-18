@@ -4,15 +4,15 @@
 #CONFIG_FILE=avltruck_models/IA-SSD.yaml
 #CONFIG_FILE=avltruck_models/second.yaml
 #DATASET=zod
-DATASET=avltruck
-#DATASET=avlrooftop
+#DATASET=avltruck
+DATASET=avlrooftop
 #MODEL=IA-SSD
 MODEL=second
 #MODEL=pointpillar_1x
-EXTRA_TAG=full_1epochs
-EPOCHS=1
+EXTRA_TAG=full_80epochs_1
+EPOCHS=80
 SUBSAMPLE=1
-CKPT_SAVE_INTERVAL=1
+CKPT_SAVE_INTERVAL=80
 NUM_GPUS=2
 
 CONFIG_FILE=${DATASET}_models/$MODEL.yaml

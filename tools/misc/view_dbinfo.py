@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 #%% load pickle file "avl_dbinfos.pkl" which is in AVLTruck folder
 #load pickle file "avl_dbinfos.pkl" which is in AVLTruck folder
-with open('/data/AVLTruck/avl_dbinfos_train.pkl', 'rb') as f:
+with open('../../data/avltruck/avl_dbinfos_train.pkl', 'rb') as f:
     #store as dataframe
     avl_dbinfos = pickle.load(f)
 
@@ -43,7 +43,7 @@ print(df.groupby('class')['num_points_in_gt'].count())
 
 #%% load pickle file "avl_dbinfos.pkl" which is in AVLRooftop folder
 #load pickle file "avl_dbinfos.pkl" which is in AVLRooftop folder
-with open('/data/AVLRooftop/avl_dbinfos_train.pkl', 'rb') as f:
+with open('../../data/avlrooftop/avl_dbinfos_train.pkl', 'rb') as f:
     #store as dataframe
     avl_dbinfos = pickle.load(f)
 
@@ -80,7 +80,7 @@ print("Number of instances per class:")
 print(df.groupby('class')['num_points_in_gt'].count())
 #%% load pickle file "zod_dbinfos.pkl" which is in zod folder
 
-with open('/data/zod/zod_dbinfos_train_small.pkl', 'rb') as f:
+with open('../../data/zod/zod_dbinfos_train_small.pkl', 'rb') as f:
     #store as dataframe
     zod_dbinfos = pickle.load(f)
 

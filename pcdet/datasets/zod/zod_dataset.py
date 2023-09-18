@@ -11,8 +11,6 @@ from ..dataset import DatasetTemplate
 from zod import ZodFrames
 from zod.constants import AnnotationProject, TRAIN, VAL
 
-
-
 class ZODDataset(DatasetTemplate):
     def __init__(self, dataset_cfg, class_names, training=True, root_path=None, logger=None, creating_infos=False):
         """
@@ -55,8 +53,6 @@ class ZODDataset(DatasetTemplate):
         self.map_class_to_kitti = self.dataset_cfg.get('MAP_CLASS_TO_KITTI',None)
 
         self.disregard_truncated = self.dataset_cfg.get('DISREGARD_TRUNCATED',False)
-
-        self.remove_truncated_gtsampling = self.dataset_cfg.get('REMOVE_TRUNCATED_GTSAMPLING',False)
 
     def map_merge_classes(self):
         if self.dataset_cfg.get('MAP_MERGE_CLASS', None) is None:
@@ -147,7 +143,7 @@ class ZODDataset(DatasetTemplate):
         positive_depth = camera_data[:, 2] > 0
         camera_data = camera_data[positive_depth]
         if not camera_data.any():
-            return camera_data, positive_depth
+            return positive_depth
 
         camera_data, mask = get_points_in_camera_fov(calib.cameras[camera].field_of_view, camera_data)
 
@@ -214,6 +210,7 @@ class ZODDataset(DatasetTemplate):
         annotations['dimensions'] = np.array([obj.box3d.size for obj in obj_annos])
         annotations['location'] = np.array([obj.box3d.center for obj in obj_annos])
         annotations['yaw'] = np.array([obj.box3d.orientation.yaw_pitch_roll[0] for obj in obj_annos])
+        annotations['corners'] = np.array([obj.box3d.corners for obj in obj_annos])
 
         if len(obj_annos) == 0:
             annotations['gt_boxes_lidar'] = np.zeros((0,7))
@@ -237,8 +234,7 @@ class ZODDataset(DatasetTemplate):
         annotations['obj_annos'] = obj_annos
 
         #calculate truncation
-        corners = np.array([obj.box3d.corners for obj in obj_annos])
-        annotations['truncated'] = self.get_object_truncation(corners, zod_frame.calibration)
+        annotations['truncated'] = self.get_object_truncation(annotations['corners'], zod_frame.calibration)
         
         return annotations
 
@@ -255,7 +251,45 @@ class ZODDataset(DatasetTemplate):
         split_dir = self.root_path  / (self.split + '_' + version+ '.txt')
         self.sample_id_list = [x.strip() for x in open
                                (split_dir).readlines()] if split_dir.exists() else None
+    
+    @staticmethod
+    def get_corners_zod(bboxes):
+        """Get the corners of 3d bboxes given in 
+            boxes3d:  (N, 7) [x, y, z, dx, dy, dz, heading], (x, y, z) is the box center
 
+
+        Order of points are:
+         - rear left bottom
+         - rear right bottom
+         - front right bottom
+         - front left bottom
+         - rear left top
+         - rear right top
+         - front right top
+         - front left top
+        """
+        # Get the 3d corners of the box
+        corner_template = np.array(
+            [
+                [-0.5, -0.5, -0.5],
+                [0.5, -0.5, -0.5],
+                [0.5, 0.5, -0.5],
+                [-0.5, 0.5, -0.5],
+                [-0.5, -0.5, 0.5],
+                [0.5, -0.5, 0.5],
+                [0.5, 0.5, 0.5],
+                [-0.5, 0.5, 0.5],
+            ]
+        )
+        corners = np.zeros((bboxes.shape[0], 8, 3))
+        for i in range(bboxes.shape[0]):
+            corners[i] = (corner_template * bboxes[i, 3:6])  # l, w, h, x, y, z, r -> x, y, z, l, w, h, r
+        corners= common_utils.rotate_points_along_z(corners, bboxes[:,6])  # rotate inplace
+        for i in range(bboxes.shape[0]):
+            corners[i] += bboxes[i, 0:3]
+        
+        return corners
+    
     def __len__(self):
         if self._merge_all_iters_to_one_epoch:
             return len(self.sample_id_list) * self.total_epochs
@@ -283,8 +317,11 @@ class ZODDataset(DatasetTemplate):
             input_dict.update({
                 'gt_names': annos['name'],
                 'gt_boxes': annos['gt_boxes_lidar'],
-#                'gt_truncation': annos['truncated'],
             })
+
+        if self.disregard_truncated:   
+            input_dict['truncated'] = annos['truncated']
+
 
         data_dict = self.prepare_data(data_dict=input_dict)
 
@@ -294,15 +331,18 @@ class ZODDataset(DatasetTemplate):
         #         data_dict["gt_boxes"][:,2] -= z_shift
         #         data_dict['points'][:,2] -= np.array(z_shift, dtype=np.float64)
 
-        #if self.disregard_truncated:            
-        #    gt_boxes = data_dict['gt_boxes']
-        #    
-        #    #set truncated gt boxes to label (last entry) to -1
-        #    #XXX or do i need to set them to label*-1?
-        #    corners = box_utils.boxes_to_corners_3d(gt_boxes)
-        #    truncated = self.get_object_truncation(corners, self.zod_frames[index].calibration)
-        #    gt_boxes[truncated, -1] = -1
-        #    data_dict['gt_boxes'] = gt_boxes
+        if self.disregard_truncated:            
+            #set truncated gt boxes to label (last entry) to -1
+            #XXX or do i need to set them to label*-1?
+            gt_boxes = data_dict['gt_boxes']
+            truncated = data_dict['truncated'].astype(np.bool)
+            gt_boxes[truncated, -1] = -1
+            data_dict['gt_boxes'] = gt_boxes
+
+            num_truncated = truncated.sum()
+            print("%d/%d gt boxes truncated" % (num_truncated, len(annos['name']))) 
+            print("%d/%d gt+sampled boxes truncated" % (num_truncated, len(truncated)))
+
 
         return data_dict
 
@@ -547,10 +587,8 @@ def split_zod_data(data_path, versions):
 
 def create_zod_infos(dataset_cfg, class_names, data_path, save_path, workers=4):
 
-    #splits = ['train', 'val']
-    splits = ['train']
-    #versions = ['full', 'mini', 'small']
-    versions = ['small']
+    splits = ['train', 'val']
+    versions = ['full', 'mini', 'small']
 
     split_zod_data(data_path, versions)
 
@@ -564,16 +602,16 @@ def create_zod_infos(dataset_cfg, class_names, data_path, save_path, workers=4):
 
     for split in splits:
         for version in versions:
-            #print('------------------------generating infos for version %s ,split %s------------------------' % (version, split))
-            #dataset.set_split(split, version)
-            #zod_infos = dataset.get_infos(
-            #    class_names, num_workers=workers, has_label=True, 
-            #    num_features=num_features, count_inside_pts=True
-            #)
+            print('------------------------generating infos for version %s ,split %s------------------------' % (version, split))
+            dataset.set_split(split, version)
+            zod_infos = dataset.get_infos(
+                class_names, num_workers=workers, has_label=True, 
+                num_features=num_features, count_inside_pts=True
+            )
             filename = save_path / ('zod_infos_%s_%s.pkl' % (split ,version))
-            #with open(filename, 'wb') as f:
-            #    pickle.dump(zod_infos, f)
-            #print('ZOD info train file is saved to %s' % filename)
+            with open(filename, 'wb') as f:
+                pickle.dump(zod_infos, f)
+            print('ZOD info train file is saved to %s' % filename)
 
             if split == 'train':
                 print('------------------------generating gt db for version %s------------------------' % version)

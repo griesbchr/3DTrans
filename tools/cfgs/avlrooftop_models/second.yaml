@@ -55,7 +55,7 @@ MODEL:
         },
         {
           "class_name": "Cyclist",
-          "anchor_sizes": [[2.002945, 0.768056, 1.093788]],
+          "anchor_sizes": [[2.145372, 0.778703, 1.758105]],
           "anchor_rotations": [0, 1.57],
           "anchor_bottom_heights": [0],
           "align_center": False,
@@ -65,7 +65,7 @@ MODEL:
         },
         {
           "class_name": "Pedestrian",
-          "anchor_sizes": [[0.916108, 0.876412, 1.732892]],
+          "anchor_sizes": [[0.851837, 0.818911, 1.728446]],
           "anchor_rotations": [0, 1.57],
           "anchor_bottom_heights": [0],
           "align_center": False,

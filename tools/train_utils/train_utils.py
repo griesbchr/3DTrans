@@ -24,17 +24,20 @@ def train_one_epoch(model, optimizer, train_loader, model_func, lr_scheduler, ac
 
     for cur_it in range(total_it_each_epoch):
         end = time.time()
-        try:
-            batch = next(dataloader_iter)
-        except (StopIteration, ValueError):
-            if logger is not None:
-                logger.warning("Skipping batch with sequences:")
-                logger.warning(batch["frame_id"])
-            else:
-                print("[WARNING]Skipping batch with sequences:")
-                print(batch["frame_id"])
-            dataloader_iter = iter(train_loader)
-            batch = next(dataloader_iter)
+        batch = next(dataloader_iter)
+
+        #try:
+        #    batch = next(dataloader_iter)
+        #except (StopIteration, ValueError) as e:
+        #    if logger is not None:
+        #        logger.warning("Skipping batch with sequences:")
+        #        logger.warning(batch["frame_id"])
+        #        logger.warning("error message: ", e)
+        #    else:
+        #        print("[WARNING]Skipping batch with sequences:")
+        #        print(batch["frame_id"])
+        #    dataloader_iter = iter(train_loader)
+        #    batch = next(dataloader_iter)
         
         data_timer = time.time()
         cur_data_time = data_timer - end

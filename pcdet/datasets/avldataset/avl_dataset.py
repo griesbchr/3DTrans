@@ -290,6 +290,7 @@ class AVLDataset(DatasetTemplate):
                                     used_classes=None,
                                     split='train'):
         import torch
+        from tqdm import tqdm
 
         database_save_path = Path(
             self.root_path) / ('gt_database' if split == 'train' else
@@ -303,7 +304,7 @@ class AVLDataset(DatasetTemplate):
         with open(info_path, 'rb') as f:
             infos = pickle.load(f)
 
-        for k in range(len(infos)):
+        for k in tqdm(range(len(infos)), desc='gt_database'):
             print('gt_database sample: %d/%d' % (k + 1, len(infos)))
             info = infos[k]
             sample_idx = info['point_cloud']['lidar_idx']
@@ -355,7 +356,9 @@ class AVLDataset(DatasetTemplate):
         if self._merge_all_iters_to_one_epoch:
             index = index % len(self.avl_infos)
 
-        info = copy.deepcopy(self.avl_infos[index])
+        frame_id = self.avl_infos[index]
+        
+        info = copy.deepcopy(frame_id)
 
         sample_idx = info['point_cloud']['lidar_idx']
         get_item_list = self.dataset_cfg.get('GET_ITEM_LIST', ['points'])

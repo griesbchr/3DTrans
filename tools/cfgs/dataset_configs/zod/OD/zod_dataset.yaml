@@ -36,10 +36,7 @@ POINT_CLOUD_RANGE: [-75.2, -75.2, -2, 123.2, 75.2, 4] # ZOD
 FOV_POINTS_ONLY: True
 
 #dont calculate loss for boxes that are truncated
-DISREGARD_TRUNCATED: False
-
-#dont store truncated boxes in gt database
-REMOVE_TRUNCATED_GTSAMPLING: True
+DISREGARD_TRUNCATED: True
 
 #position of the groundplane relative to data origin (usually lidar sensor)
 #used to shift data to the ground plane when generating infos and at training time (get_lidar)

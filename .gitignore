@@ -40,3 +40,5 @@ data/zod/gt_database_full
 data/zod/gt_database_mini
 data/zod/gt_database_small
 data/zod/single_frames
+data/zod/trainval-frames-mini.json
+data/zod/trainval-frames-full.json

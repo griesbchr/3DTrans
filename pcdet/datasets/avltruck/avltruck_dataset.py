@@ -84,7 +84,7 @@ class AVLTruckDataset(AVLDataset):
         names = np.array(names)
         if len(gt_boxes_lidar) == 0:
             gt_boxes_lidar = np.zeros((0, 7))
-            names = np.zeros((0, 1))
+            names = np.zeros((0))
         return {"gt_boxes_lidar": gt_boxes_lidar, "name": names}
 
     def get_lidar(self, idx):
@@ -102,7 +102,7 @@ class AVLTruckDataset(AVLDataset):
     
 
     def get_infos(self,
-                  num_workers=8,
+                  num_workers=4,
                   has_label=True,
                   count_inside_pts=True,
                   sample_id_list=None):
@@ -138,11 +138,11 @@ class AVLTruckDataset(AVLDataset):
         sample_id_list = sample_id_list if sample_id_list is not None else self.sample_id_list
         from tqdm import tqdm
         #debug
-        #infos = []
-        #for i, sid in enumerate(sample_id_list):
-        #    infos.append(process_single_scene(sid))
-        infos = Parallel(n_jobs=num_workers)(delayed(process_single_scene)(sid)
-                                             for sid in tqdm(sample_id_list))
+        infos = []
+        for i, sid in tqdm(enumerate(sample_id_list),total=len(sample_id_list)):
+            infos.append(process_single_scene(sid))
+        #infos = Parallel(n_jobs=num_workers)(delayed(process_single_scene)(sid)
+        #                                     for sid in tqdm(sample_id_list))
         return infos
 
 def split_avl_data(data_path, train_test_split=0.8):
@@ -212,7 +212,7 @@ def create_avl_infos(dataset_cfg,
                      class_names,
                      data_path,
                      save_path,
-                     workers=8,
+                     workers=4,
                      creating_infos=True):
     dataset = AVLTruckDataset(dataset_cfg=dataset_cfg,
                          class_names=class_names,

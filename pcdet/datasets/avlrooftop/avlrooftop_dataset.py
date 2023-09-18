@@ -158,12 +158,12 @@ class AVLRooftopDataset(AVLDataset):
         sample_id_list = sample_id_list if sample_id_list is not None else self.sample_id_list
         
         #debug
-        #infos = []
-        #for sample_idx in sample_id_list:
-        #    infos.append(process_single_scene(sample_idx))
+        infos = []
+        for sample_idx in tqdm(sample_id_list, desc='generate infos'):
+            infos.append(process_single_scene(sample_idx))
         
-        infos = Parallel(n_jobs=num_workers)(delayed(process_single_scene)(sid)
-                                             for sid in sample_id_list)
+        #infos = Parallel(n_jobs=num_workers)(delayed(process_single_scene)(sid)
+        #                                     for sid in sample_id_list)
         return infos
     
 def split_avl_data(data_path, sequence_file_path, train_test_split=0.8):

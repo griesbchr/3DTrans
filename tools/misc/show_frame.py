@@ -8,6 +8,12 @@ from scipy.spatial.transform import Rotation
 import yaml
 from easydict import EasyDict
 
+from pcdet.models import build_network, load_data_to_gpu
+from pcdet.datasets import build_dataloader
+from pcdet.config import cfg, cfg_from_yaml_file
+import torch
+from pcdet.utils import common_utils
+
 import open3d 
 from tools.visual_utils import open3d_vis_utils as vis
 
@@ -21,6 +27,8 @@ def main():
     parser.add_argument('--ckpt', type=str, default=None, help='specify the pretrained model path')
 
     args = parser.parse_args()
+
+    logger = common_utils.create_logger()
 
     if (args.dataset == "avltruck"):
         from pcdet.datasets.avltruck.avltruck_dataset import AVLTruckDataset
@@ -50,12 +58,43 @@ def main():
 
         if args.frame_idx is None:
             args.frame_idx = "055820"
-        class_names = None
+        
+        class_names = ["Vehicle_Car", 
+                       "Vehicle_Van", 
+                       "Vehicle_Truck", 
+                       "Vehicle_Trailer", 
+                       "Vehicle_Bus", 
+                       "Vehicle_HeavyEquip", 
+                       "Vehicle_TramTrain",
+                       "VulnerableVehicle_Bicycle",
+                       "VulnerableVehicle_Motorcycle",
+                       "Pedestrian"]
+        
+        #dataset = ZODDataset(dataset_cfg, class_names=class_names)
+        dataset, train_loader, train_sampler = build_dataloader(dataset_cfg=dataset_cfg,
+                                        class_names=class_names,
+                                        batch_size=1,
+                                        dist=False,
+                                        workers=0,
+                                        logger=logger,
+                                        training=False)
+        annos = dataset.get_label(args.frame_idx, class_names)
+        
+        #filter annos dict for class names
+        mask = np.isin(annos['name'], class_names)
+        annos["name"] = annos["name"][mask]
+        annos["gt_boxes_lidar"] = annos["gt_boxes_lidar"][mask]
+        annos["truncated"] = annos["truncated"][mask]
 
-        dataset = ZODDataset(dataset_cfg, class_names=class_names)
-        annos = dataset.get_label(args.frame_idx)
+
         gt_boxes_lidar = annos['gt_boxes_lidar'] 
 
+        points = dataset.get_lidar(args.frame_idx)
+        from pcdet.utils import box_utils
+        corners = box_utils.boxes_to_corners_3d(gt_boxes_lidar)
+        truncated = dataset.get_object_truncation(corners, dataset.zod_frames[args.frame_idx].calibration)
+        corners_alt = np.array([obj_anno.box3d.corners for obj_anno in annos["obj_annos"]])
+        print(truncated)
         #get annos from info files
         #dataset.set_split('train')
         #sample_id_list = dataset.sample_id_list
@@ -70,6 +109,7 @@ def main():
         
         if args.frame_idx is None:
             args.frame_idx = "sequences/CITY_Sunny_junction_20200319140600/unpacked/lidar/0026.pkl"
+            args.frame_idx = "sequences/CITY_Rain_street_20200511124709/unpacked/lidar/0020.pkl" #no bike human label
         class_names = None
 
         dataset = AVLRooftopDataset(dataset_cfg, 
@@ -90,13 +130,8 @@ def main():
 
     #load model if specified
     if args.ckpt is not None:
-        from pcdet.models import build_network, load_data_to_gpu
-        from pcdet.config import cfg, cfg_from_yaml_file
-        from pcdet.datasets import build_dataloader
-        import torch
-        from pcdet.utils import common_utils
+
         
-        logger = common_utils.create_logger()
 
         #get model config 
         ckpt_path = Path(args.ckpt)
@@ -106,13 +141,7 @@ def main():
 
         #parse config
         cfg_from_yaml_file(cfg_path, cfg)
-        dataset, train_loader, train_sampler = build_dataloader(dataset_cfg=dataset_cfg,
-                                        class_names=cfg.CLASS_NAMES,
-                                        batch_size=1,
-                                        dist=False,
-                                        workers=0,
-                                        logger=logger,
-                                        training=False)
+
 
         model = build_network(model_cfg=cfg.MODEL, num_class=len(cfg.CLASS_NAMES), dataset=dataset)
         model.load_params_from_file(filename=args.ckpt, logger=logger, to_cpu=False)

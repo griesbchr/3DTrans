@@ -47,7 +47,7 @@ MODEL:
       [
         {
           "class_name": "Vehicle",
-          "anchor_sizes": [[4.0, 1.841, 1.500]],
+          "anchor_sizes": [[4.061601, 1.871461, 1.543918]],
           "anchor_rotations": [0, 1.57],
           "anchor_bottom_heights": [0],
           "align_center": False,
@@ -57,7 +57,7 @@ MODEL:
         },
         {
           "class_name": "Cyclist",
-          "anchor_sizes": [[1.800, 0.681, 1.750]],
+          "anchor_sizes": [[1.799321, 0.700711, 1.723687]],
           "anchor_rotations": [0, 1.57],
           "anchor_bottom_heights": [0],
           "align_center": False,
@@ -67,7 +67,7 @@ MODEL:
         },
         {
           "class_name": "Pedestrian",
-          "anchor_sizes": [[0.600, 0.645, 1.708]],
+          "anchor_sizes": [[0.620373, 0.639181, 1.671025]],
           "anchor_rotations": [0, 1.57],
           "anchor_bottom_heights": [0],
           "align_center": False,
