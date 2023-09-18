@@ -239,6 +239,8 @@ class DataBaseSampler(object):
         points = np.concatenate([obj_points, points], axis=0)
         gt_names = np.concatenate([gt_names, sampled_gt_names], axis=0)
         gt_boxes = np.concatenate([gt_boxes, sampled_gt_boxes], axis=0)
+        if 'truncated' in data_dict:
+            data_dict['truncated'] = np.concatenate([data_dict['truncated'], np.zeros_like(sampled_gt_names, dtype=np.bool)], axis=0)
         data_dict['gt_boxes'] = gt_boxes
         data_dict['gt_names'] = gt_names
         data_dict['points'] = points
