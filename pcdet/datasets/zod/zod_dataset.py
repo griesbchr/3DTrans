@@ -215,6 +215,8 @@ class ZODDataset(DatasetTemplate):
         if len(obj_annos) == 0:
             annotations['gt_boxes_lidar'] = np.zeros((0,7))
             annotations['obj_annos'] = obj_annos
+            annotations['truncated'] = np.zeros((0))
+            annotations['corners'] = np.zeros((0,8,3))
             return annotations
 
         #rotate and shift coordinate system to match waymo (90 deg around z axis and shift to ground plane)
@@ -252,43 +254,6 @@ class ZODDataset(DatasetTemplate):
         self.sample_id_list = [x.strip() for x in open
                                (split_dir).readlines()] if split_dir.exists() else None
     
-    @staticmethod
-    def get_corners_zod(bboxes):
-        """Get the corners of 3d bboxes given in 
-            boxes3d:  (N, 7) [x, y, z, dx, dy, dz, heading], (x, y, z) is the box center
-
-
-        Order of points are:
-         - rear left bottom
-         - rear right bottom
-         - front right bottom
-         - front left bottom
-         - rear left top
-         - rear right top
-         - front right top
-         - front left top
-        """
-        # Get the 3d corners of the box
-        corner_template = np.array(
-            [
-                [-0.5, -0.5, -0.5],
-                [0.5, -0.5, -0.5],
-                [0.5, 0.5, -0.5],
-                [-0.5, 0.5, -0.5],
-                [-0.5, -0.5, 0.5],
-                [0.5, -0.5, 0.5],
-                [0.5, 0.5, 0.5],
-                [-0.5, 0.5, 0.5],
-            ]
-        )
-        corners = np.zeros((bboxes.shape[0], 8, 3))
-        for i in range(bboxes.shape[0]):
-            corners[i] = (corner_template * bboxes[i, 3:6])  # l, w, h, x, y, z, r -> x, y, z, l, w, h, r
-        corners= common_utils.rotate_points_along_z(corners, bboxes[:,6])  # rotate inplace
-        for i in range(bboxes.shape[0]):
-            corners[i] += bboxes[i, 0:3]
-        
-        return corners
     
     def __len__(self):
         if self._merge_all_iters_to_one_epoch:
@@ -319,9 +284,11 @@ class ZODDataset(DatasetTemplate):
                 'gt_boxes': annos['gt_boxes_lidar'],
             })
 
-        if self.disregard_truncated:   
-            input_dict['truncated'] = annos['truncated']
-
+        if self.disregard_truncated:
+            if "truncated" in annos:
+                input_dict['truncated'] = annos['truncated']
+            else:
+                print("\nWARNING: truncated not in annos for sample id", sample_idx)
 
         data_dict = self.prepare_data(data_dict=input_dict)
 
@@ -331,7 +298,7 @@ class ZODDataset(DatasetTemplate):
         #         data_dict["gt_boxes"][:,2] -= z_shift
         #         data_dict['points'][:,2] -= np.array(z_shift, dtype=np.float64)
 
-        if self.disregard_truncated:            
+        if "truncated" in data_dict:            
             #set truncated gt boxes to label (last entry) to -1
             #XXX or do i need to set them to label*-1?
             gt_boxes = data_dict['gt_boxes']
@@ -343,7 +310,7 @@ class ZODDataset(DatasetTemplate):
             #num_truncated = truncated.sum()
             #print("%d/%d gt boxes truncated" % (num_truncated, len(annos['name']))) 
             #print("%d/%d gt+sampled boxes truncated" % (num_truncated, len(truncated)))
-            
+
             data_dict.pop('truncated')
 
         return data_dict
@@ -442,6 +409,7 @@ class ZODDataset(DatasetTemplate):
         '''
         import concurrent.futures as futures
         import time
+        from tqdm import tqdm
 
         def process_single_scene(sample_idx):
             print('%s sample_idx: %s' % (self.split, sample_idx))
@@ -471,8 +439,11 @@ class ZODDataset(DatasetTemplate):
                 annotations['num_points_in_gt'] = num_points_in_gt
             
             info['annos'] = annotations
-
-
+            
+            #check if "truncated" is in annotations
+            if "truncated" not in annotations:
+                print("\nWARNING: truncated not in annos for sample id", sample_idx)
+            
             return info
         
         load_version = "mini" if self.version == 'mini' else 'full'
@@ -482,7 +453,7 @@ class ZODDataset(DatasetTemplate):
         # create a thread pool to improve the velocity
         start_time = time.time()
         with futures.ThreadPoolExecutor(num_workers) as executor:
-            infos = executor.map(process_single_scene, sample_id_list)
+            infos = tqdm(executor.map(process_single_scene, sample_id_list), total=len(sample_id_list))
         end_time = time.time()
         print("Total time for loading infos: ", end_time - start_time, "s")
         print("Loading speed for infos: ", len(sample_id_list) / (end_time - start_time), "sample/s")
@@ -491,7 +462,7 @@ class ZODDataset(DatasetTemplate):
 
     def create_groundtruth_database(self, info_path=None, version="full", used_classes=None, split='train', num_point_features=4):
         import torch
-        
+        from tqdm import tqdm
         database_save_path = Path(self.root_path) / ('gt_database_%s' % version if split == 'train' else ('gt_database_%s_%s' % (split, version)))
         db_info_save_path = Path(self.root_path) / ('zod_dbinfos_%s_%s.pkl' % (split, version))
 
@@ -504,7 +475,7 @@ class ZODDataset(DatasetTemplate):
         with open(info_path, 'rb') as f:
             infos = pickle.load(f)
 
-        for k in range(len(infos)):
+        for k in tqdm(range(len(infos)), total=len(infos)):
             print('gt_database sample: %d/%d' % (k + 1, len(infos)))
             info = infos[k]
             sample_idx = info['point_cloud']['lidar_idx']
@@ -590,7 +561,8 @@ def split_zod_data(data_path, versions):
 def create_zod_infos(dataset_cfg, class_names, data_path, save_path, workers=4):
 
     splits = ['train', 'val']
-    versions = ['full', 'mini', 'small']
+    #versions = ['full', 'mini', 'small']
+    versions = ['small']
 
     split_zod_data(data_path, versions)
 
