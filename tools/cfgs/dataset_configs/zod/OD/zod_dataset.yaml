@@ -6,7 +6,7 @@
 DATASET: "ZODDataset"
 DATA_PATH: "../data/zod"
 
-VERSION: "small" # 'mini', 'small' or 'full'    #dont forget to change info paths below!
+VERSION: "full" # 'mini', 'small' or 'full'    #dont forget to change info paths below!
 
 #maps the classes form the dataset info files to classes from the detector
 #the right-hand names need to match the class names in the detector config
@@ -55,7 +55,7 @@ POINT_FEATURE_ENCODING:
     src_feature_list: ["x", "y", "z", "intensity"],
   }
 
-INFO_PATH: { "train": zod_infos_train_small.pkl, "test": zod_infos_val_small.pkl }
+INFO_PATH: { "train": zod_infos_train_full.pkl, "test": zod_infos_val_full.pkl }
 
 DATA_AUGMENTOR:
   DISABLE_AUG_LIST: ["placeholder"]
@@ -64,7 +64,7 @@ DATA_AUGMENTOR:
     - NAME: gt_sampling
       USE_ROAD_PLANE: False
       DB_INFO_PATH:
-        - zod_dbinfos_train_small.pkl
+        - zod_dbinfos_train_full.pkl
       PREPARE:
         {
           filter_by_min_points:

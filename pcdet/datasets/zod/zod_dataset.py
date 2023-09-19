@@ -367,6 +367,7 @@ class ZODDataset(DatasetTemplate):
         return annos
     
     def evaluation(self, det_annos, class_names, **kwargs):
+        #class_names are dataset.class_names
         if 'annos' not in self.zod_infos[0].keys():
             return 'No ground-truth boxes for evaluation', {}
 
@@ -374,12 +375,25 @@ class ZODDataset(DatasetTemplate):
             from ..kitti.kitti_object_eval_python import eval as kitti_eval
             from ..kitti import kitti_utils
 
+            #if  annos has "truncated" annotations then add, else add empty np array
+            truncation_annos = []
+            for anno in eval_gt_annos:
+                if "truncated" not in anno:
+                    truncation_annos.append(np.array([]))
+                else: 
+                    truncation_annos.append(copy.deepcopy(anno["truncated"].astype(np.float64)))
+            
             kitti_utils.transform_annotations_to_kitti_format(
                 eval_det_annos, map_name_to_kitti=map_name_to_kitti)
             kitti_utils.transform_annotations_to_kitti_format(
                 eval_gt_annos, map_name_to_kitti=map_name_to_kitti,
                 info_with_fakelidar=self.dataset_cfg.get('INFO_WITH_FAKELIDAR', False)
             )
+
+            # add truncation information to gt annotations
+            for anno, truncation in zip(eval_gt_annos, truncation_annos):
+                anno["truncated"] = truncation
+
             kitti_class_names = [map_name_to_kitti[x] for x in class_names]
             ap_result_str, ap_dict = kitti_eval.get_custom_eval_result(
                 gt_annos=eval_gt_annos, dt_annos=eval_det_annos, 
