@@ -249,6 +249,8 @@ class DatasetTemplate(torch_data.Dataset):
             selected = common_utils.keep_arrays_by_name(data_dict['gt_names'], self.class_names)
             data_dict['gt_boxes'] = data_dict['gt_boxes'][selected]
             data_dict['gt_names'] = data_dict['gt_names'][selected]
+            if 'truncated' in data_dict:	
+                data_dict['truncated'] = data_dict['truncated'][selected]
             # for pseudo label has ignore labels.
             if 'gt_classes' not in data_dict:
                 gt_classes = np.array([self.class_names.index(n) + 1 for n in data_dict['gt_names']], dtype=np.int32)

@@ -38,7 +38,7 @@ def parse_config():
     parser.add_argument('--eval_all', action='store_true', default=False, help='whether to evaluate all checkpoints')
     parser.add_argument('--ckpt_dir', type=str, default=None, help='specify a ckpt directory to be evaluated if needed')
     parser.add_argument('--save_to_file', action='store_true', default=False, help='')
-
+    parser.add_argument('--crosseval_dataset_cfg', type=str, default=None, help='specify the dataset cfg for cross evaluation')
     args = parser.parse_args()
 
     cfg_from_yaml_file(args.cfg_file, cfg)
@@ -200,6 +200,16 @@ def main():
         test_set, test_loader, sampler = build_dataloader(
             dataset_cfg=cfg.DATA_CONFIG_TAR,
             class_names=cfg.DATA_CONFIG_TAR.CLASS_NAMES,
+            batch_size=args.batch_size,
+            dist=dist_test, workers=args.workers, logger=logger, training=False
+        )
+    elif args.crosseval_dataset_cfg is not None:
+        import yaml
+        from easydict import EasyDict
+        dataset_cfg = EasyDict(yaml.safe_load(open(args.crosseval_dataset_cfg)))
+        test_set, test_loader, sampler = build_dataloader(
+            dataset_cfg=dataset_cfg,
+            class_names=cfg.CLASS_NAMES,
             batch_size=args.batch_size,
             dist=dist_test, workers=args.workers, logger=logger, training=False
         )

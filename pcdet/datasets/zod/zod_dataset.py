@@ -195,15 +195,15 @@ class ZODDataset(DatasetTemplate):
 
         return points
     
-    def get_label(self, sample_idx=123456, class_names=None):
+    def get_label(self, sample_idx):
         zod_frame = self.zod_frames[sample_idx]
         obj_annos = zod_frame.get_annotation(AnnotationProject.OBJECT_DETECTION)
         #filter out objects without 3d anno
         obj_annos = [obj for obj in obj_annos if obj.box3d is not None]     
         #print("filtered out %d objects without 3d anno" % (len(zod_frame.get_annotation(AnnotationProject.OBJECT_DETECTION)) - len(obj_annos)))
-        if class_names is not None:
+        #if self.class_names is not None:
             #filter out objects that are not in class_names
-            obj_annos = [obj for obj in obj_annos if obj.subclass in class_names]
+        #    obj_annos = [obj for obj in obj_annos if obj.subclass in self.class_names]
             
         annotations = {}
         annotations['name'] = np.array([obj.subclass for obj in obj_annos])
@@ -434,7 +434,10 @@ class ZODDataset(DatasetTemplate):
             if not has_label:
                 return info
 
-            annotations = self.get_label(sample_idx, class_names)            
+            annotations = self.get_label(sample_idx)    
+            
+            #filter out annos where name is not in class_names
+            annotations = common_utils.drop_info_with_name(annotations, name=class_names)
 
             if count_inside_pts:   
                 obj_annos = annotations.pop("obj_annos")
