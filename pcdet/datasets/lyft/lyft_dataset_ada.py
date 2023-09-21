@@ -160,7 +160,7 @@ class ActiveLyftDataset(DatasetTemplate):
         #         input_dict['gt_boxes'] = None
             
         #     # for debug only
-        #     # gt_boxes_mask = np.array([n in self.class_names for n in input_dict['gt_names']], dtype=bool_)
+        #     # gt_boxes_mask = np.array([n in self.class_names for n in input_dict['gt_names']], dtype=bool)
         #     # debug_dict = {'gt_boxes': copy.deepcopy(input_dict['gt_boxes'][gt_boxes_mask])}
         
         # if self.dataset_cfg.get('FOV_POINTS_ONLY', None):

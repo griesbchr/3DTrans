@@ -112,7 +112,7 @@ class ONCEDataset(DatasetTemplate):
 
             if self.dataset_cfg.get('REMOVE_ORIGIN_GTS', None) and self.training:
                 input_dict['points'] = box_utils.remove_points_in_boxes3d(input_dict['points'], input_dict['gt_boxes'])
-                mask = np.zeros(gt_boxes_lidar.shape[0], dtype=bool_)
+                mask = np.zeros(gt_boxes_lidar.shape[0], dtype=bool)
                 input_dict['gt_boxes'] = input_dict['gt_boxes'][mask]
                 input_dict['gt_names'] = input_dict['gt_names'][mask]
 

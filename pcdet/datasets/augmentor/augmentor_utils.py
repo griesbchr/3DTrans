@@ -759,7 +759,7 @@ def scale_pre_object(gt_boxes, points, scale_perturb, num_try=50):
         # detect conflict
         # [num_try, N-1]
         if num_boxes > 1:
-            self_mask = np.ones(num_boxes, dtype=bool_)
+            self_mask = np.ones(num_boxes, dtype=bool)
             self_mask[k] = False
             iou_matrix = iou3d_nms_utils.boxes_bev_iou_cpu(scl_box, gt_boxes[self_mask])
             ious = np.max(iou_matrix, axis=1)
@@ -888,7 +888,7 @@ def rotate_objects(gt_boxes, points, gt_boxes_mask, rotation_perturb, prob, num_
         # detect conflict
         # [num_try, N-1]
         if num_boxes > 1:
-            self_mask = np.ones(num_boxes, dtype=bool_)
+            self_mask = np.ones(num_boxes, dtype=bool)
             self_mask[idx] = False
             iou_matrix = iou3d_nms_utils.boxes_bev_iou_cpu(rot_box, gt_boxes[self_mask])
             ious = np.max(iou_matrix, axis=1)

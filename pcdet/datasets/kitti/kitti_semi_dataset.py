@@ -416,7 +416,7 @@ class KittiSemiDataset(SemiDatasetTemplate):
                 input_dict['gt_boxes2d'] = annos["bbox"]
             if self.dataset_cfg.get('REMOVE_ORIGIN_GTS', None) and self.training:
                 input_dict['points'] = box_utils.remove_points_in_boxes3d(input_dict['points'], input_dict['gt_boxes'])
-                mask = np.zeros(gt_boxes_lidar.shape[0], dtype=bool_)
+                mask = np.zeros(gt_boxes_lidar.shape[0], dtype=bool)
                 input_dict['gt_boxes'] = input_dict['gt_boxes'][mask]
                 input_dict['gt_names'] = input_dict['gt_names'][mask]
 
@@ -428,7 +428,7 @@ class KittiSemiDataset(SemiDatasetTemplate):
                 input_dict['road_plane'] = road_plane
                 
             # for debug only
-            # gt_boxes_mask = np.array([n in self.class_names for n in input_dict['gt_names']], dtype=bool_)
+            # gt_boxes_mask = np.array([n in self.class_names for n in input_dict['gt_names']], dtype=bool)
             # debug_dict = {'gt_boxes': copy.deepcopy(gt_boxes_lidar[gt_boxes_mask])}
             
         if "points" in get_item_list:
@@ -513,7 +513,7 @@ class KittiPretrainDataset(KittiSemiDataset):
                 input_dict['gt_boxes2d'] = annos["bbox"]
             if self.dataset_cfg.get('REMOVE_ORIGIN_GTS', None) and self.training:
                 input_dict['points'] = box_utils.remove_points_in_boxes3d(input_dict['points'], input_dict['gt_boxes'])
-                mask = np.zeros(gt_boxes_lidar.shape[0], dtype=bool_)
+                mask = np.zeros(gt_boxes_lidar.shape[0], dtype=bool)
                 input_dict['gt_boxes'] = input_dict['gt_boxes'][mask]
                 input_dict['gt_names'] = input_dict['gt_names'][mask]
 
@@ -599,7 +599,7 @@ class KittiLabeledDataset(KittiSemiDataset):
             input_dict['gt_boxes2d'] = annos["bbox"]
         if self.dataset_cfg.get('REMOVE_ORIGIN_GTS', None) and self.training:
             input_dict['points'] = box_utils.remove_points_in_boxes3d(input_dict['points'], input_dict['gt_boxes'])
-            mask = np.zeros(gt_boxes_lidar.shape[0], dtype=bool_)
+            mask = np.zeros(gt_boxes_lidar.shape[0], dtype=bool)
             input_dict['gt_boxes'] = input_dict['gt_boxes'][mask]
             input_dict['gt_names'] = input_dict['gt_names'][mask]
 
@@ -753,7 +753,7 @@ class KittiTestDataset(KittiSemiDataset):
                 input_dict['gt_boxes2d'] = annos["bbox"]
             if self.dataset_cfg.get('REMOVE_ORIGIN_GTS', None) and self.training:
                 input_dict['points'] = box_utils.remove_points_in_boxes3d(input_dict['points'], input_dict['gt_boxes'])
-                mask = np.zeros(gt_boxes_lidar.shape[0], dtype=bool_)
+                mask = np.zeros(gt_boxes_lidar.shape[0], dtype=bool)
                 input_dict['gt_boxes'] = input_dict['gt_boxes'][mask]
                 input_dict['gt_names'] = input_dict['gt_names'][mask]
 
