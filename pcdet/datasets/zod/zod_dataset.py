@@ -61,9 +61,8 @@ class ZODDataset(DatasetTemplate):
         #update class names in zod_infos
         map_merge_class = self.dataset_cfg.MAP_MERGE_CLASS
         for info in self.zod_infos:
-            if 'annos' not in info:
-                continue
-            info['annos']['name'] = np.vectorize(lambda name: map_merge_class[name], otypes=[np.str])(info['annos']['name'])
+            assert 'annos' in info
+            info['annos']['name'] = np.vectorize(lambda name: map_merge_class[name], otypes=[str])(info['annos']['name'])
         
         if not(hasattr(self, 'data_augmentor')) or self.data_augmentor is None:
             return
@@ -181,6 +180,8 @@ class ZODDataset(DatasetTemplate):
             pc.intensity = pc.intensity[mask]
         
         if num_features == 4:
+            #scale intensity to [0,1] from [0,255]
+            pc.intensity = pc.intensity / 255
             points = np.concatenate((pc.points, pc.intensity.reshape(-1,1)), axis=1)
         elif num_features == 3:
             points = pc.points
@@ -196,14 +197,18 @@ class ZODDataset(DatasetTemplate):
         return points
     
     def get_label(self, sample_idx):
+        """
+        returns label data loaded from data folder, 
+        only loads classes that are in class_names
+        """
         zod_frame = self.zod_frames[sample_idx]
         obj_annos = zod_frame.get_annotation(AnnotationProject.OBJECT_DETECTION)
         #filter out objects without 3d anno
         obj_annos = [obj for obj in obj_annos if obj.box3d is not None]     
         #print("filtered out %d objects without 3d anno" % (len(zod_frame.get_annotation(AnnotationProject.OBJECT_DETECTION)) - len(obj_annos)))
-        #if self.class_names is not None:
+        if self.class_names is not None:
             #filter out objects that are not in class_names
-        #    obj_annos = [obj for obj in obj_annos if obj.subclass in self.class_names]
+            obj_annos = [obj for obj in obj_annos if obj.subclass in self.class_names]
             
         annotations = {}
         annotations['name'] = np.array([obj.subclass for obj in obj_annos])
@@ -214,7 +219,6 @@ class ZODDataset(DatasetTemplate):
 
         if len(obj_annos) == 0:
             annotations['gt_boxes_lidar'] = np.zeros((0,7))
-            annotations['obj_annos'] = obj_annos
             annotations['truncated'] = np.zeros((0))
             annotations['corners'] = np.zeros((0,8,3))
             return annotations
@@ -233,7 +237,6 @@ class ZODDataset(DatasetTemplate):
             [loc, l, w, h, rots[..., np.newaxis]], axis=1)
 
         annotations['gt_boxes_lidar'] = gt_boxes_lidar       
-        annotations['obj_annos'] = obj_annos
 
         #calculate truncation
         annotations['truncated'] = self.get_object_truncation(annotations['corners'], zod_frame.calibration)
@@ -270,6 +273,7 @@ class ZODDataset(DatasetTemplate):
 
         #get points
         points = self.get_lidar(sample_idx, self.num_point_features)
+
         input_dict = {
             'frame_id': self.sample_id_list[index],
             'points': points
@@ -440,18 +444,16 @@ class ZODDataset(DatasetTemplate):
             annotations = common_utils.drop_info_with_name(annotations, name=class_names)
 
             if count_inside_pts:   
-                obj_annos = annotations.pop("obj_annos")
                 
                 # use truncated pc to get points in gt boxes
                 points = self.get_lidar(sample_idx, num_features=num_features)
 
-                corners_lidar = np.array([obj.box3d.corners for obj in obj_annos])
                 num_gt = len(annotations['name'])
                 num_points_in_gt = -np.ones(num_gt, dtype=np.int32)
 
                 for k in range(num_gt):
                     flag = box_utils.in_hull(points[:, 0:3],
-                                                corners_lidar[k])
+                                                annotations["corners"][k])
                     num_points_in_gt[k] = flag.sum()
                 annotations['num_points_in_gt'] = num_points_in_gt
             
@@ -578,13 +580,13 @@ def split_zod_data(data_path, versions):
 def create_zod_infos(dataset_cfg, class_names, data_path, save_path, workers=4):
 
     splits = ['train', 'val']
-    #versions = ['full', 'mini', 'small']
-    versions = ['small']
+    versions = ['full', 'mini', 'small']
+    #versions = ['small']
 
     split_zod_data(data_path, versions)
 
     dataset = ZODDataset(
-        dataset_cfg=dataset_cfg, class_names=None, root_path=data_path,
+        dataset_cfg=dataset_cfg, class_names=class_names, root_path=data_path,
         training=False, logger=common_utils.create_logger(), creating_infos=True
     )
 

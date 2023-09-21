@@ -50,7 +50,7 @@ class AVLDataset(DatasetTemplate):
         for info in self.avl_infos:
             if 'annos' not in info:
                 continue
-            info['annos']['name'] = np.vectorize(lambda name: map_merge_class[name], otypes=[np.str])(info['annos']['name'])
+            info['annos']['name'] = np.vectorize(lambda name: map_merge_class[name], otypes=[str])(info['annos']['name'])
         
         if not(hasattr(self, 'data_augmentor')) or self.data_augmentor is None:
             return

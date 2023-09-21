@@ -30,7 +30,7 @@ def main():
 
     logger = common_utils.create_logger()
 
-    dataset = "zod"
+    dataset = "avltruck"
     
     #avlrooftop
     #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output/avlrooftop_models/second/full_80epochs/ckpt/checkpoint_epoch_80.pth"
@@ -55,7 +55,7 @@ def main():
         cfg_path =  "/home/cgriesbacher/thesis/3DTrans/tools/cfgs/dataset_configs/avltruck/OD/avltruck_dataset.yaml"
         dataset_cfg = EasyDict(yaml.safe_load(open(cfg_path)))
 
-        class_names = ['Vehicle_Drivable_Car',
+        dataset_class_names = ['Vehicle_Drivable_Car',
                        'Vehicle_Drivable_Van', 
                        'Vehicle_Ridable_Motorcycle', 
                        'Vehicle_Ridable_Bicycle', 
@@ -76,7 +76,7 @@ def main():
         if args.frame_idx is None:
             args.frame_idx = "055820"
         
-        class_names = ["Vehicle_Car", 
+        dataset_class_names = ["Vehicle_Car", 
                        "Vehicle_Van", 
                        "Vehicle_Truck", 
                        "Vehicle_Trailer", 
@@ -96,7 +96,7 @@ def main():
         if args.frame_idx is None:
             args.frame_idx = "sequences/CITY_Sunny_junction_20200319140600/unpacked/lidar/0026.pkl"
         
-        class_names = ["Vehicle_Drivable_Car",
+        dataset_class_names = ["Vehicle_Drivable_Car",
                         "Vehicle_Drivable_Van",
                         "LargeVehicle_Truck",
                         "LargeVehicle_TruckCab",
@@ -112,27 +112,6 @@ def main():
         raise NotImplementedError("Please specify the dataset path")
     
 
-    dataset, train_loader, train_sampler = build_dataloader(dataset_cfg=dataset_cfg,
-                                    class_names=class_names,
-                                    batch_size=1,
-                                    dist=False,
-                                    workers=0,
-                                    logger=logger,
-                                    training=False)
-    annos = dataset.get_label(args.frame_idx)
-    gt_boxes_lidar = annos['gt_boxes_lidar'] 
-
-    points = dataset.get_lidar(args.frame_idx)
-
-    #filter out gt boxes that are out of range
-    gt_boxes_lidar = gt_boxes_lidar[gt_boxes_lidar[:,0] < dataset_cfg.POINT_CLOUD_RANGE[3]]
-    gt_boxes_lidar = gt_boxes_lidar[gt_boxes_lidar[:,0] > dataset_cfg.POINT_CLOUD_RANGE[0]]
-    gt_boxes_lidar = gt_boxes_lidar[gt_boxes_lidar[:,1] < dataset_cfg.POINT_CLOUD_RANGE[4]]
-    gt_boxes_lidar = gt_boxes_lidar[gt_boxes_lidar[:,1] > dataset_cfg.POINT_CLOUD_RANGE[1]]
-    gt_boxes_lidar = gt_boxes_lidar[gt_boxes_lidar[:,2] < dataset_cfg.POINT_CLOUD_RANGE[5]]
-    gt_boxes_lidar = gt_boxes_lidar[gt_boxes_lidar[:,2] > dataset_cfg.POINT_CLOUD_RANGE[2]]
-
-
     #load model if specified
     if args.ckpt is not None:
 
@@ -145,23 +124,58 @@ def main():
         #parse config
         cfg_from_yaml_file(cfg_path, cfg)
 
-
+        #build dataset
+        dataset, train_loader, train_sampler = build_dataloader(dataset_cfg=dataset_cfg,
+                                    class_names=cfg.CLASS_NAMES,
+                                    batch_size=1,
+                                    dist=False,
+                                    workers=0,
+                                    logger=logger,
+                                    training=False) 
+        
+        #build model
         model = build_network(model_cfg=cfg.MODEL, num_class=len(cfg.CLASS_NAMES), dataset=dataset)
         model.load_params_from_file(filename=args.ckpt, logger=logger, to_cpu=False)
         model.cuda()
         model.eval()
+
+        #find sample index for frame
+        sample_id_list = dataset.sample_id_list
+        list_index = sample_id_list.index(args.frame_idx)
+        #get data from info files -> is in detector class name space
+        data_dict = dataset.__getitem__(list_index)
+        #remove point intensity information as it is different for each dataset
+        #data_dict['points'] = data_dict['points'][:, :4]
+        #crop point cloud fov
+
+        data_dict = dataset.collate_batch([data_dict])
+
+        #get eval frame        
         with torch.no_grad():
-            #find sample index for frame
-            sample_id_list = dataset.sample_id_list
-            list_index = sample_id_list.index(args.frame_idx)
-            #get data dict for frame
-            data_dict = dataset.__getitem__(list_index)
-            data_dict = dataset.collate_batch([data_dict])
             load_data_to_gpu(data_dict)
             pred_dicts, _ = model.forward(data_dict)
        
-        vis.draw_scenes(points, gt_boxes_lidar, pred_dicts[0]["pred_boxes"].detach().cpu().numpy())
+        vis.draw_scenes(data_dict['points'][:,1:4], 
+                        data_dict["gt_boxes"][0,:,:7], 
+                        pred_dicts[0]["pred_boxes"].detach().cpu().numpy())
     else:
+        dataset, train_loader, train_sampler = build_dataloader(dataset_cfg=dataset_cfg,
+                                        class_names=dataset_class_names,
+                                        batch_size=1,
+                                        dist=False,
+                                        workers=0,
+                                        logger=logger,
+                                        training=False) 
+        points = dataset.get_lidar(args.frame_idx)
+
+        #filter out gt boxes that are out of range
+        gt_boxes_lidar = gt_boxes_lidar[gt_boxes_lidar[:,0] < dataset_cfg.POINT_CLOUD_RANGE[3]]
+        gt_boxes_lidar = gt_boxes_lidar[gt_boxes_lidar[:,0] > dataset_cfg.POINT_CLOUD_RANGE[0]]
+        gt_boxes_lidar = gt_boxes_lidar[gt_boxes_lidar[:,1] < dataset_cfg.POINT_CLOUD_RANGE[4]]
+        gt_boxes_lidar = gt_boxes_lidar[gt_boxes_lidar[:,1] > dataset_cfg.POINT_CLOUD_RANGE[1]]
+        gt_boxes_lidar = gt_boxes_lidar[gt_boxes_lidar[:,2] < dataset_cfg.POINT_CLOUD_RANGE[5]]
+        gt_boxes_lidar = gt_boxes_lidar[gt_boxes_lidar[:,2] > dataset_cfg.POINT_CLOUD_RANGE[2]]
+
         vis.draw_scenes(points, gt_boxes_lidar)
 
     return

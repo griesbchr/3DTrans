@@ -15,6 +15,7 @@ build/
 *.DS_Store
 *.sbatch
 *.out
+*.sh
 
 **__pycache__**
 **build**
@@ -42,3 +43,5 @@ data/zod/gt_database_small
 data/zod/single_frames
 data/zod/trainval-frames-mini.json
 data/zod/trainval-frames-full.json
+
+data/*

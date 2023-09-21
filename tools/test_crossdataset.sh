@@ -1,12 +1,12 @@
 #!/bin/bash
 #################CROSS DATASET TESTING#################
 
-TRAIN_DATASET=zod
+TRAIN_DATASET=avltruck
 MODEL=second
-CFG_TAG=full_2epochs_trunc
-EPOCH=2
+CFG_TAG=full_10epochs
+EPOCH=10
 
-EVAL_DATASET=avlrooftop
+EVAL_DATASET=zod
 
 NUM_GPUS=2
 BATCHSIZE=4
