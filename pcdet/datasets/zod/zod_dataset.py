@@ -162,7 +162,7 @@ class ZODDataset(DatasetTemplate):
         mask = mask.reshape(-1,8)
 
         #if all corners are in fov, object is not truncated
-        truncated = np.zeros(mask.shape[0], dtype=np.bool)
+        truncated = np.zeros(mask.shape[0], dtype=bool)
         truncated[mask.sum(axis=1) < 8] = 1
 
         return truncated
@@ -306,7 +306,7 @@ class ZODDataset(DatasetTemplate):
             #set truncated gt boxes to label (last entry) to -1
             #XXX or do i need to set them to label*-1?
             gt_boxes = data_dict['gt_boxes']
-            truncated = data_dict['truncated'].astype(np.bool)
+            truncated = data_dict['truncated'].astype(bool)
             gt_boxes[truncated, -1] = -1
             data_dict['gt_boxes'] = gt_boxes
 

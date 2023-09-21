@@ -236,7 +236,7 @@ class DatasetTemplate(torch_data.Dataset):
                 data_dict['truncated'] = data_dict['truncated'][mask]
 
             assert 'gt_boxes' in data_dict, 'gt_boxes should be provided for training'
-            gt_boxes_mask = np.array([n in self.class_names for n in data_dict['gt_names']], dtype=np.bool_)
+            gt_boxes_mask = np.array([n in self.class_names for n in data_dict['gt_names']], dtype=bool_)
 
             data_dict = self.data_augmentor.forward(
                 data_dict={

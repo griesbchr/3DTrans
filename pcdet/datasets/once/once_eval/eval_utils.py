@@ -11,11 +11,11 @@ def compute_split_parts(num_samples, num_parts):
         return [part_samples] * num_parts + [remain_samples]
 
 def overall_filter(boxes):
-    ignore = np.zeros(boxes.shape[0], dtype=np.bool) # all false
+    ignore = np.zeros(boxes.shape[0], dtype=bool) # all false
     return ignore
 
 def distance_filter(boxes, level):
-    ignore = np.ones(boxes.shape[0], dtype=np.bool) # all true
+    ignore = np.ones(boxes.shape[0], dtype=bool) # all true
     dist = np.sqrt(np.sum(boxes[:, 0:3] * boxes[:, 0:3], axis=1))
 
     if level == 0: # 0-30m
@@ -31,11 +31,11 @@ def distance_filter(boxes, level):
     return ignore
 
 def overall_distance_filter(boxes, level):
-    ignore = np.ones(boxes.shape[0], dtype=np.bool) # all true
+    ignore = np.ones(boxes.shape[0], dtype=bool) # all true
     dist = np.sqrt(np.sum(boxes[:, 0:3] * boxes[:, 0:3], axis=1))
 
     if level == 0:
-        flag = np.ones(boxes.shape[0], dtype=np.bool)
+        flag = np.ones(boxes.shape[0], dtype=bool)
     elif level == 1: # 0-30m
         flag = dist < 30
     elif level == 2: # 30-50m

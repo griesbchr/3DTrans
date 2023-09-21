@@ -39,7 +39,7 @@ class OpenPCDetWaymoDetectionMetricsEstimator(tf.test.TestCase):
         frame_id, boxes3d, obj_type, score, overlap_nlz, difficulty = [], [], [], [], [], []
         for frame_index, info in enumerate(infos):
             if is_gt:
-                box_mask = np.array([n in class_names for n in info['name']], dtype=np.bool_)
+                box_mask = np.array([n in class_names for n in info['name']], dtype=bool_)
                 if 'num_points_in_gt' in info:
                     zero_difficulty_mask = info['difficulty'] == 0
                     info['difficulty'][(info['num_points_in_gt'] > 5) & zero_difficulty_mask] = 1

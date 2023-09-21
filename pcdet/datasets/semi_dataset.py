@@ -164,7 +164,7 @@ class SemiDatasetTemplate(torch_data.Dataset):
         """
         if self.training:
             assert 'gt_boxes' in data_dict, 'gt_boxes should be provided for training'
-            gt_boxes_mask = np.array([n in self.class_names for n in data_dict['gt_names']], dtype=np.bool_)
+            gt_boxes_mask = np.array([n in self.class_names for n in data_dict['gt_names']], dtype=bool_)
 
             data_dict = self.data_augmentor.forward(
                 data_dict={
@@ -215,7 +215,7 @@ class SemiDatasetTemplate(torch_data.Dataset):
                 ...
         """
         if 'gt_boxes' in data_dict:
-            gt_boxes_mask = np.array([n in self.class_names for n in data_dict['gt_names']], dtype=np.bool_)
+            gt_boxes_mask = np.array([n in self.class_names for n in data_dict['gt_names']], dtype=bool_)
             data_dict={
                 **data_dict,
                 'gt_boxes_mask': gt_boxes_mask
@@ -303,7 +303,7 @@ class SemiDatasetTemplate(torch_data.Dataset):
                 ...
         """
         if 'gt_boxes' in data_dict:
-            gt_boxes_mask = np.array([n in self.class_names for n in data_dict['gt_names']], dtype=np.bool_)
+            gt_boxes_mask = np.array([n in self.class_names for n in data_dict['gt_names']], dtype=bool_)
             data_dict={
                 **data_dict,
                 'gt_boxes_mask': gt_boxes_mask
