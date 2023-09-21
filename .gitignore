@@ -44,3 +44,4 @@ data/zod/trainval-frames-mini.json
 data/zod/trainval-frames-full.json
 
 data/*
+tools/train_okleanos.sh
