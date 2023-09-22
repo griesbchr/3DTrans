@@ -19,7 +19,7 @@ MAP_MERGE_CLASS: {
     "Vehicle_Bus": "Vehicle",
     "Vehicle_HeavyEquip": "Vehicle",
     "Vehicle_TramTrain": "Vehicle",
-    "VulnerableVehicle_Motorcycle": "Vehicle",
+    "VulnerableVehicle_Motorcycle": "Cyclist",
     "VulnerableVehicle_Bicycle": "Cyclist",
     "Pedestrian": "Pedestrian",
     #'Placeholder': 'DontCare',
@@ -85,15 +85,15 @@ DATA_AUGMENTOR:
       SAMPLE_GROUPS:
         #Vehicle: 15, Cyclist: 10, Pedestrian: 10
         [
-          "Vehicle_Car: 10",
-          "Vehicle_Van: 1",
+          "Vehicle_Car: 11",
+          "Vehicle_Van: 2",
           "Vehicle_Truck: 1",
           "Vehicle_Trailer: 0",
           "Vehicle_Bus: 1",
           "Vehicle_HeavyEquip: 0",
           "Vehicle_TramTrain: 0",
-          "VulnerableVehicle_Motorcycle: 2",
-          "VulnerableVehicle_Bicycle: 10",
+          "VulnerableVehicle_Motorcycle: 5",
+          "VulnerableVehicle_Bicycle: 5",
           "Pedestrian: 10",
         ]
         # [Vehicle_Car:18, Vehicle_Van:2, VulnerableVehicle_Bicycle:10, Pedestrian:20]

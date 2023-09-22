@@ -66,7 +66,7 @@ def main():
                        'Trailer']
 
         if args.frame_idx is None:
-            args.frame_idx = 'sequences/CityThoroughfare_dgt_2021-08-20-10-48-41_0_s0/dataset/logical_frame_000020.json'
+            args.frame_idx = 'sequences/CityStreet_dgt_2021-08-19-11-46-54_0_s0/dataset/logical_frame_000012.json'
         
     elif (args.dataset == "zod"):
         from pcdet.datasets.zod.zod_dataset import ZODDataset

@@ -27,7 +27,7 @@ INFO_PATH: { "train": [avl_infos_train.pkl], "val": [avl_infos_val.pkl] }
 MAP_MERGE_CLASS: {
     "Vehicle_Drivable_Car": "Vehicle",
     "Vehicle_Drivable_Van": "Vehicle",
-    "Vehicle_Ridable_Motorcycle": "Vehicle",
+    "Vehicle_Ridable_Motorcycle": "Cyclist",
     "Vehicle_Ridable_Bicycle": "Cyclist",
     "Human": "Pedestrian",
     "LargeVehicle_Bus": "Vehicle",
@@ -99,11 +99,11 @@ DATA_AUGMENTOR:
         #Vehicle: 15, Cyclist: 10, Pedestrian: 10
 
         [
-          "Vehicle_Drivable_Car:10",
-          "Vehicle_Drivable_Van:1",
+          "Vehicle_Drivable_Car:11",
+          "Vehicle_Drivable_Van:2",
           "Human:10",
-          "Vehicle_Ridable_Motorcycle:2",
-          "Vehicle_Ridable_Bicycle:10",
+          "Vehicle_Ridable_Motorcycle:5",
+          "Vehicle_Ridable_Bicycle:5",
           "LargeVehicle_Bus:1",
           "LargeVehicle_Truck:1",
           "LargeVehicle_TruckCab:0",

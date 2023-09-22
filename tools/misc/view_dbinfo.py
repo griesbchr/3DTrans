@@ -80,7 +80,7 @@ print("Number of instances per class:")
 print(df.groupby('class')['num_points_in_gt'].count())
 #%% load pickle file "zod_dbinfos.pkl" which is in zod folder
 
-with open('../../data/zod/zod_dbinfos_train_small.pkl', 'rb') as f:
+with open('../../data/zod/zod_dbinfos_train_full.pkl', 'rb') as f:
     #store as dataframe
     zod_dbinfos = pickle.load(f)
 
