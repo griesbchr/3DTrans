@@ -68,11 +68,35 @@ DATA_AUGMENTOR:
       PREPARE:
         {
           filter_by_min_points:
-            [Vehicle_Car:5, Vehicle_Van:5, VulnerableVehicle_Bicycle:5, Pedestrian:5],
+            [
+              "Vehicle_Car: 5",
+              "Vehicle_Van: 5",
+              "Vehicle_Truck: 5",
+              "Vehicle_Trailer: 5",
+              "Vehicle_Bus: 5",
+              "Vehicle_HeavyEquip: 5",
+              "Vehicle_TramTrain: 5",
+              "VulnerableVehicle_Motorcycle: 5",
+              "VulnerableVehicle_Bicycle: 5",
+              "Pedestrian: 5",
+            ],
         }
 
       SAMPLE_GROUPS:
-        [Vehicle_Car:18, Vehicle_Van:2, VulnerableVehicle_Bicycle:10, Pedestrian:20]
+        #Vehicle: 15, Cyclist: 10, Pedestrian: 10
+        [
+          "Vehicle_Car: 10",
+          "Vehicle_Van: 1",
+          "Vehicle_Truck: 1",
+          "Vehicle_Trailer: 0",
+          "Vehicle_Bus: 1",
+          "Vehicle_HeavyEquip: 0",
+          "Vehicle_TramTrain: 0",
+          "VulnerableVehicle_Motorcycle: 2",
+          "VulnerableVehicle_Bicycle: 10",
+          "Pedestrian: 10",
+        ]
+        # [Vehicle_Car:18, Vehicle_Van:2, VulnerableVehicle_Bicycle:10, Pedestrian:20]
       NUM_POINT_FEATURES: 4
       DATABASE_WITH_FAKELIDAR: False
       REMOVE_EXTRA_WIDTH: [0.0, 0.0, 0.0]

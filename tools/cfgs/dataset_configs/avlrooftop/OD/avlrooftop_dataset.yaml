@@ -87,17 +87,27 @@ DATA_AUGMENTOR:
         }
 
       SAMPLE_GROUPS:
+        #Vehicle: 15, Cyclist: 10, Pedestrian: 10
         [
-          "Vehicle_Drivable_Car:12",
-          "Vehicle_Drivable_Van:5",
-          "Human:15",
+          "Vehicle_Drivable_Car:10",
+          "Vehicle_Drivable_Van:1",
+          "Human:10",
           "Vehicle_Ridable_Motorcycle:2",
-          "Vehicle_Ridable_Bicycle:15",
-          "LargeVehicle_Bus:0",
-          "LargeVehicle_Truck:0",
+          "Vehicle_Ridable_Bicycle:10",
+          "LargeVehicle_Bus:1",
+          "LargeVehicle_Truck:1",
           "LargeVehicle_TruckCab:0",
           "Trailer:0",
         ]
+        #Vehicle_Drivable_Car:12",
+        #"Vehicle_Drivable_Van:5",
+        #"Human:15",
+        #"Vehicle_Ridable_Motorcycle:2",
+        #"Vehicle_Ridable_Bicycle:15",
+        #"LargeVehicle_Bus:0",
+        #"LargeVehicle_Truck:0",
+        #"LargeVehicle_TruckCab:0",
+        #"Trailer:0",
 
       NUM_POINT_FEATURES: 4
       DATABASE_WITH_FAKELIDAR: False
