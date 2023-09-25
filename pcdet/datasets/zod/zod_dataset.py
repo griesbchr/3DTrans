@@ -396,8 +396,8 @@ class ZODDataset(DatasetTemplate):
             )
 
             # add truncation information to gt annotations
-            for anno, truncation in zip(eval_gt_annos, truncation_annos):
-                anno["truncated"] = truncation
+            #for anno, truncation in zip(eval_gt_annos, truncation_annos):
+            #    anno["truncated"] = truncation
 
             kitti_class_names = [map_name_to_kitti[x] for x in class_names]
             ap_result_str, ap_dict = kitti_eval.get_custom_eval_result(
@@ -453,6 +453,10 @@ class ZODDataset(DatasetTemplate):
             iou_matrix = iou3d_nms_utils.boxes_bev_iou_cpu(
                 gt_anno["gt_boxes_lidar"][remove_mask], eval_det_annos[i]["boxes_lidar"])
             remove_mask_det[np.any(iou_matrix > min_remove_overlap_bev_iou, axis=0)] = True
+
+            #ignore truncated gt boxes
+            if self.disregard_truncated:
+                remove_mask[gt_anno["truncated"] == 1] = True
             
             eval_gt_annos[i] = common_utils.drop_info_with_mask(gt_anno, remove_mask)
             eval_det_annos[i] = common_utils.drop_info_with_mask(eval_det_annos[i], remove_mask_det)              
