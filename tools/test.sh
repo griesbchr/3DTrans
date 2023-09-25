@@ -3,10 +3,10 @@
 
 #CONFIG_FILE=kitti_models/second
 #CONFIG_FILE=kitti_models/IA-SSD
-DATASET=zod
+DATASET=avlrooftop
 MODEL=second
-CFG_TAG=full_2epochs_trunc
-EPOCH=2
+CFG_TAG=full_80epochs_gtsampling
+EPOCH=80
 
 NUM_GPUS=2
 BATCHSIZE=4
@@ -20,7 +20,7 @@ CFG_PATH=$ROOT_PATH/output/$RUN_PATH/$MODEL.yaml
 
 #multi gpu training
 cd "/home/cgriesbacher/thesis/3DTrans/tools"
-bash scripts/dist_test.sh $NUM_GPUS --cfg_file $CFG_PATH  MODEL.BACKBONE_NAME "SECOND_BACKBONE" --ckpt $CHECKPOINT_PATH --batch_size $BATCHSIZE --workers $NUM_WORKERS --extra_tag $CFG_TAG
+bash scripts/dist_test.sh $NUM_GPUS --cfg_file $CFG_PATH --ckpt $CHECKPOINT_PATH --batch_size $BATCHSIZE --workers $NUM_WORKERS --extra_tag $CFG_TAG
 
 #single gpu training for debugging
 #python test.py --cfg_file $CFG_PATH --ckpt $CHECKPOINT_PATH --batch_size 6 --workers 6 --extra_tag $CFG_TAG

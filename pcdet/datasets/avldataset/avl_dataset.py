@@ -222,6 +222,7 @@ class AVLDataset(DatasetTemplate):
         return annos
 
     def evaluation(self, det_annos, class_names, **kwargs):
+        from ...ops.iou3d_nms import iou3d_nms_utils
         if 'annos' not in self.avl_infos[0].keys():
             return 'No ground-truth boxes for evaluation', {}
                                                                                         
@@ -256,17 +257,60 @@ class AVLDataset(DatasetTemplate):
                 ap_result_str += '%s: %.4f \n' % (key, ap_dict[key])
 
             return ap_result_str, ap_dict
-
+            
         eval_det_annos = copy.deepcopy(det_annos)
         eval_gt_annos = []
+        #drop_info = self.dataset_cfg.get('EVAL_REMOVE_CLASSES', None)
+        drop_infos = ["DontCare", "Dont_Care", "Other"]
         for info in self.avl_infos:
             eval_gt_annos.append(copy.deepcopy(info['annos']))
-            eval_gt_annos[-1] = common_utils.drop_info_with_name(
-                eval_gt_annos[-1], name='Other')
-            eval_gt_annos[-1] = common_utils.drop_info_with_name(
-                eval_gt_annos[-1], name='Dont_Care')
-            eval_gt_annos[-1] = common_utils.drop_info_with_name(
-                eval_gt_annos[-1], name='DontCare')
+            for drop_info in drop_infos:
+                eval_gt_annos[-1] = common_utils.drop_info_with_name(
+                    eval_gt_annos[-1], name=drop_info)
+
+        #print number of objects in gt and det for each class in class_names
+        for class_name in class_names:
+            gt_count = 0
+            det_count = 0
+            for anno in eval_gt_annos:
+                gt_count += sum(anno['name'] == class_name)
+            for anno in eval_det_annos:
+                det_count += sum(anno['name'] == class_name)
+            print("Class:", class_name, "gt_count:", gt_count, "det_count:", det_count)
+
+
+        #remove_le_points = self.dataset_cfg.get('EVAL_REMOVE_LESS_OR_EQ_POINTS', None)
+        remove_le_points = 0
+        #ignore_classes = self.dataset_cfg.get('EVAL_IGNORE_CLASSES', None)
+        ignore_classes = [""]
+        #ignore_classes = []
+        #remove_overlapping = self.dataset_cfg.get('EVAL_REMOVE_OVERLAPPING_BEV_IOU', None)
+        min_remove_overlap_bev_iou = 0.25
+
+        # remove gt objects and overlapping det objects  
+        for i, gt_anno in enumerate(eval_gt_annos):
+
+            remove_mask = np.zeros(len(gt_anno["name"]), dtype=bool)
+            
+            # remove with less then n points
+            remove_mask[gt_anno['num_points_in_gt'] <= remove_le_points] = True
+
+            # add ignore classes to mask
+            name = gt_anno['name']
+            for ignore_class in ignore_classes:
+                remove_mask[name == ignore_class] = True
+
+            remove_mask_det = np.zeros(len(eval_det_annos[i]["name"]), dtype=bool)
+            iou_matrix = iou3d_nms_utils.boxes_bev_iou_cpu(
+                gt_anno["gt_boxes_lidar"][remove_mask], eval_det_annos[i]["boxes_lidar"])
+            remove_mask_det[np.any(iou_matrix > min_remove_overlap_bev_iou, axis=0)] = True
+            
+            eval_gt_annos[i] = common_utils.drop_info_with_mask(gt_anno, remove_mask)
+            eval_det_annos[i] = common_utils.drop_info_with_mask(eval_det_annos[i], remove_mask_det)
+
+                
+                
+
 
         # z_shift = self.dataset_cfg.get('TRAINING_Z_SHIFT', None)
         # if z_shift is not None:

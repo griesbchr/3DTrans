@@ -57,6 +57,18 @@ def drop_info_with_name(info, name):
         ret_info[key] = info[key][keep_indices]
     return ret_info
 
+def drop_info_with_mask(info, mask):
+    '''
+    True means drop
+    '''
+    ret_info = {}
+    for key in info.keys():
+        #skip if not np array
+        if not isinstance(info[key], np.ndarray):
+            ret_info[key] = info[key]
+            continue
+        ret_info[key] = info[key][~mask]
+    return ret_info
 
 def rotate_points_along_z(points, angle):
     """
