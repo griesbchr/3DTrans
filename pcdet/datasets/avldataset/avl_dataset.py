@@ -273,8 +273,12 @@ class AVLDataset(DatasetTemplate):
             gt_count = 0
             det_count = 0
             for anno in eval_gt_annos:
+                if len(anno['name']) == 0:    
+                    continue
                 gt_count += sum(anno['name'] == class_name)
             for anno in eval_det_annos:
+                if len(anno['name']) == 0:
+                    continue
                 det_count += sum(anno['name'] == class_name)
             print("Class:", class_name, "gt_count:", gt_count, "det_count:", det_count)
 

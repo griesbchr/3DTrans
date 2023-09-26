@@ -3,14 +3,14 @@
 
 #CONFIG_FILE=kitti_models/second
 #CONFIG_FILE=kitti_models/IA-SSD
-DATASET=avlrooftop
+DATASET=zod
 MODEL=second
-CFG_TAG=full_80epochs_gtsampling
-EPOCH=80
+CFG_TAG=full_4epochs_normintensity
+EPOCH=4
 
 NUM_GPUS=2
 BATCHSIZE=4
-NUM_WORKERS=6
+NUM_WORKERS=4
 
 #----------------------------------------------------
 ROOT_PATH=/home/cgriesbacher/thesis/3DTrans

@@ -411,7 +411,7 @@ class ZODDataset(DatasetTemplate):
         eval_gt_annos = []
         #drop_info = self.dataset_cfg.get('EVAL_REMOVE_CLASSES', None)
         drop_infos = []
-        for info in self.avl_infos:
+        for info in self.zod_infos:
             eval_gt_annos.append(copy.deepcopy(info['annos']))
             for drop_info in drop_infos:
                 eval_gt_annos[-1] = common_utils.drop_info_with_name(
@@ -422,8 +422,12 @@ class ZODDataset(DatasetTemplate):
             gt_count = 0
             det_count = 0
             for anno in eval_gt_annos:
+                if len(anno['name']) == 0:
+                    continue
                 gt_count += sum(anno['name'] == class_name)
             for anno in eval_det_annos:
+                if len(anno['name']) == 0:
+                    continue
                 det_count += sum(anno['name'] == class_name)
             print("Class:", class_name, "gt_count:", gt_count, "det_count:", det_count)
 
@@ -455,8 +459,8 @@ class ZODDataset(DatasetTemplate):
             remove_mask_det[np.any(iou_matrix > min_remove_overlap_bev_iou, axis=0)] = True
 
             #ignore truncated gt boxes
-            if self.disregard_truncated:
-                remove_mask[gt_anno["truncated"] == 1] = True
+            #if self.disregard_truncated:
+            #    remove_mask[gt_anno["truncated"] == 1] = True
             
             eval_gt_annos[i] = common_utils.drop_info_with_mask(gt_anno, remove_mask)
             eval_det_annos[i] = common_utils.drop_info_with_mask(eval_det_annos[i], remove_mask_det)              
