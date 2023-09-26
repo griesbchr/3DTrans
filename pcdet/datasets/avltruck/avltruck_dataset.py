@@ -117,19 +117,23 @@ class AVLTruckDataset(AVLDataset):
             if has_label:
                 annotations = self.get_label(sample_idx)
 
-                if count_inside_pts and len(annotations['name']) > 0:
-                    points = self.get_lidar(sample_idx)
+                if count_inside_pts:
+                    if len(annotations['name']) == 0:
+                        annotations['num_points_in_gt'] = np.zeros((0, ),
+                                                                   dtype=np.int32)
+                    else:
+                        points = self.get_lidar(sample_idx)
 
-                    corners_lidar = box_utils.boxes_to_corners_3d(
-                        annotations['gt_boxes_lidar'])
-                    num_gt = len(annotations['name'])
-                    num_points_in_gt = -np.ones(num_gt, dtype=np.int32)
+                        corners_lidar = box_utils.boxes_to_corners_3d(
+                            annotations['gt_boxes_lidar'])
+                        num_gt = len(annotations['name'])
+                        num_points_in_gt = -np.ones(num_gt, dtype=np.int32)
 
-                    for k in range(num_gt):
-                        flag = box_utils.in_hull(points[:, 0:3],
-                                                    corners_lidar[k])
-                        num_points_in_gt[k] = flag.sum()
-                    annotations['num_points_in_gt'] = num_points_in_gt
+                        for k in range(num_gt):
+                            flag = box_utils.in_hull(points[:, 0:3],
+                                                        corners_lidar[k])
+                            num_points_in_gt[k] = flag.sum()
+                        annotations['num_points_in_gt'] = num_points_in_gt
 
                 info['annos'] = annotations
 

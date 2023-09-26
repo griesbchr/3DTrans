@@ -438,8 +438,10 @@ class ZODDataset(DatasetTemplate):
         ignore_classes = [""]
         #ignore_classes = []
         #remove_overlapping = self.dataset_cfg.get('EVAL_REMOVE_OVERLAPPING_BEV_IOU', None)
-        min_remove_overlap_bev_iou = 0.25
-
+        min_remove_overlap_bev_iou = 0.5
+        
+        sum_gt = 0
+        sum_det = 0
         # remove gt objects and overlapping det objects  
         for i, gt_anno in enumerate(eval_gt_annos):
 
@@ -453,18 +455,23 @@ class ZODDataset(DatasetTemplate):
             for ignore_class in ignore_classes:
                 remove_mask[name == ignore_class] = True
 
-            remove_mask_det = np.zeros(len(eval_det_annos[i]["name"]), dtype=bool)
-            iou_matrix = iou3d_nms_utils.boxes_bev_iou_cpu(
-                gt_anno["gt_boxes_lidar"][remove_mask], eval_det_annos[i]["boxes_lidar"])
-            remove_mask_det[np.any(iou_matrix > min_remove_overlap_bev_iou, axis=0)] = True
+            #remove_mask_det = np.zeros(len(eval_det_annos[i]["name"]), dtype=bool)
+            #iou_matrix = iou3d_nms_utils.boxes_bev_iou_cpu(
+            #    gt_anno["gt_boxes_lidar"][remove_mask], eval_det_annos[i]["boxes_lidar"])
+            #remove_mask_det[np.any(iou_matrix > min_remove_overlap_bev_iou, axis=0)] = True
 
             #ignore truncated gt boxes
             #if self.disregard_truncated:
             #    remove_mask[gt_anno["truncated"] == 1] = True
-            
-            eval_gt_annos[i] = common_utils.drop_info_with_mask(gt_anno, remove_mask)
-            eval_det_annos[i] = common_utils.drop_info_with_mask(eval_det_annos[i], remove_mask_det)              
 
+            #print("dropping", np.sum(remove_mask), "gt objects and", np.sum(remove_mask_det), "det objects")
+            sum_gt += np.sum(remove_mask)
+            #sum_det += np.sum(remove_mask_det)
+
+            eval_gt_annos[i] = common_utils.drop_info_with_mask(gt_anno, remove_mask)
+            #eval_det_annos[i] = common_utils.drop_info_with_mask(eval_det_annos[i], remove_mask_det)              
+
+        print("dropped", sum_gt, "gt objects and", sum_det, "det objects over all frames")
 
         # z_shift = self.dataset_cfg.get('TRAINING_Z_SHIFT', None)
         # if z_shift is not None:
@@ -485,7 +492,6 @@ class ZODDataset(DatasetTemplate):
         '''
         import concurrent.futures as futures
         import time
-        from tqdm import tqdm
 
         def process_single_scene(sample_idx):
             print('%s sample_idx: %s' % (self.split, sample_idx))
@@ -510,8 +516,10 @@ class ZODDataset(DatasetTemplate):
                 num_points_in_gt = -np.ones(num_gt, dtype=np.int32)
 
                 for k in range(num_gt):
+                    corners_lidar = box_utils.boxes_to_corners_3d(
+                        annotations['gt_boxes_lidar'])
                     flag = box_utils.in_hull(points[:, 0:3],
-                                                annotations["corners"][k])
+                                                corners_lidar[k])
                     num_points_in_gt[k] = flag.sum()
                 annotations['num_points_in_gt'] = num_points_in_gt
             
@@ -530,7 +538,7 @@ class ZODDataset(DatasetTemplate):
         # create a thread pool to improve the velocity
         start_time = time.time()
         with futures.ThreadPoolExecutor(num_workers) as executor:
-            infos = tqdm(executor.map(process_single_scene, sample_id_list), total=len(sample_id_list))
+            infos = executor.map(process_single_scene, sample_id_list)
         end_time = time.time()
         print("Total time for loading infos: ", end_time - start_time, "s")
         print("Loading speed for infos: ", len(sample_id_list) / (end_time - start_time), "sample/s")
@@ -638,10 +646,10 @@ def split_zod_data(data_path, versions):
 def create_zod_infos(dataset_cfg, class_names, data_path, save_path, workers=4):
 
     splits = ['train', 'val']
-    versions = ['full', 'mini', 'small']
-    #versions = ['small']
+    #versions = ['full', 'mini', 'small']
+    versions = ['small']
 
-    split_zod_data(data_path, versions)
+    #split_zod_data(data_path, versions)
 
     dataset = ZODDataset(
         dataset_cfg=dataset_cfg, class_names=class_names, root_path=data_path,

@@ -155,6 +155,12 @@ class DatasetTemplate(torch_data.Dataset):
         gt_angle = np.arctan2(gt_boxes_lidar[:, 1], gt_boxes_lidar[:, 0])
         fov_gt_mask = ((np.abs(gt_angle) < half_fov_degree) & (gt_boxes_lidar[:, 0] > 0))
         return fov_gt_mask
+    
+    @staticmethod
+    def extract_fov_gt_nontruncated(gt_boxes, fov_degree, heading_angle):
+        """
+        
+        """
 
     def fill_pseudo_labels(self, input_dict):
         gt_boxes = self_training_utils.load_ps_label(input_dict['frame_id'])

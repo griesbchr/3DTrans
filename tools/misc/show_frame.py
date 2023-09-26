@@ -30,17 +30,16 @@ def main():
 
     logger = common_utils.create_logger()
 
-    dataset = "avltruck"
+    dataset = "zod"
     
     #avlrooftop
     #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output/avlrooftop_models/second/full_80epochs/ckpt/checkpoint_epoch_80.pth"
 
     #zod 
-    #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output/zod_models/second/full_2epochs_notrunc/ckpt/checkpoint_epoch_2.pth"
+    checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output_okeanos/output/zod_models/second/full_30epochs_fusesingletrack/ckpt/checkpoint_epoch_30.pth"
 
     #avltruck
-    checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output/avltruck_models/second/full_10epochs/ckpt/checkpoint_epoch_10.pth"
-    
+    #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output/avltruck_models/second/full_10epochs/ckpt/checkpoint_epoch_10.pth"
 
     
     if (args.dataset == None):
@@ -74,7 +73,7 @@ def main():
         dataset_cfg = EasyDict(yaml.safe_load(open(cfg_path)))
 
         if args.frame_idx is None:
-            args.frame_idx = "055820"
+            args.frame_idx = "022786"
         
         dataset_class_names = ["Vehicle_Car", 
                        "Vehicle_Van", 
@@ -167,7 +166,7 @@ def main():
                                         logger=logger,
                                         training=False) 
         points = dataset.get_lidar(args.frame_idx)
-
+        gt_boxes_lidar = dataset.get_label(args.frame_idx)["gt_boxes_lidar"]
         #filter out gt boxes that are out of range
         gt_boxes_lidar = gt_boxes_lidar[gt_boxes_lidar[:,0] < dataset_cfg.POINT_CLOUD_RANGE[3]]
         gt_boxes_lidar = gt_boxes_lidar[gt_boxes_lidar[:,0] > dataset_cfg.POINT_CLOUD_RANGE[0]]

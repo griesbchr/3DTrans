@@ -3,10 +3,10 @@
 
 #CONFIG_FILE=kitti_models/second
 #CONFIG_FILE=kitti_models/IA-SSD
-DATASET=zod
+DATASET=avltruck
 MODEL=second
-CFG_TAG=full_4epochs_normintensity
-EPOCH=4
+CFG_TAG=D6_80epochs_fusesingletrack
+EPOCH=80
 
 NUM_GPUS=2
 BATCHSIZE=4

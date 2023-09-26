@@ -289,8 +289,9 @@ class AVLDataset(DatasetTemplate):
         ignore_classes = [""]
         #ignore_classes = []
         #remove_overlapping = self.dataset_cfg.get('EVAL_REMOVE_OVERLAPPING_BEV_IOU', None)
-        min_remove_overlap_bev_iou = 0.25
-
+        min_remove_overlap_bev_iou = 0.5
+        sum_gt = 0
+        sum_det = 0
         # remove gt objects and overlapping det objects  
         for i, gt_anno in enumerate(eval_gt_annos):
 
@@ -309,9 +310,14 @@ class AVLDataset(DatasetTemplate):
                 gt_anno["gt_boxes_lidar"][remove_mask], eval_det_annos[i]["boxes_lidar"])
             remove_mask_det[np.any(iou_matrix > min_remove_overlap_bev_iou, axis=0)] = True
             
+            #print("dropping", np.sum(remove_mask), "gt objects and", np.sum(remove_mask_det), "det objects")
+            sum_gt += np.sum(remove_mask)
+            sum_det += np.sum(remove_mask_det)
+
             eval_gt_annos[i] = common_utils.drop_info_with_mask(gt_anno, remove_mask)
             eval_det_annos[i] = common_utils.drop_info_with_mask(eval_det_annos[i], remove_mask_det)
 
+        print("dropped", sum_gt, "gt objects and", sum_det, "det objects over all frames")
                 
                 
 
