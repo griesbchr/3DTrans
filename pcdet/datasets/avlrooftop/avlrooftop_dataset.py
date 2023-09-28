@@ -26,7 +26,6 @@ class AVLRooftopDataset(AVLDataset):
                         root_path=root_path,
                         logger=logger,
                         creating_infos=creating_infos)
-        self.is_fov = self.dataset_cfg.get('FOV_POINTS_ONLY',False)
         
     def get_label(self, idx):
         sequence_name = Path(idx).parent.parent.parent.stem
@@ -100,10 +99,8 @@ class AVLRooftopDataset(AVLDataset):
         else:
             raise NotImplementedError
 
-        if self.is_fov:
-            angle = np.arctan2(points[:, 1], points[:, 0])
-            mask = (angle > -self.fov / 2.) & (angle < self.fov / 2.)
-            points = points[mask]
+        if self.train_fov_only:
+            points = self.extract_fov_data(points, self.fov_angle_deg, self.lidar_heading_angle_deg)
 
         points[:, -1] = np.clip(points[:, -1], a_min=0, a_max=1.)
         points[:,2] -= self.lidar_z_shift

@@ -36,6 +36,13 @@ class AVLDataset(DatasetTemplate):
         self.include_avl_data(self.split)
         self.avl_infos = [ai for ai in self.avl_infos
                           if 'annos' in ai]  # filter out frames wituoht labels
+        
+        self.train_fov_only = self.dataset_cfg.get('TRAIN_FOV_ONLY', False)
+        self.fov_angle_deg = self.dataset_cfg.get('LIDAR_FOV', 120)
+        self.lidar_heading_angle_deg = self.dataset_cfg.get('LIDAR_HEADING', 120)
+        self.disregard_truncated = self.dataset_cfg.get('DISREGARD_TRUNCATED', True)
+
+        self.eval_fov_only = self.dataset_cfg.get('EVAL_FOV_ONLY', False)
 
         self.lidar_z_shift = self.dataset_cfg.get('LIDAR_Z_SHIFT', 0.0)
         
@@ -291,7 +298,6 @@ class AVLDataset(DatasetTemplate):
                 det_count += sum(anno['name'] == class_name)
             print("Class:", class_name, "gt_count:", gt_count, "det_count:", det_count)
 
-
         #remove_le_points = self.dataset_cfg.get('EVAL_REMOVE_LESS_OR_EQ_POINTS', None)
         remove_le_points = 0
         #ignore_classes = self.dataset_cfg.get('EVAL_IGNORE_CLASSES', None)
@@ -318,7 +324,11 @@ class AVLDataset(DatasetTemplate):
             iou_matrix = iou3d_nms_utils.boxes_bev_iou_cpu(
                 gt_anno["gt_boxes_lidar"][remove_mask], eval_det_annos[i]["boxes_lidar"])
             remove_mask_det[np.any(iou_matrix > min_remove_overlap_bev_iou, axis=0)] = True
-            
+
+            #add gt boxes that are not in fov to remove mask
+            if self.eval_fov_only:
+                remove_mask[~self.extract_fov_gt_nontruncated(gt_anno["gt_boxes_lidar"], 120, 0)] = True
+                remove_mask_det[~self.extract_fov_gt_nontruncated(eval_det_annos[i]["boxes_lidar"], 120, 0)] = True	
             #print("dropping", np.sum(remove_mask), "gt objects and", np.sum(remove_mask_det), "det objects")
             sum_gt += np.sum(remove_mask)
             sum_det += np.sum(remove_mask_det)
@@ -327,6 +337,9 @@ class AVLDataset(DatasetTemplate):
             eval_det_annos[i] = common_utils.drop_info_with_mask(eval_det_annos[i], remove_mask_det)
 
         print("dropped", sum_gt/len(eval_gt_annos), "gt objects/frame and", sum_det/len(eval_det_annos), "det objects/frame")
+        
+        if self.eval_fov_only:
+            print("doing fov only evaluation")
                 
                 
 
@@ -345,7 +358,10 @@ class AVLDataset(DatasetTemplate):
             ap_result_str, ap_dict = waymo_eval(eval_det_annos, eval_gt_annos)
         else:
             raise NotImplementedError
-
+        
+        if 'return_annos' in kwargs and kwargs['return_annos']:
+            return ap_result_str, ap_dict, eval_gt_annos, eval_det_annos
+        
         return ap_result_str, ap_dict
         
         
@@ -438,8 +454,6 @@ class AVLDataset(DatasetTemplate):
 
             gt_names = annos['name']
             gt_boxes_lidar = annos["gt_boxes_lidar"].astype(np.float32)
-            #if self.dataset_cfg.get('SHIFT_COOR', None):
-            #    gt_boxes_lidar[:, 0:3] += self.dataset_cfg.SHIFT_COOR
 
 
             input_dict.update({
@@ -450,12 +464,38 @@ class AVLDataset(DatasetTemplate):
         if "points" in get_item_list:
             points = self.get_lidar(sample_idx)
 
-            #if self.dataset_cfg.get('SHIFT_COOR', None):
-            #    points[:, 0:3] += np.array(self.dataset_cfg.SHIFT_COOR,dtype=np.float32)
-
             input_dict['points'] = points
 
+        if self.train_fov_only:
+            #remove gt boxes that are completely outside of fov
+            outside_fov_mask = self.extract_bbox_outside_fov(gt_boxes_lidar, self.fov_angle_deg, self.lidar_heading_angle_deg)
+            input_dict['gt_boxes'] =  gt_boxes_lidar[~outside_fov_mask]
+            input_dict['gt_names'] = gt_names[~outside_fov_mask]
+
+            if self.disregard_truncated:
+                truncated = np.ones(len(input_dict['gt_names']), dtype=bool)
+                non_truncated_mask = self.extract_fov_gt_nontruncated(input_dict['gt_boxes'], self.fov_angle_deg, self.lidar_heading_angle_deg)
+                truncated[non_truncated_mask] = False
+
+                input_dict['truncated'] = truncated
+
         data_dict = self.prepare_data(data_dict=input_dict)
+
+
+
+        if "truncated" in data_dict:            
+            #set truncated gt boxes to label (last entry) to -1
+            gt_boxes = data_dict['gt_boxes']
+            truncated = data_dict['truncated'].astype(bool)
+            gt_boxes[truncated, -1] = -1
+            data_dict['gt_boxes'] = gt_boxes
+
+            #debug outputs
+            num_truncated = truncated.sum()
+            #print("%d/%d gt boxes truncated" % (num_truncated, len(annos['name']))) 
+            #print("%d/%d gt+sampled boxes truncated" % (num_truncated, len(truncated)))
+
+            data_dict.pop('truncated')
 
         #do z shift after data preparation to be able to use pc range and anchor sizes for unified coordinate system 
         #z_shift = self.dataset_cfg.get('TRAINING_Z_SHIFT', None)

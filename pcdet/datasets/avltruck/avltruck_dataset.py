@@ -94,6 +94,8 @@ class AVLTruckDataset(AVLDataset):
         assert np_lidar_file.exists(), f"{np_lidar_file} does not exist"
         points = np.load(np_lidar_file, allow_pickle=False)
 
+        if self.train_fov_only:
+            points = self.extract_fov_data(points, self.fov_angle_deg, self.lidar_heading_angle_deg)
 
         points[:, -1] = np.clip(points[:, -1], a_min=0, a_max=1.)
         points[:,2] -= self.lidar_z_shift

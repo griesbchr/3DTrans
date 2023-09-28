@@ -135,10 +135,29 @@ class DatasetTemplate(torch_data.Dataset):
         fov_mask = ((np.abs(angle) < half_fov_degree) & (points_new[:, 0] > 0))
         points = points_new[fov_mask]
         return points
-
+    
+    @staticmethod
+    def extract_fov_data_mask(points, fov_degree, heading_angle):
+        """
+        Args:
+            points: (N, 3 + C)
+            fov_degree: [0~180]
+            heading_angle: [0~360] in lidar coords, 0 is the x-axis, increase clockwise
+        Returns:
+        """
+        half_fov_degree = fov_degree / 180 * np.pi / 2
+        heading_angle = -heading_angle / 180 * np.pi
+        points_new = common_utils.rotate_points_along_z(
+            points.copy()[np.newaxis, :, :], np.array([heading_angle])
+        )[0]
+        angle = np.arctan2(points_new[:, 1], points_new[:, 0])
+        fov_mask = ((np.abs(angle) < half_fov_degree) & (points_new[:, 0] > 0))
+        return fov_mask
+    
     @staticmethod
     def extract_fov_gt(gt_boxes, fov_degree, heading_angle):
         """
+        Returns a mask of gt boxes that are in fov
         Args:
             anno_dict:
             fov_degree: [0~180]
@@ -156,11 +175,51 @@ class DatasetTemplate(torch_data.Dataset):
         fov_gt_mask = ((np.abs(gt_angle) < half_fov_degree) & (gt_boxes_lidar[:, 0] > 0))
         return fov_gt_mask
     
-    @staticmethod
-    def extract_fov_gt_nontruncated(gt_boxes, fov_degree, heading_angle):
+    def extract_fov_gt_nontruncated(self, gt_boxes, fov_degree, heading_angle):
         """
         
         """
+        heading_angle = -heading_angle / 180 * np.pi
+        gt_boxes_lidar = copy.deepcopy(gt_boxes)
+        gt_boxes_lidar = common_utils.rotate_points_along_z(
+            gt_boxes_lidar[np.newaxis, :, :], np.array([heading_angle])
+        )[0]
+        gt_boxes_lidar[:, 6] += heading_angle
+        #get lidar boxes corners
+        corners_points = box_utils.boxes_to_corners_3d(gt_boxes_lidar).reshape(-1,3)
+        corners_points_fov_mask = self.extract_fov_data_mask(corners_points, fov_degree, heading_angle)
+
+        #respahe mask to per box shape
+        corners_points_fov_mask = corners_points_fov_mask.reshape(-1, 8)
+
+        #if all corners are in fov, object is not truncated
+        fov_mask = np.zeros(corners_points_fov_mask.shape[0], dtype=bool)
+        fov_mask[corners_points_fov_mask.sum(axis=1) == 8] = 1
+
+        return fov_mask
+        
+    def extract_bbox_outside_fov(self, gt_boxes, fov_degree, heading_angle):
+        """
+        t
+        """
+        heading_angle = -heading_angle / 180 * np.pi
+        gt_boxes_lidar = copy.deepcopy(gt_boxes)
+        gt_boxes_lidar = common_utils.rotate_points_along_z(
+            gt_boxes_lidar[np.newaxis, :, :], np.array([heading_angle])
+        )[0]
+        gt_boxes_lidar[:, 6] += heading_angle
+        #get lidar boxes corners
+        corners_points = box_utils.boxes_to_corners_3d(gt_boxes_lidar).reshape(-1,3)
+        corners_points_fov_mask = self.extract_fov_data_mask(corners_points, fov_degree, heading_angle)
+
+        #respahe mask to per box shape
+        corners_points_fov_mask = corners_points_fov_mask.reshape(-1, 8)
+
+        #if all corners are in fov, object is not truncated
+        outside_mask = np.zeros(corners_points_fov_mask.shape[0], dtype=bool)
+        outside_mask[corners_points_fov_mask.sum(axis=1) == 0] = 1
+
+        return outside_mask
 
     def fill_pseudo_labels(self, input_dict):
         gt_boxes = self_training_utils.load_ps_label(input_dict['frame_id'])

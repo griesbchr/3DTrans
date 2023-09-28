@@ -2,6 +2,7 @@ import argparse
 from pathlib import Path
 import yaml
 from easydict import EasyDict
+import numpy as np
 
 from pcdet.models import build_network, load_data_to_gpu
 from pcdet.datasets import build_dataloader
@@ -22,16 +23,16 @@ def main():
 
     logger = common_utils.create_logger()
 
-    dataset = "avlrooftop"
+    dataset = "avltruck"
     
     #avlrooftop
-    checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output/avlrooftop_models/second/full_80epochs/ckpt/checkpoint_epoch_80.pth"
+    #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output/avlrooftop_models/second/full_80epochs/ckpt/checkpoint_epoch_80.pth"
 
     #zod 
     #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output/output/zod_models/second/full_30epochs_fusesingletrack/ckpt/checkpoint_epoch_30.pth"
 
     #avltruck
-    #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output/avltruck_models/second/D6_80epochs_fusesingletrack/ckpt/checkpoint_epoch_80.pth"
+    checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output/avltruck_models/second/D6_80epochs_fusesingletrack/ckpt/checkpoint_epoch_80.pth"
 
     
     if (args.dataset == None):
@@ -147,14 +148,20 @@ def main():
         annos = dataset.generate_prediction_dicts(
                 data_dict, pred_dicts, dataset.class_names, None)
         
-        result_str, result_dict = dataset.evaluation(det_annos=annos, class_names=dataset.class_names, eval_metric="kitti")
+        result_str, result_dict, eval_gt_annos, eval_det_annos= dataset.evaluation(det_annos=annos, class_names=dataset.class_names, eval_metric="kitti", return_annos=True)
         
         print(result_str)
-    
-        vis.draw_scenes(data_dict['points'][:,1:4], 
-                        data_dict["gt_boxes"][0,:,:7], 
-                        pred_dicts[0]["pred_boxes"].detach().cpu().numpy(),
-                        point_colors = data_dict['points'][:,-1].detach().cpu().numpy())
+
+        print("remaining gt boxes for nontruncated method:", dataset.extract_fov_gt_nontruncated(data_dict["gt_boxes"][0,:,:7].cpu().numpy(), 120, 0).sum())
+        print("remaining gt boxes for center method:", dataset.extract_fov_gt(data_dict["gt_boxes"][0,:,:7].cpu().numpy(), 120, 0).sum())
+        
+        points4 = data_dict['points'].detach().cpu().numpy()[:,1:]
+        gt_boxes = eval_gt_annos[0]["gt_boxes_lidar"]
+        det_boxes = eval_det_annos[0]["boxes_lidar"]
+
+        points4 = dataset.extract_fov_data(points4, 120, 0)
+
+        vis.draw_scenes(points4[:,:3], gt_boxes, det_boxes,point_colors=points4[:,-1])
     else:
         dataset, train_loader, train_sampler = build_dataloader(dataset_cfg=dataset_cfg,
                                         class_names=dataset_class_names,

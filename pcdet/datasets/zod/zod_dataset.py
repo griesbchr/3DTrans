@@ -52,7 +52,7 @@ class ZODDataset(DatasetTemplate):
 
         self.map_class_to_kitti = self.dataset_cfg.get('MAP_CLASS_TO_KITTI',None)
 
-        self.disregard_truncated = self.dataset_cfg.get('DISREGARD_TRUNCATED',False)
+        self.disregard_truncated = self.dataset_cfg.get('DISREGARD_TRUNCATED',True)
 
     def map_merge_classes(self):
         if self.dataset_cfg.get('MAP_MERGE_CLASS', None) is None:
@@ -304,7 +304,6 @@ class ZODDataset(DatasetTemplate):
 
         if "truncated" in data_dict:            
             #set truncated gt boxes to label (last entry) to -1
-            #XXX or do i need to set them to label*-1?
             gt_boxes = data_dict['gt_boxes']
             truncated = data_dict['truncated'].astype(bool)
             gt_boxes[truncated, -1] = -1
@@ -376,8 +375,8 @@ class ZODDataset(DatasetTemplate):
         if 'annos' not in self.zod_infos[0].keys():
             return 'No ground-truth boxes for evaluation', {}
         
-        if (len(det_annos) != len(self.avl_infos)):
-            print("Number of frames in det_annos and avl_infos do not match")
+        if (len(det_annos) != len(self.zod_infos)):
+            print("Number of frames in det_annos and zod_infos do not match")
             partial = True
         else:
             partial = False
@@ -400,10 +399,6 @@ class ZODDataset(DatasetTemplate):
                 eval_gt_annos, map_name_to_kitti=map_name_to_kitti,
                 info_with_fakelidar=self.dataset_cfg.get('INFO_WITH_FAKELIDAR', False)
             )
-
-            # add truncation information to gt annotations
-            #for anno, truncation in zip(eval_gt_annos, truncation_annos):
-            #    anno["truncated"] = truncation
 
             kitti_class_names = [map_name_to_kitti[x] for x in class_names]
             ap_result_str, ap_dict = kitti_eval.get_custom_eval_result(
@@ -464,21 +459,23 @@ class ZODDataset(DatasetTemplate):
             for ignore_class in ignore_classes:
                 remove_mask[name == ignore_class] = True
 
-            #remove_mask_det = np.zeros(len(eval_det_annos[i]["name"]), dtype=bool)
-            #iou_matrix = iou3d_nms_utils.boxes_bev_iou_cpu(
-            #    gt_anno["gt_boxes_lidar"][remove_mask], eval_det_annos[i]["boxes_lidar"])
-            #remove_mask_det[np.any(iou_matrix > min_remove_overlap_bev_iou, axis=0)] = True
+            remove_mask_det = np.zeros(len(eval_det_annos[i]["name"]), dtype=bool)
+            iou_matrix = iou3d_nms_utils.boxes_bev_iou_cpu(
+                gt_anno["gt_boxes_lidar"][remove_mask], eval_det_annos[i]["boxes_lidar"])
+            remove_mask_det[np.any(iou_matrix > min_remove_overlap_bev_iou, axis=0)] = True
 
             #ignore truncated gt boxes
-            #if self.disregard_truncated:
-            #    remove_mask[gt_anno["truncated"] == 1] = True
+            if self.disregard_truncated:
+                remove_mask[gt_anno["truncated"] == 1] = True
+                #XXX next line can also be left out, now quit sure if it makes a difference
+                remove_mask_det[~self.extract_fov_gt_nontruncated(eval_det_annos[i]["boxes_lidar"], 120, 0)] = True	
 
-            #print("dropping", np.sum(remove_mask), "gt objects and", np.sum(remove_mask_det), "det objects")
+
             sum_gt += np.sum(remove_mask)
-            #sum_det += np.sum(remove_mask_det)
+            sum_det += np.sum(remove_mask_det)
 
             eval_gt_annos[i] = common_utils.drop_info_with_mask(gt_anno, remove_mask)
-            #eval_det_annos[i] = common_utils.drop_info_with_mask(eval_det_annos[i], remove_mask_det)              
+            eval_det_annos[i] = common_utils.drop_info_with_mask(eval_det_annos[i], remove_mask_det)              
 
         print("dropped", sum_gt/len(eval_gt_annos), "gt objects/frame and", sum_det/len(eval_det_annos), "det objects/frame")
 
@@ -492,6 +489,9 @@ class ZODDataset(DatasetTemplate):
                                                 self.map_class_to_kitti)
         else:
             raise NotImplementedError
+        
+        if "return_annos" in kwargs and kwargs["return_annos"]:
+            return ap_result_str, ap_dict, eval_gt_annos, eval_det_annos
 
         return ap_result_str, ap_dict
 
