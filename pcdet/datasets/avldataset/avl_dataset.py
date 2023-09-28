@@ -225,6 +225,12 @@ class AVLDataset(DatasetTemplate):
         from ...ops.iou3d_nms import iou3d_nms_utils
         if 'annos' not in self.avl_infos[0].keys():
             return 'No ground-truth boxes for evaluation', {}
+
+        if (len(det_annos) != len(self.avl_infos)):
+            print("Number of frames in det_annos and avl_infos do not match")
+            partial = True
+        else:
+            partial = False
                                                                                         
         def kitti_eval(eval_det_annos, eval_gt_annos, map_class_to_kitti):
             from ..kitti.kitti_object_eval_python import eval as kitti_eval
@@ -263,6 +269,9 @@ class AVLDataset(DatasetTemplate):
         #drop_info = self.dataset_cfg.get('EVAL_REMOVE_CLASSES', None)
         drop_infos = ["DontCare", "Dont_Care", "Other"]
         for info in self.avl_infos:
+            if partial:
+                if info['point_cloud']['lidar_idx'] not in [det_anno['frame_id'] for det_anno in eval_det_annos]:
+                    continue
             eval_gt_annos.append(copy.deepcopy(info['annos']))
             for drop_info in drop_infos:
                 eval_gt_annos[-1] = common_utils.drop_info_with_name(
@@ -317,7 +326,7 @@ class AVLDataset(DatasetTemplate):
             eval_gt_annos[i] = common_utils.drop_info_with_mask(gt_anno, remove_mask)
             eval_det_annos[i] = common_utils.drop_info_with_mask(eval_det_annos[i], remove_mask_det)
 
-        print("dropped", sum_gt, "gt objects and", sum_det, "det objects over all frames")
+        print("dropped", sum_gt/len(eval_gt_annos), "gt objects/frame and", sum_det/len(eval_det_annos), "det objects/frame")
                 
                 
 
@@ -338,7 +347,8 @@ class AVLDataset(DatasetTemplate):
             raise NotImplementedError
 
         return ap_result_str, ap_dict
-
+        
+        
     def create_groundtruth_database(self,
                                     info_path=None,
                                     used_classes=None,

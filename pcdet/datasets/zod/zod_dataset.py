@@ -375,6 +375,12 @@ class ZODDataset(DatasetTemplate):
         #class_names are dataset.class_names
         if 'annos' not in self.zod_infos[0].keys():
             return 'No ground-truth boxes for evaluation', {}
+        
+        if (len(det_annos) != len(self.avl_infos)):
+            print("Number of frames in det_annos and avl_infos do not match")
+            partial = True
+        else:
+            partial = False
 
         def kitti_eval(eval_det_annos, eval_gt_annos, map_name_to_kitti):
             from ..kitti.kitti_object_eval_python import eval as kitti_eval
@@ -412,6 +418,9 @@ class ZODDataset(DatasetTemplate):
         #drop_info = self.dataset_cfg.get('EVAL_REMOVE_CLASSES', None)
         drop_infos = []
         for info in self.zod_infos:
+            if partial:
+                if info['point_cloud']['lidar_idx'] not in [det_anno['frame_id'] for det_anno in eval_det_annos]:
+                    continue
             eval_gt_annos.append(copy.deepcopy(info['annos']))
             for drop_info in drop_infos:
                 eval_gt_annos[-1] = common_utils.drop_info_with_name(
@@ -471,7 +480,7 @@ class ZODDataset(DatasetTemplate):
             eval_gt_annos[i] = common_utils.drop_info_with_mask(gt_anno, remove_mask)
             #eval_det_annos[i] = common_utils.drop_info_with_mask(eval_det_annos[i], remove_mask_det)              
 
-        print("dropped", sum_gt, "gt objects and", sum_det, "det objects over all frames")
+        print("dropped", sum_gt/len(eval_gt_annos), "gt objects/frame and", sum_det/len(eval_det_annos), "det objects/frame")
 
         # z_shift = self.dataset_cfg.get('TRAINING_Z_SHIFT', None)
         # if z_shift is not None:
@@ -646,8 +655,8 @@ def split_zod_data(data_path, versions):
 def create_zod_infos(dataset_cfg, class_names, data_path, save_path, workers=4):
 
     splits = ['train', 'val']
-    #versions = ['full', 'mini', 'small']
-    versions = ['small']
+    versions = ['full', 'mini', 'small']
+    #versions = ['small']
 
     #split_zod_data(data_path, versions)
 

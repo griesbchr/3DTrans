@@ -164,13 +164,17 @@ def draw_scenes(points, gt_boxes=None, ref_boxes=None, ref_labels=None, ref_scor
 
     vis.add_geometry(pts)
     if point_colors is not None:
+        if (point_colors.shape[-1] == 1 or len(point_colors.shape) == 1):
+            from matplotlib import cm
+            colormap = cm.get_cmap('viridis')
+            point_colors = colormap(point_colors.squeeze())[:, :3] 
         pts.colors = o3d.utility.Vector3dVector(point_colors)
 
     if gt_boxes is not None:
-        vis = draw_box(vis, gt_boxes, (1, 0, 0))
+        vis = draw_box(vis, gt_boxes, (0.99, 0.0, 0.0))
 
     if ref_boxes is not None:
-        vis = draw_box(vis, ref_boxes, (0, 1, 0), ref_labels, ref_scores)
+        vis = draw_box(vis, ref_boxes, (0.0, 0.99, 0.0), ref_labels, ref_scores)
 
     if fit_ground_plane:
         xlim= [-50, 50]
