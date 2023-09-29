@@ -23,7 +23,8 @@ def main():
 
     logger = common_utils.create_logger()
 
-    dataset = "avltruck"
+    dataset = "avlrooftop"
+    checkpoint_path = None
     
     #avlrooftop
     #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output/avlrooftop_models/second/full_80epochs/ckpt/checkpoint_epoch_80.pth"
@@ -32,7 +33,7 @@ def main():
     #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output/output/zod_models/second/full_30epochs_fusesingletrack/ckpt/checkpoint_epoch_30.pth"
 
     #avltruck
-    checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output/avltruck_models/second/D6_80epochs_fusesingletrack/ckpt/checkpoint_epoch_80.pth"
+    #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output/avltruck_models/second/D6_80epochs_fusesingletrack/ckpt/checkpoint_epoch_80.pth"
 
     
     if (args.dataset == None):
@@ -180,8 +181,32 @@ def main():
         gt_boxes_lidar = gt_boxes_lidar[gt_boxes_lidar[:,2] < dataset_cfg.POINT_CLOUD_RANGE[5]]
         gt_boxes_lidar = gt_boxes_lidar[gt_boxes_lidar[:,2] > dataset_cfg.POINT_CLOUD_RANGE[2]]
 
+        frame_list = dataset.sample_id_list
+
+        #sample 100 frames
+        sample_frames = np.random.choice(frame_list, 100, replace=False)
+        point_intensity_min = []
+        point_intensity_max = []
+        point_intensity_mean = []
+        point_intensity_std = []
+        for frame in sample_frames:
+            points = dataset.get_lidar(frame)
+            point_intensity = points[:,-1]
+            point_intensity_min.append(point_intensity.min())
+            point_intensity_max.append(point_intensity.max())
+            point_intensity_mean.append(point_intensity.mean())
+            point_intensity_std.append(point_intensity.std())
+
+        print("min intensity: min", np.array(point_intensity_min).min())
+        print("max intensity: max", np.array(point_intensity_max).max())
+        print("mean intensity: mean", np.array(point_intensity_mean).mean())
+        print("std intensity: mean", np.array(point_intensity_std).mean())
+        
+
+
         vis.draw_scenes(points, gt_boxes_lidar)
 
+    
     return
 
 

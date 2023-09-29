@@ -102,7 +102,8 @@ class AVLRooftopDataset(AVLDataset):
         if self.train_fov_only:
             points = self.extract_fov_data(points, self.fov_angle_deg, self.lidar_heading_angle_deg)
 
-        points[:, -1] = np.clip(points[:, -1], a_min=0, a_max=1.)
+        #points[:, -1] = np.clip(points[:, -1], a_min=0, a_max=1.)
+        points[:, -1] *= 255
         points[:,2] -= self.lidar_z_shift
 
         return points
