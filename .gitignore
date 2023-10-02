@@ -47,5 +47,6 @@ data/*
 tools/test_crossdataset_okeanos.sh
 tools/train_okeanos.sh
 tools/test_okeanos.sh
+tools/viz
 
 output_okeanos/

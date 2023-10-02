@@ -12,8 +12,7 @@ from pcdet.utils import common_utils
 
 from tools.visual_utils import open3d_vis_utils as vis
 
-
-def main():
+def parse_args():
     parser = argparse.ArgumentParser(description='arg parser')
     parser.add_argument('--dataset', type=str, default=None, help='the dataset name')
     parser.add_argument('--frame-idx', type=str, default=None)
@@ -21,9 +20,15 @@ def main():
 
     args = parser.parse_args()
 
-    logger = common_utils.create_logger()
+    return args
 
-    dataset = "avlrooftop"
+def main():
+    args = parse_args()
+    
+
+    save_image = True
+
+    dataset = "zod"
     checkpoint_path = None
     
     #avlrooftop
@@ -35,14 +40,12 @@ def main():
     #avltruck
     #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output/avltruck_models/second/D6_80epochs_fusesingletrack/ckpt/checkpoint_epoch_80.pth"
 
-    
     if (args.dataset == None):
         args.dataset = dataset
 
     if (args.ckpt == None):
         args.ckpt = checkpoint_path
-
-
+    
     if (args.dataset == "avltruck"):
         from pcdet.datasets.avltruck.avltruck_dataset import AVLTruckDataset
         cfg_path =  "/home/cgriesbacher/thesis/3DTrans/tools/cfgs/dataset_configs/avltruck/OD/avltruck_dataset.yaml"
@@ -61,13 +64,12 @@ def main():
         if args.frame_idx is None:
             args.frame_idx = 'sequences/CityStreet_dgt_2021-08-19-11-46-54_0_s0/dataset/logical_frame_000012.json'
         
+        image_path_frame = args.frame_idx.split("/")[1] + "_" + args.frame_idx.split("/")[-1].split(".")[0] 
+
     elif (args.dataset == "zod"):
         from pcdet.datasets.zod.zod_dataset import ZODDataset
         cfg_path =  "cfgs/dataset_configs/zod/OD/zod_dataset.yaml"
         dataset_cfg = EasyDict(yaml.safe_load(open(cfg_path)))
-
-        if args.frame_idx is None:
-            args.frame_idx = "022786"
         
         dataset_class_names = ["Vehicle_Car", 
                        "Vehicle_Van", 
@@ -79,16 +81,16 @@ def main():
                        "VulnerableVehicle_Bicycle",
                        "VulnerableVehicle_Motorcycle",
                        "Pedestrian"]
+        if args.frame_idx is None:
+            args.frame_idx = "022786"
         
+        image_path_frame = args.frame_idx
 
     elif (args.dataset == "avlrooftop"):
         from pcdet.datasets.avlrooftop.avlrooftop_dataset import AVLRooftopDataset
         cfg_path =  "cfgs/dataset_configs/avlrooftop/OD/avlrooftop_dataset.yaml"
         dataset_cfg = EasyDict(yaml.safe_load(open(cfg_path)))
-        
-        if args.frame_idx is None:
-            args.frame_idx = 'sequences/INTERURBAN_Normal_roundabout_20200505103429/unpacked/lidar/0007.pkl'
-        
+    
         dataset_class_names = ["Vehicle_Drivable_Car",
                         "Vehicle_Drivable_Van",
                         "LargeVehicle_Truck",
@@ -101,9 +103,27 @@ def main():
                         "Human",
                         "PPObject_Stroller"]
 
+    
+        if args.frame_idx is None:
+            args.frame_idx = 'sequences/INTERURBAN_Normal_roundabout_20200505103429/unpacked/lidar/0007.pkl'
+        
+        image_path_frame = args.frame_idx.split("/")[1] + "_" + args.frame_idx.split("/")[-1].split(".")[0]
     else:
         raise NotImplementedError("Please specify the dataset path")
     
+    image_path = "viz/" + args.dataset
+
+    if args.ckpt != None:
+        train_dataset = args.ckpt.split("/")[-5]
+        train_detector = args.ckpt.split("/")[-4]
+        train_name = args.ckpt.split("/")[-3]
+        train_epoch = args.ckpt.split("/")[-1].split(".")[0].split("_")[-1]
+
+        image_path += "/" + train_dataset + "_" + train_detector + "_" + train_name + "_" + train_epoch
+
+    image_path += "/" + image_path_frame + ".png"
+
+    logger = common_utils.create_logger()
 
     #load model if specified
     if args.ckpt is not None:
@@ -162,7 +182,10 @@ def main():
 
         points4 = dataset.extract_fov_data(points4, 120, 0)
 
-        vis.draw_scenes(points4[:,:3], gt_boxes, det_boxes,point_colors=points4[:,-1])
+
+        points = points4[:,:3]
+        gt_boxes_lidar = gt_boxes
+        color = points4[:,-1]
     else:
         dataset, train_loader, train_sampler = build_dataloader(dataset_cfg=dataset_cfg,
                                         class_names=dataset_class_names,
@@ -181,32 +204,31 @@ def main():
         gt_boxes_lidar = gt_boxes_lidar[gt_boxes_lidar[:,2] < dataset_cfg.POINT_CLOUD_RANGE[5]]
         gt_boxes_lidar = gt_boxes_lidar[gt_boxes_lidar[:,2] > dataset_cfg.POINT_CLOUD_RANGE[2]]
 
-        frame_list = dataset.sample_id_list
+        #filter out boxes that are not in fov
+        gt_boxes_lidar_mask = dataset.extract_fov_gt(gt_boxes_lidar, 120, 0)
+        gt_boxes_lidar = gt_boxes_lidar[gt_boxes_lidar_mask]
 
-        #sample 100 frames
-        sample_frames = np.random.choice(frame_list, 100, replace=False)
-        point_intensity_min = []
-        point_intensity_max = []
-        point_intensity_mean = []
-        point_intensity_std = []
-        for frame in sample_frames:
-            points = dataset.get_lidar(frame)
-            point_intensity = points[:,-1]
-            point_intensity_min.append(point_intensity.min())
-            point_intensity_max.append(point_intensity.max())
-            point_intensity_mean.append(point_intensity.mean())
-            point_intensity_std.append(point_intensity.std())
+        color=points[:,-1]
+        points=points[:,:3]
+        det_boxes=None
 
-        print("min intensity: min", np.array(point_intensity_min).min())
-        print("max intensity: max", np.array(point_intensity_max).max())
-        print("mean intensity: mean", np.array(point_intensity_mean).mean())
-        print("std intensity: mean", np.array(point_intensity_std).mean())
+    if save_image:
+        #insert image view here, can be copied by pressing Ctrl+C in open3d window and paste in editor file
         
+        view_control = {
+			"boundingbox_max" : [ 176.625, 143.04679870605469, 15.683642387390137 ],
+			"boundingbox_min" : [ -0.059999999999999998, -142.8343505859375, -4.8461880683898926 ],
+			"field_of_view" : 60.0,
+			"front" : [ -0.9691411056871565, -0.084253242249075211, 0.23166119320679146 ],
+			"lookat" : [ 26.938944167003275, 0.13884025881358295, -1.5513422083739699 ],
+			"up" : [ 0.23550074544658964, -0.038778553809448474, 0.97110021246962386 ],
+			"zoom" : 0.079999999999999613
+		}
 
+        vis.draw_scenes(points, gt_boxes_lidar,det_boxes ,point_colors=color, view_control=view_control, image_path=image_path)
+    else:
+        vis.draw_scenes(points, gt_boxes_lidar,det_boxes ,point_colors=color)
 
-        vis.draw_scenes(points, gt_boxes_lidar)
-
-    
     return
 
 

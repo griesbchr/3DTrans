@@ -138,7 +138,7 @@ def plane_coefficients_to_euler(coefficients):
 
 
 
-def draw_scenes(points, gt_boxes=None, ref_boxes=None, ref_labels=None, ref_scores=None, point_colors=None, draw_origin=True, fit_ground_plane=False):
+def draw_scenes(points, gt_boxes=None, ref_boxes=None, ref_labels=None, ref_scores=None, point_colors=None, draw_origin=True, fit_ground_plane=False, image_path=None, view_control=None):
     if isinstance(points, torch.Tensor):
         points = points.cpu().numpy()
     if isinstance(gt_boxes, torch.Tensor):
@@ -195,6 +195,24 @@ def draw_scenes(points, gt_boxes=None, ref_boxes=None, ref_labels=None, ref_scor
         
         vis.add_geometry(plane_point_cloud, point_show_normal=True)
 
+    if view_control is not None:
+        ctr = vis.get_view_control()
+        #insert image view here, can be copied by pressing Ctrl+C in open3d window and paste in editor file
+        ctr.set_front(view_control["front"])
+        ctr.set_lookat(view_control["lookat"])
+        ctr.set_up(view_control["up"])
+        ctr.set_zoom(view_control["zoom"])
+        ctr
+        vis.update_renderer()
+        vis.poll_events()
+        
+        #create image path if not exist
+        import os
+        image_path_dir = os.path.dirname(image_path)
+        if not os.path.exists(image_path_dir):
+            os.makedirs(image_path_dir)
 
+        vis.capture_screen_image(image_path, do_render=True)
+        print("image saved to: ", image_path)
     vis.run()
     vis.destroy_window()
