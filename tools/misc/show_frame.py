@@ -25,7 +25,6 @@ def parse_args():
 def main():
     args = parse_args()
     
-
     save_image = True
 
     dataset = "zod"

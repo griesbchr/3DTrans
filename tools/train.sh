@@ -7,12 +7,12 @@ DATASET=avlrooftop
 #DATASET=avltruck
 #DATASET=avlrooftop
 #MODEL=IA-SSD
-MODEL=second
+MODEL=centerpoint
 #MODEL=pointpillar_1x
-EXTRA_TAG=D1_80epochs_fov
-EPOCHS=80
+EXTRA_TAG=full_2epochs
+EPOCHS=2
 SUBSAMPLE=1
-CKPT_SAVE_INTERVAL=80
+CKPT_SAVE_INTERVAL=2
 NUM_GPUS=2
 
 CONFIG_FILE=${DATASET}_models/$MODEL.yaml
