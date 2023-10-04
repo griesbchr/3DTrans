@@ -257,17 +257,30 @@ class AVLDataset(DatasetTemplate):
         def waymo_eval(eval_det_annos, eval_gt_annos):
             from ..waymo.waymo_eval import OpenPCDetWaymoDetectionMetricsEstimator
             eval = OpenPCDetWaymoDetectionMetricsEstimator()
-
+            
+            for anno in eval_gt_annos:
+                anno['difficulty'] = np.zeros([anno['name'].shape[0]], dtype=np.int32)
+            #waymo supports     WAYMO_CLASSES = ['unknown', 'Vehicle', 'Pedestrian', 'Truck', 'Cyclist']
             ap_dict = eval.waymo_evaluation(eval_det_annos,
                                             eval_gt_annos,
-                                            class_name=class_names,
+                                            class_name= self.class_names,
                                             distance_thresh=1000,
                                             fake_gt_infos=self.dataset_cfg.get(
                                                 'INFO_WITH_FAKELIDAR', False))
+            #filter out dict entries where the key contains SIGN
+            ap_dict = {k: v for k, v in ap_dict.items() if 'SIGN' not in k}
+
+            #filter out dict entries where the key contains APH
+            ap_dict = {k: v for k, v in ap_dict.items() if 'APH' not in k}
+
+            #reduce key OBJECT_TYPE_TYPE_VEHICLE_LEVEL_1 TO VEHICLE_1
+            ap_dict = {k.replace('OBJECT_TYPE_TYPE_', ''): v for k, v in ap_dict.items()} 
+            ap_dict = {k.replace('LEVEL_', ''): v for k, v in ap_dict.items()} 
+
             ap_result_str = '\n'
             for key in ap_dict:
                 ap_dict[key] = ap_dict[key][0]
-                ap_result_str += '%s: %.4f \n' % (key, ap_dict[key])
+                ap_result_str += '%s: %.4f \n' % (key, ap_dict[key]*100)
 
             return ap_result_str, ap_dict
             
@@ -296,7 +309,7 @@ class AVLDataset(DatasetTemplate):
                 if len(anno['name']) == 0:
                     continue
                 det_count += sum(anno['name'] == class_name)
-            print("Class:", class_name, "gt_count:", gt_count, "det_count:", det_count)
+            print("Class:", class_name, "avg. gt_count/frame:", gt_count/len(eval_gt_annos), "avg. det_count/frame:", det_count/len(eval_det_annos))
 
         #remove_le_points = self.dataset_cfg.get('EVAL_REMOVE_LESS_OR_EQ_POINTS', None)
         remove_le_points = 0
@@ -321,14 +334,16 @@ class AVLDataset(DatasetTemplate):
                 remove_mask[name == ignore_class] = True
 
             remove_mask_det = np.zeros(len(eval_det_annos[i]["name"]), dtype=bool)
-            iou_matrix = iou3d_nms_utils.boxes_bev_iou_cpu(
-                gt_anno["gt_boxes_lidar"][remove_mask], eval_det_annos[i]["boxes_lidar"])
-            remove_mask_det[np.any(iou_matrix > min_remove_overlap_bev_iou, axis=0)] = True
 
             #add gt boxes that are not in fov to remove mask
             if self.eval_fov_only:
                 remove_mask[~self.extract_fov_gt_nontruncated(gt_anno["gt_boxes_lidar"], 120, 0)] = True
                 remove_mask_det[~self.extract_fov_gt_nontruncated(eval_det_annos[i]["boxes_lidar"], 120, 0)] = True	
+
+            iou_matrix = iou3d_nms_utils.boxes_bev_iou_cpu(
+                gt_anno["gt_boxes_lidar"][remove_mask], eval_det_annos[i]["boxes_lidar"])
+            remove_mask_det[np.any(iou_matrix > min_remove_overlap_bev_iou, axis=0)] = True
+            
             #print("dropping", np.sum(remove_mask), "gt objects and", np.sum(remove_mask_det), "det objects")
             sum_gt += np.sum(remove_mask)
             sum_det += np.sum(remove_mask_det)

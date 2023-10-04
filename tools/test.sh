@@ -3,9 +3,9 @@
 
 #CONFIG_FILE=kitti_models/second
 #CONFIG_FILE=kitti_models/IA-SSD
-DATASET=zod
-MODEL=second
-CFG_TAG=D16_80epochs_fusesingletrack
+DATASET=avlrooftop
+MODEL=centerpoint
+CFG_TAG=D1_80epochs
 EPOCH=80
 
 NUM_GPUS=2

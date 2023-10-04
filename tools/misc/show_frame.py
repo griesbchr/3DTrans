@@ -27,11 +27,11 @@ def main():
     
     save_image = True
 
-    dataset = "zod"
+    dataset = "avlrooftop"
     checkpoint_path = None
     
     #avlrooftop
-    #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output/avlrooftop_models/second/full_80epochs/ckpt/checkpoint_epoch_80.pth"
+    checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output/avlrooftop_models/centerpoint/D1_80epochs/ckpt/checkpoint_epoch_80.pth"
 
     #zod 
     #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output/output/zod_models/second/full_30epochs_fusesingletrack/ckpt/checkpoint_epoch_30.pth"
@@ -46,7 +46,6 @@ def main():
         args.ckpt = checkpoint_path
     
     if (args.dataset == "avltruck"):
-        from pcdet.datasets.avltruck.avltruck_dataset import AVLTruckDataset
         cfg_path =  "/home/cgriesbacher/thesis/3DTrans/tools/cfgs/dataset_configs/avltruck/OD/avltruck_dataset.yaml"
         dataset_cfg = EasyDict(yaml.safe_load(open(cfg_path)))
 
@@ -66,7 +65,6 @@ def main():
         image_path_frame = args.frame_idx.split("/")[1] + "_" + args.frame_idx.split("/")[-1].split(".")[0] 
 
     elif (args.dataset == "zod"):
-        from pcdet.datasets.zod.zod_dataset import ZODDataset
         cfg_path =  "cfgs/dataset_configs/zod/OD/zod_dataset.yaml"
         dataset_cfg = EasyDict(yaml.safe_load(open(cfg_path)))
         
@@ -86,7 +84,6 @@ def main():
         image_path_frame = args.frame_idx
 
     elif (args.dataset == "avlrooftop"):
-        from pcdet.datasets.avlrooftop.avlrooftop_dataset import AVLRooftopDataset
         cfg_path =  "cfgs/dataset_configs/avlrooftop/OD/avlrooftop_dataset.yaml"
         dataset_cfg = EasyDict(yaml.safe_load(open(cfg_path)))
     
@@ -104,7 +101,7 @@ def main():
 
     
         if args.frame_idx is None:
-            args.frame_idx = 'sequences/INTERURBAN_Normal_roundabout_20200505103429/unpacked/lidar/0007.pkl'
+            args.frame_idx = 'sequences/CITY_Sunny_junction_20200319110030/unpacked/lidar/0003.pkl'
         
         image_path_frame = args.frame_idx.split("/")[1] + "_" + args.frame_idx.split("/")[-1].split(".")[0]
     else:
@@ -168,7 +165,8 @@ def main():
         annos = dataset.generate_prediction_dicts(
                 data_dict, pred_dicts, dataset.class_names, None)
         
-        result_str, result_dict, eval_gt_annos, eval_det_annos= dataset.evaluation(det_annos=annos, class_names=dataset.class_names, eval_metric="kitti", return_annos=True)
+        eval_metric = "waymo"
+        result_str, _, eval_gt_annos, eval_det_annos= dataset.evaluation(det_annos=annos, class_names=dataset.class_names, eval_metric=eval_metric, return_annos=True)
         
         print(result_str)
 

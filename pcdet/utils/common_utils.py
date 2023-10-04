@@ -49,6 +49,15 @@ def limit_period(val, offset=0.5, period=np.pi):
     ans = val - torch.floor(val / period + offset) * period
     return ans.numpy() if is_numpy else ans
 
+def keep_info_with_names(info, names):
+    if isinstance(names, str):
+        names = [names]
+    ret_info = {}
+    keep_indices = [i for i, x in enumerate(info['name']) if x in names]
+    for key in info.keys():
+        ret_info[key] = info[key][keep_indices]
+    return ret_info
+
 
 def drop_info_with_name(info, name):
     ret_info = {}

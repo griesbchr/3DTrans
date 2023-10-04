@@ -60,7 +60,7 @@ MODEL:
 
     POST_PROCESSING:
       SCORE_THRESH: 0.1
-      POST_CENTER_LIMIT_RANGE: [-75.2, -75.2, -2, 75.2, 75.2, 4]
+      POST_CENTER_LIMIT_RANGE: [-75.2, -75.2, -2, 123.2, 75.2, 4]
       MAX_OBJ_PER_SAMPLE: 500
       NMS_CONFIG:
         NMS_TYPE: nms_gpu
@@ -73,12 +73,12 @@ MODEL:
     SCORE_THRESH: 0.1
     OUTPUT_RAW_SCORE: False
 
-    EVAL_METRIC: kitti
+    EVAL_METRIC: waymo
 
     NMS_CONFIG:
       MULTI_CLASSES_NMS: False
       NMS_TYPE: nms_gpu
-      NMS_THRESH: 0.1
+      NMS_THRESH: 0.01
       NMS_PRE_MAXSIZE: 4096
       NMS_POST_MAXSIZE: 500
 

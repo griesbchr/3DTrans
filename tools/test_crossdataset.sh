@@ -1,10 +1,10 @@
 #!/bin/bash
 #################CROSS DATASET TESTING#################
 
-TRAIN_DATASET=avltruck
-MODEL=second
-CFG_TAG=full_10epochs
-EPOCH=10
+TRAIN_DATASET=avlrooftop
+MODEL=centerpoint
+CFG_TAG=D1_80epochs
+EPOCH=80
 
 EVAL_DATASET=zod
 

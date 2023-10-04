@@ -281,4 +281,20 @@ print("Number of instances per frame:")
 print(df_limit['frame_idx'].value_counts())
 
 
-# %%
+# %% view point distribution within each class using a 2d (x,y) histogram with marginal histograms. 
+# The marginal histograms should be normalized by the total number of instances in each class.
+
+#plot 2d histogram with marginal histograms
+sns.set_style("darkgrid")
+sns.set_context("paper")
+sns.set(font_scale=1.5)
+plt.figure(figsize=(20, 10))
+for i in range(len(classes)):
+    plt.subplot(3,4,i+1)
+    sns.histplot(data=df[df['class'] == classes[i]], x="x", y="y", bins=100, cbar=True)
+    plt.title(classes[i])
+    plt.xlabel('x')
+    plt.ylabel('y')
+plt.suptitle('2D Histogram with marginal histograms')
+plt.tight_layout()
+plt.show()
