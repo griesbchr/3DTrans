@@ -195,14 +195,20 @@ def draw_scenes(points, gt_boxes=None, ref_boxes=None, ref_labels=None, ref_scor
         
         vis.add_geometry(plane_point_cloud, point_show_normal=True)
 
+    ctr = vis.get_view_control()
+    ctr.set_front([ -0.87382241185475829, 0.1038469625471736, 0.4750265265330551 ])
+    ctr.set_lookat([ 10.812253045886072, -2.1608895246509467, -0.15099049601009432 ])
+    ctr.set_up( [ 0.47961097680366721, 0.023248470207012737, 0.87717319815556705 ])
+    ctr.set_zoom(0.059999999999999609)
+    vis.update_renderer()
+    vis.poll_events()
+   
     if view_control is not None:
-        ctr = vis.get_view_control()
         #insert image view here, can be copied by pressing Ctrl+C in open3d window and paste in editor file
         ctr.set_front(view_control["front"])
         ctr.set_lookat(view_control["lookat"])
         ctr.set_up(view_control["up"])
         ctr.set_zoom(view_control["zoom"])
-        ctr
         vis.update_renderer()
         vis.poll_events()
         

@@ -298,3 +298,5 @@ for i in range(len(classes)):
 plt.suptitle('2D Histogram with marginal histograms')
 plt.tight_layout()
 plt.show()
+
+# %%

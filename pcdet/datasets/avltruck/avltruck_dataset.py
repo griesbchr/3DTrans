@@ -76,8 +76,7 @@ class AVLTruckDataset(AVLDataset):
                 loc = (np.array([bb['cx'], bb['cy'], bb['cz']]) -
                        dev_loc) @ dev_q.as_matrix()
                 loc[2] -= self.lidar_z_shift
-                yaw = (dev_q.inv() * yaw_q).as_euler('xyz', degrees=False)[-1]
-                
+                yaw = (dev_q.inv() * yaw_q).as_euler('xyz', degrees=False)[-1] + np.pi                
                 names.append(name)
                 gt_boxes_lidar.append(np.array([loc[0], loc[1], loc[2], bb['l'], bb['w'], bb['h'], yaw]))
         gt_boxes_lidar = np.array(gt_boxes_lidar)

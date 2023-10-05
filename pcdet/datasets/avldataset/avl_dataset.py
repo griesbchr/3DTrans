@@ -244,7 +244,7 @@ class AVLDataset(DatasetTemplate):
             from ..kitti import kitti_utils
             
             if self.map_class_to_kitti is not None:
-                class_names = [self.map_class_to_kitti[x] for x in class_names]
+                class_names = list(set([self.map_class_to_kitti[x] for x in class_names]))
             
             kitti_utils.transform_annotations_to_kitti_format(eval_det_annos, map_name_to_kitti=map_class_to_kitti)
             kitti_utils.transform_annotations_to_kitti_format(
@@ -264,10 +264,11 @@ class AVLDataset(DatasetTemplate):
             for anno in eval_gt_annos:
                 anno['difficulty'] = np.zeros([anno['name'].shape[0]], dtype=np.int32)
             #waymo supports     WAYMO_CLASSES = ['unknown', 'Vehicle', 'Pedestrian', 'Truck', 'Cyclist']
+            max_eval_dist = 1000
             ap_dict = eval.waymo_evaluation(eval_det_annos,
                                             eval_gt_annos,
                                             class_name= self.class_names,
-                                            distance_thresh=1000,
+                                            distance_thresh=max_eval_dist,
                                             fake_gt_infos=self.dataset_cfg.get(
                                                 'INFO_WITH_FAKELIDAR', False))
             #filter out dict entries where the key contains SIGN
@@ -300,6 +301,7 @@ class AVLDataset(DatasetTemplate):
                 eval_gt_annos[-1] = common_utils.drop_info_with_name(
                     eval_gt_annos[-1], name=drop_info)
 
+        print("\n")
         #print number of objects in gt and det for each class in class_names
         for class_name in class_names:
             gt_count = 0
@@ -312,12 +314,12 @@ class AVLDataset(DatasetTemplate):
                 if len(anno['name']) == 0:
                     continue
                 det_count += sum(anno['name'] == class_name)
-            print("Class:", class_name, "avg. gt_count/frame:", gt_count/len(eval_gt_annos), "avg. det_count/frame:", det_count/len(eval_det_annos))
-
+            print("Pre Drop: Class:", class_name, "avg. gt_count/frame:", round(gt_count/len(eval_gt_annos),2), "avg. det_count/frame:", round(det_count/len(eval_det_annos),2))
+        print("\n")
         #remove_le_points = self.dataset_cfg.get('EVAL_REMOVE_LESS_OR_EQ_POINTS', None)
         remove_le_points = 0
         #ignore_classes = self.dataset_cfg.get('EVAL_IGNORE_CLASSES', None)
-        ignore_classes = [""]
+        ignore_classes = []
         #ignore_classes = []
         #remove_overlapping = self.dataset_cfg.get('EVAL_REMOVE_OVERLAPPING_BEV_IOU', None)
         min_remove_overlap_bev_iou = 0.5
@@ -327,16 +329,16 @@ class AVLDataset(DatasetTemplate):
         for i, gt_anno in enumerate(eval_gt_annos):
 
             remove_mask = np.zeros(len(gt_anno["name"]), dtype=bool)
-            
+            remove_mask_det = np.zeros(len(eval_det_annos[i]["name"]), dtype=bool)
+
             # remove with less then n points
             remove_mask[gt_anno['num_points_in_gt'] <= remove_le_points] = True
 
             # add ignore classes to mask
-            name = gt_anno['name']
             for ignore_class in ignore_classes:
-                remove_mask[name == ignore_class] = True
+                remove_mask[ gt_anno['name'] == ignore_class] = True
+                remove_mask_det[ eval_det_annos[i]['name'] == ignore_class] = True
 
-            remove_mask_det = np.zeros(len(eval_det_annos[i]["name"]), dtype=bool)
 
             #add gt boxes that are not in fov to remove mask
             if self.eval_fov_only:
@@ -354,10 +356,25 @@ class AVLDataset(DatasetTemplate):
             eval_gt_annos[i] = common_utils.drop_info_with_mask(gt_anno, remove_mask)
             eval_det_annos[i] = common_utils.drop_info_with_mask(eval_det_annos[i], remove_mask_det)
 
-        print("dropped", sum_gt/len(eval_gt_annos), "gt objects/frame and", sum_det/len(eval_det_annos), "det objects/frame")
+        #print number of objects in gt and det for each class in class_names
+        print("\n")
+        for class_name in class_names:
+            gt_count = 0
+            det_count = 0
+            for anno in eval_gt_annos:
+                if len(anno['name']) == 0:    
+                    continue
+                gt_count += sum(anno['name'] == class_name)
+            for anno in eval_det_annos:
+                if len(anno['name']) == 0:
+                    continue
+                det_count += sum(anno['name'] == class_name)
+            print("Post Drop: Class:", class_name, "avg. gt_count/frame:", round(gt_count/len(eval_gt_annos),2), "avg. det_count/frame:", round(det_count/len(eval_det_annos),2))
+
+        print("\ndropped", round(sum_gt/len(eval_gt_annos),2), "gt objects/frame and", round(sum_det/len(eval_det_annos),2), "det objects/frame")
         
         if self.eval_fov_only:
-            print("doing fov only evaluation")
+            print("\ndoing fov only evaluation\n")
                 
                 
 

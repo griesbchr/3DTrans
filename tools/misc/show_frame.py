@@ -27,11 +27,11 @@ def main():
     
     save_image = True
 
-    dataset = "avlrooftop"
+    dataset = "avltruck"
     checkpoint_path = None
     
     #avlrooftop
-    checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output/avlrooftop_models/centerpoint/D1_80epochs/ckpt/checkpoint_epoch_80.pth"
+    checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output/avlrooftop_models/centerpoint/D1_100epochs_truck/ckpt/checkpoint_epoch_100.pth"
 
     #zod 
     #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output/output/zod_models/second/full_30epochs_fusesingletrack/ckpt/checkpoint_epoch_30.pth"
