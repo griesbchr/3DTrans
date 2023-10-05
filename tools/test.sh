@@ -5,8 +5,8 @@
 #CONFIG_FILE=kitti_models/IA-SSD
 DATASET=avlrooftop
 MODEL=centerpoint
-CFG_TAG=D1_80epochs
-EPOCH=80
+CFG_TAG=D1_100epochs_truck
+EPOCH=100
 
 NUM_GPUS=2
 BATCHSIZE=4

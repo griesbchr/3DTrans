@@ -1,4 +1,4 @@
-CLASS_NAMES: ["Vehicle", "Cyclist", "Pedestrian"]
+CLASS_NAMES: ["Vehicle", "Cyclist", "Pedestrian", "Truck"]
 
 DATA_CONFIG:
   _BASE_CONFIG_: cfgs/dataset_configs/avlrooftop/OD/avlrooftop_dataset.yaml
@@ -29,7 +29,7 @@ MODEL:
     NAME: CenterHead
     CLASS_AGNOSTIC: False
 
-    CLASS_NAMES_EACH_HEAD: [["Vehicle", "Cyclist", "Pedestrian"]]
+    CLASS_NAMES_EACH_HEAD: [["Vehicle", "Cyclist", "Pedestrian", "Truck"]]
 
     SHARED_CONV_CHANNEL: 64
     USE_BIAS_BEFORE_NORM: True
@@ -64,16 +64,16 @@ MODEL:
       MAX_OBJ_PER_SAMPLE: 500
       NMS_CONFIG:
         NMS_TYPE: nms_gpu
-        NMS_THRESH: 0.7
+        NMS_THRESH: 0.01
         NMS_PRE_MAXSIZE: 4096
         NMS_POST_MAXSIZE: 500
 
   POST_PROCESSING:
     RECALL_THRESH_LIST: [0.3, 0.5, 0.7]
-    SCORE_THRESH: 0.8
+    SCORE_THRESH: 0.1
     OUTPUT_RAW_SCORE: False
 
-    EVAL_METRIC: waymo
+    EVAL_METRIC: kitti
 
     NMS_CONFIG:
       MULTI_CLASSES_NMS: False

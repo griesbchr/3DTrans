@@ -28,11 +28,11 @@ INFO_PATH: { "train": [avl_infos_train.pkl], "val": [avl_infos_val.pkl] }
 MAP_MERGE_CLASS: {
     "Vehicle_Drivable_Car": "Vehicle",
     "Vehicle_Drivable_Van": "Vehicle",
-    "LargeVehicle_Truck": "Vehicle",
-    "LargeVehicle_TruckCab": "Vehicle",
-    "LargeVehicle_Bus": "Vehicle",
-    "LargeVehicle_Bus_Bendy": "Vehicle",
-    "Trailer": "Vehicle",
+    "LargeVehicle_Truck": "Truck",
+    "LargeVehicle_TruckCab": "Truck",
+    "LargeVehicle_Bus": "Truck",
+    "LargeVehicle_Bus_Bendy": "Truck",
+    "Trailer": "Truck",
     "Vehicle_Ridable_Motorcycle": "Cyclist",
     "Vehicle_Ridable_Bicycle": "Cyclist",
     "Human": "Pedestrian",
@@ -44,7 +44,7 @@ MAP_MERGE_CLASS: {
 
 #maps detector classes to kitti classes (kitti eval needs kitti class names)
 MAP_CLASS_TO_KITTI:
-  { "Vehicle": "Car", "Pedestrian": "Pedestrian", "Cyclist": "Cyclist" }
+  { "Vehicle": "Car", "Pedestrian": "Pedestrian", "Cyclist": "Cyclist", "Truck": "Car" }
 
 #position of the groundplane relative to data origin (usually lidar sensor)
 #negative z value means the ground plane is below the sensor

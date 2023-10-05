@@ -239,10 +239,13 @@ class AVLDataset(DatasetTemplate):
         else:
             partial = False
                                                                                         
-        def kitti_eval(eval_det_annos, eval_gt_annos, map_class_to_kitti):
+        def kitti_eval(eval_det_annos, eval_gt_annos, map_class_to_kitti, class_names):
             from ..kitti.kitti_object_eval_python import eval as kitti_eval
             from ..kitti import kitti_utils
-
+            
+            if self.map_class_to_kitti is not None:
+                class_names = [self.map_class_to_kitti[x] for x in class_names]
+            
             kitti_utils.transform_annotations_to_kitti_format(eval_det_annos, map_name_to_kitti=map_class_to_kitti)
             kitti_utils.transform_annotations_to_kitti_format(
                 eval_gt_annos, map_name_to_kitti=map_class_to_kitti,
@@ -363,12 +366,10 @@ class AVLDataset(DatasetTemplate):
         # if z_shift is not None:
         #     for anno in eval_det_annos:
         #         anno['boxes_lidar'][:, 2] += z_shift
-        
-        if self.map_class_to_kitti is not None:
-            class_names = [self.map_class_to_kitti[x] for x in class_names]
+    
 
         if kwargs['eval_metric'] == 'kitti':
-            ap_result_str, ap_dict = kitti_eval(eval_det_annos, eval_gt_annos, self.map_class_to_kitti)
+            ap_result_str, ap_dict = kitti_eval(eval_det_annos, eval_gt_annos, self.map_class_to_kitti, class_names)
         elif kwargs['eval_metric'] == 'waymo':
             ap_result_str, ap_dict = waymo_eval(eval_det_annos, eval_gt_annos)
         else:
