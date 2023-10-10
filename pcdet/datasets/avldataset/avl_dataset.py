@@ -301,7 +301,6 @@ class AVLDataset(DatasetTemplate):
                 eval_gt_annos[-1] = common_utils.drop_info_with_name(
                     eval_gt_annos[-1], name=drop_info)
 
-        print("\n")
         #print number of objects in gt and det for each class in class_names
         for class_name in class_names:
             gt_count = 0
@@ -315,7 +314,6 @@ class AVLDataset(DatasetTemplate):
                     continue
                 det_count += sum(anno['name'] == class_name)
             print("Pre Drop: Class:", class_name, "avg. gt_count/frame:", round(gt_count/len(eval_gt_annos),2), "avg. det_count/frame:", round(det_count/len(eval_det_annos),2))
-        print("\n")
         #remove_le_points = self.dataset_cfg.get('EVAL_REMOVE_LESS_OR_EQ_POINTS', None)
         remove_le_points = 0
         #ignore_classes = self.dataset_cfg.get('EVAL_IGNORE_CLASSES', None)
