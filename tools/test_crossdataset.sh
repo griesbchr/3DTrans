@@ -3,10 +3,10 @@
 
 TRAIN_DATASET=avlrooftop
 MODEL=centerpoint
-CFG_TAG=D1_80epochs
-EPOCH=80
+CFG_TAG=D1_100epochs_truck
+EPOCH=100
 
-EVAL_DATASET=zod
+EVAL_DATASET=avltruck
 
 NUM_GPUS=2
 BATCHSIZE=4

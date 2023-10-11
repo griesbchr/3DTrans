@@ -433,7 +433,7 @@ class ZODDataset(DatasetTemplate):
             ap_result_str = '\n'
             for key in ap_dict:
                 ap_dict[key] = ap_dict[key][0]
-                ap_result_str += '%s: %.4f \n' % (key, ap_dict[key])
+                ap_result_str += '%s: %.4f \n' % (key, ap_dict[key]*100)
 
             return ap_result_str, ap_dict
         
