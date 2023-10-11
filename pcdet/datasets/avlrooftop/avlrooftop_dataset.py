@@ -198,7 +198,8 @@ def split_avl_data(data_path, sequence_file_path, train_test_split=0.8):
     for category in sequence_categories:
         category_sequences.append([x for x in dirs if category in x])
 
-    #shuffle sequences within each category
+    #shuffle sequences within each category with fixed seed
+    random.seed(42)
     for sequence in category_sequences:
         random.shuffle(sequence)
 

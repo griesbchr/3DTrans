@@ -166,6 +166,7 @@ def split_avl_data(data_path, train_test_split=0.8):
     t5 = [x for x in dirs if 'PrimaryHighway' in x]
     t6 = [x for x in dirs if 'SecondaryHighway' in x]
 
+    random.seed(42)
     random.shuffle(t1)
     random.shuffle(t2)
     random.shuffle(t3)
