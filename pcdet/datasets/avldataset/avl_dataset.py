@@ -277,6 +277,9 @@ class AVLDataset(DatasetTemplate):
             #filter out dict entries where the key contains APH
             ap_dict = {k: v for k, v in ap_dict.items() if 'APH' not in k}
 
+            #filter out dict entries where the key contains APL
+            ap_dict = {k: v for k, v in ap_dict.items() if 'APL' not in k}
+            
             #reduce key OBJECT_TYPE_TYPE_VEHICLE_LEVEL_1 TO VEHICLE_1
             ap_dict = {k.replace('OBJECT_TYPE_TYPE_', ''): v for k, v in ap_dict.items()} 
             ap_dict = {k.replace('LEVEL_', ''): v for k, v in ap_dict.items()} 
