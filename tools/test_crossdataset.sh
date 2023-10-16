@@ -3,10 +3,10 @@
 
 TRAIN_DATASET=avlrooftop
 MODEL=centerpoint
-CFG_TAG=D1_100epochs_truck
+CFG_TAG=D1_100epochs_4classes
 EPOCH=100
 
-EVAL_DATASET=avltruck
+EVAL_DATASET=kitti
 
 NUM_GPUS=2
 BATCHSIZE=4
@@ -23,7 +23,7 @@ CFG_PATH=$ROOT_PATH/output/$RUN_PATH/$MODEL.yaml
 
 #multi gpu training
 cd "/home/cgriesbacher/thesis/3DTrans/tools"
-bash scripts/dist_test.sh $NUM_GPUS --cfg_file $CFG_PATH --ckpt $CHECKPOINT_PATH --batch_size $BATCHSIZE --workers $NUM_WORKERS --extra_tag $CFG_TAG --crosseval_dataset_cfg $EVAL_DATASET_CFG_PATH
+bash scripts/dist_test.sh $NUM_GPUS --cfg_file $CFG_PATH --ckpt $CHECKPOINT_PATH --batch_size $BATCHSIZE --workers $NUM_WORKERS --extra_tag $CFG_TAG --crosseval_dataset_cfg $EVAL_DATASET_CFG_PATH --eval_tag $EVAL_DATASET
 
 #single gpu training for debugging
 #python test.py --cfg_file $CFG_PATH --ckpt $CHECKPOINT_PATH --batch_size 6 --workers 6 --extra_tag $CFG_TAG

@@ -1,0 +1,13 @@
+breakdown_generator_ids: OBJECT_TYPE
+difficulties {
+levels:1
+levels:2
+}
+matcher_type: TYPE_HUNGARIAN
+iou_thresholds: 0.0        #unknown
+iou_thresholds: 0.7        #vehicle
+iou_thresholds: 0.5        #pedestrian
+iou_thresholds: 0.5        #truck
+iou_thresholds: 0.5        #cyclist
+box_type: TYPE_3D
+        

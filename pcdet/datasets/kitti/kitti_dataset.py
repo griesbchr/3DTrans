@@ -49,6 +49,11 @@ class KittiDataset(DatasetTemplate):
         self.kitti_infos = []
         self.include_kitti_data(self.mode)
 
+        self.eval_fov_only = self.dataset_cfg.FOV_POINTS_ONLY
+
+        self.map_class_to_waymo = self.dataset_cfg.get('MAP_CLASS_TO_WAYMO',None)
+        self.map_kitti_to_waymo = self.dataset_cfg.get('MAP_KITTI_TO_WAYMO',None)
+
     def include_kitti_data(self, mode):
         if self.logger is not None:
             self.logger.info('Loading KITTI dataset')
@@ -411,17 +416,183 @@ class KittiDataset(DatasetTemplate):
         return annos
 
     def evaluation(self, det_annos, class_names, **kwargs):
+        from ...ops.iou3d_nms import iou3d_nms_utils
         if 'annos' not in self.kitti_infos[0].keys():
-            return None, {}
+            return 'No ground-truth boxes for evaluation', {}
 
-        from .kitti_object_eval_python import eval as kitti_eval
+        if (len(det_annos) != len(self.kitti_infos)):
+            print("Number of frames in det_annos and kitti_infos do not match")
+            partial = True
+        else:
+            partial = False
+                                                                                        
+        def kitti_eval(eval_det_annos, eval_gt_annos, map_class_to_kitti, class_names):
+            from ..kitti.kitti_object_eval_python import eval as kitti_eval
+            
+            if self.map_class_to_kitti is not None:
+                class_names = list(set([self.map_class_to_kitti[x] for x in class_names]))
+            
+            #kitti_utils.transform_annotations_to_kitti_format(eval_det_annos, map_name_to_kitti=map_class_to_kitti)
+            #kitti_utils.transform_annotations_to_kitti_format(
+            #    eval_gt_annos, map_name_to_kitti=map_class_to_kitti,
+            #    info_with_fakelidar=self.dataset_cfg.get(
+            #        'INFO_WITH_FAKELIDAR', False))
+            ap_result_str, ap_dict = kitti_eval.get_custom_eval_result(
+                gt_annos=eval_gt_annos,
+                dt_annos=eval_det_annos,
+                current_classes=class_names)
+            return ap_result_str, ap_dict
 
+        def waymo_eval(eval_det_annos, eval_gt_annos):
+            from ..waymo.waymo_eval import OpenPCDetWaymoDetectionMetricsEstimator
+            eval = OpenPCDetWaymoDetectionMetricsEstimator()
+            
+            for anno in eval_det_annos:
+                if self.map_class_to_waymo is not None:   
+                    for k in range(anno['name'].shape[0]):
+                        anno['name'][k] = self.map_class_to_waymo[anno['name'][k]]
+
+            for anno in eval_gt_annos:
+                if self.map_kitti_to_waymo is not None:   
+                    for k in range(anno['name'].shape[0]):
+                        anno['name'][k] = self.map_kitti_to_waymo[anno['name'][k]]
+
+            for anno in eval_gt_annos:
+                anno['difficulty'] = np.zeros([anno['name'].shape[0]], dtype=np.int32)
+            #waymo supports     WAYMO_CLASSES = ['unknown', 'Vehicle', 'Pedestrian', 'Truck', 'Cyclist']
+            max_eval_dist = 1000
+            ap_dict = eval.waymo_evaluation(eval_det_annos,
+                                            eval_gt_annos,
+                                            class_name= self.class_names,
+                                            distance_thresh=max_eval_dist,
+                                            fake_gt_infos=self.dataset_cfg.get(
+                                                'INFO_WITH_FAKELIDAR', False))
+            #filter out dict entries where the key contains SIGN
+            ap_dict = {k: v for k, v in ap_dict.items() if 'SIGN' not in k}
+
+            #filter out dict entries where the key contains APH
+            ap_dict = {k: v for k, v in ap_dict.items() if 'APH' not in k}
+
+            #filter out dict entries where the key contains APL
+            ap_dict = {k: v for k, v in ap_dict.items() if 'APL' not in k}
+            
+            #reduce key OBJECT_TYPE_TYPE_VEHICLE_LEVEL_1 TO VEHICLE_1
+            ap_dict = {k.replace('OBJECT_TYPE_TYPE_', ''): v for k, v in ap_dict.items()} 
+            ap_dict = {k.replace('LEVEL_', ''): v for k, v in ap_dict.items()} 
+
+            ap_result_str = '\n'
+            for key in ap_dict:
+                ap_dict[key] = ap_dict[key][0]
+                ap_result_str += '%s: %.4f \n' % (key, ap_dict[key]*100)
+
+            return ap_result_str, ap_dict
+            
         eval_det_annos = copy.deepcopy(det_annos)
-        eval_gt_annos = [copy.deepcopy(info['annos']) for info in self.kitti_infos]
-        ap_result_str, ap_dict = kitti_eval.get_official_eval_result(eval_gt_annos, eval_det_annos, class_names)
+        eval_gt_annos = []
+        #drop_info = self.dataset_cfg.get('EVAL_REMOVE_CLASSES', None)
+        drop_infos = ["DontCare", "Dont_Care", "Other"]
+        for info in self.kitti_infos:
+            if partial:
+                if info['point_cloud']['lidar_idx'] not in [det_anno['frame_id'] for det_anno in eval_det_annos]:
+                    continue
+            eval_gt_annos.append(copy.deepcopy(info['annos']))
+            for drop_info in drop_infos:
+                eval_gt_annos[-1] = common_utils.drop_info_with_name(
+                    eval_gt_annos[-1], name=drop_info)
 
+        #print number of objects in gt and det for each class in class_names
+        for class_name in class_names:
+            gt_count = 0
+            det_count = 0
+            for anno in eval_gt_annos:
+                if len(anno['name']) == 0:    
+                    continue
+                gt_count += sum(anno['name'] == class_name)
+            for anno in eval_det_annos:
+                if len(anno['name']) == 0:
+                    continue
+                det_count += sum(anno['name'] == class_name)
+            print("Pre Drop: Class:", class_name, "avg. gt_count/frame:", round(gt_count/len(eval_gt_annos),2), "avg. det_count/frame:", round(det_count/len(eval_det_annos),2))
+        
+        #remove_le_points = self.dataset_cfg.get('EVAL_REMOVE_LESS_OR_EQ_POINTS', None)
+        remove_le_points = 0
+        #ignore_classes = self.dataset_cfg.get('EVAL_IGNORE_CLASSES', None)
+        ignore_classes = []
+        #ignore_classes = []
+        #remove_overlapping = self.dataset_cfg.get('EVAL_REMOVE_OVERLAPPING_BEV_IOU', None)
+        min_remove_overlap_bev_iou = 0.5
+        sum_gt = 0
+        sum_det = 0
+        # remove gt objects and overlapping det objects  
+        for i, gt_anno in enumerate(eval_gt_annos):
+
+            remove_mask = np.zeros(len(gt_anno["name"]), dtype=bool)
+            remove_mask_det = np.zeros(len(eval_det_annos[i]["name"]), dtype=bool)
+
+            # remove with less then n points
+            remove_mask[gt_anno['num_points_in_gt'] <= remove_le_points] = True
+
+            # add ignore classes to mask
+            for ignore_class in ignore_classes:
+                remove_mask[ gt_anno['name'] == ignore_class] = True
+                remove_mask_det[ eval_det_annos[i]['name'] == ignore_class] = True
+
+
+            #add gt boxes that are not in fov to remove mask
+            if self.eval_fov_only:
+                remove_mask[~self.extract_fov_gt_nontruncated(gt_anno["gt_boxes_lidar"], 120, 0)] = True
+                remove_mask_det[~self.extract_fov_gt_nontruncated(eval_det_annos[i]["boxes_lidar"], 120, 0)] = True	
+
+            iou_matrix = iou3d_nms_utils.boxes_bev_iou_cpu(
+                gt_anno["gt_boxes_lidar"][remove_mask], eval_det_annos[i]["boxes_lidar"])
+            remove_mask_det[np.any(iou_matrix > min_remove_overlap_bev_iou, axis=0)] = True
+            
+            #print("dropping", np.sum(remove_mask), "gt objects and", np.sum(remove_mask_det), "det objects")
+            sum_gt += np.sum(remove_mask)
+            sum_det += np.sum(remove_mask_det)
+
+            eval_gt_annos[i] = common_utils.drop_info_with_mask(gt_anno, remove_mask)
+            eval_det_annos[i] = common_utils.drop_info_with_mask(eval_det_annos[i], remove_mask_det)
+
+        #print number of objects in gt and det for each class in class_names
+        print("\n")
+        for class_name in class_names:
+            gt_count = 0
+            det_count = 0
+            for anno in eval_gt_annos:
+                if len(anno['name']) == 0:    
+                    continue
+                gt_count += sum(anno['name'] == class_name)
+            for anno in eval_det_annos:
+                if len(anno['name']) == 0:
+                    continue
+                det_count += sum(anno['name'] == class_name)
+            print("Post Drop: Class:", class_name, "avg. gt_count/frame:", round(gt_count/len(eval_gt_annos),2), "avg. det_count/frame:", round(det_count/len(eval_det_annos),2))
+
+        print("\ndropped", round(sum_gt/len(eval_gt_annos),2), "gt objects/frame and", round(sum_det/len(eval_det_annos),2), "det objects/frame")
+        
+        if self.eval_fov_only:
+            print("\ndoing fov only evaluation\n")
+
+        # z_shift = self.dataset_cfg.get('TRAINING_Z_SHIFT', None)
+        # if z_shift is not None:
+        #     for anno in eval_det_annos:
+        #         anno['boxes_lidar'][:, 2] += z_shift
+    
+
+        if kwargs['eval_metric'] == 'kitti':
+            ap_result_str, ap_dict = kitti_eval(eval_det_annos, eval_gt_annos, self.map_class_to_kitti, class_names)
+        elif kwargs['eval_metric'] == 'waymo':
+            ap_result_str, ap_dict = waymo_eval(eval_det_annos, eval_gt_annos)
+        else:
+            raise NotImplementedError
+        
+        if 'return_annos' in kwargs and kwargs['return_annos']:
+            return ap_result_str, ap_dict, eval_gt_annos, eval_det_annos
+        
         return ap_result_str, ap_dict
-
+        
+        
     def __len__(self):
         if self._merge_all_iters_to_one_epoch:
             return len(self.kitti_infos) * self.total_epochs

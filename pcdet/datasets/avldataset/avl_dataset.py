@@ -39,7 +39,7 @@ class AVLDataset(DatasetTemplate):
         
         self.train_fov_only = self.dataset_cfg.get('TRAIN_FOV_ONLY', False)
         self.fov_angle_deg = self.dataset_cfg.get('LIDAR_FOV', 120)
-        self.lidar_heading_angle_deg = self.dataset_cfg.get('LIDAR_HEADING', 120)
+        self.lidar_heading_angle_deg = self.dataset_cfg.get('LIDAR_HEADING', 0)
         self.disregard_truncated = self.dataset_cfg.get('DISREGARD_TRUNCATED', True)
 
         self.eval_fov_only = self.dataset_cfg.get('EVAL_FOV_ONLY', False)

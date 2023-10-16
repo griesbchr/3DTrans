@@ -27,17 +27,19 @@ def main():
     
     save_image = True
 
+    fov=True
+
     dataset = "avltruck"
     checkpoint_path = None
     
     #avlrooftop
-    checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output/avlrooftop_models/centerpoint/D1_100epochs_truck/ckpt/checkpoint_epoch_100.pth"
+    #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output/avlrooftop_models/centerpoint/D1_100epochs_4classes/ckpt/checkpoint_epoch_100.pth"
 
     #zod 
-    #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output/output/zod_models/second/full_30epochs_fusesingletrack/ckpt/checkpoint_epoch_30.pth"
+    #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output/output/zod_models/centerpoint/D16_100epochs_4classes/ckpt/checkpoint_epoch_100.pth"
 
     #avltruck
-    #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output/avltruck_models/second/D6_80epochs_fusesingletrack/ckpt/checkpoint_epoch_80.pth"
+    checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output/avltruck_models/centerpoint/D6_100epochs_4classes/ckpt/checkpoint_epoch_100.pth"
 
     if (args.dataset == None):
         args.dataset = dataset
@@ -104,9 +106,34 @@ def main():
             args.frame_idx = 'sequences/CITY_Sunny_junction_20200319110030/unpacked/lidar/0003.pkl'
         
         image_path_frame = args.frame_idx.split("/")[1] + "_" + args.frame_idx.split("/")[-1].split(".")[0]
+    elif (args.dataset == "kitti"):
+        cfg_path =  "cfgs/dataset_configs/kitti/OD/kitti_dataset.yaml"
+        dataset_cfg = EasyDict(yaml.safe_load(open(cfg_path)))
+    
+        dataset_class_names = ["Car",
+                        "Van",
+                        "Truck",
+                        "Pedestrian",
+                        "Person_sitting",
+                        "Cyclist",
+                        "Tram"]
+
+    
+        if args.frame_idx is None:
+            args.frame_idx = '000224'
+        
+        image_path_frame = args.frame_idx
+
     else:
         raise NotImplementedError("Please specify the dataset path")
     
+    if fov is not None:
+        dataset_cfg.FOV_POINTS_ONLY = fov
+        dataset_cfg.EVAL_FOV_ONLY = fov
+        dataset_cfg.TRAIN_FOV_ONLY = fov
+        dataset_cfg.LIDAR_HEADING = 0
+        dataset_cfg.LIDAR_FOV = 120
+
     image_path = "viz/" + args.dataset
 
     if args.ckpt != None:
@@ -191,7 +218,7 @@ def main():
                                         workers=0,
                                         logger=logger,
                                         training=False) 
-        points = dataset.get_lidar(args.frame_idx)
+        points4 = dataset.get_lidar(args.frame_idx)
         gt_boxes_lidar = dataset.get_label(args.frame_idx)["gt_boxes_lidar"]
         #filter out gt boxes that are out of range
         gt_boxes_lidar = gt_boxes_lidar[gt_boxes_lidar[:,0] < dataset_cfg.POINT_CLOUD_RANGE[3]]
@@ -202,11 +229,12 @@ def main():
         gt_boxes_lidar = gt_boxes_lidar[gt_boxes_lidar[:,2] > dataset_cfg.POINT_CLOUD_RANGE[2]]
 
         #filter out boxes that are not in fov
-        gt_boxes_lidar_mask = dataset.extract_fov_gt(gt_boxes_lidar, 120, 0)
-        gt_boxes_lidar = gt_boxes_lidar[gt_boxes_lidar_mask]
+        if fov:
+            gt_boxes_lidar_mask = dataset.extract_fov_gt(gt_boxes_lidar, dataset_cfg.LIDAR_FOV, dataset_cfg.LIDAR_HEADING)
+            gt_boxes_lidar = gt_boxes_lidar[gt_boxes_lidar_mask]
 
-        color=points[:,-1]
-        points=points[:,:3]
+        color=points4[:,-1]
+        points=points4[:,:3]
         det_boxes=None
 
     if save_image:

@@ -85,20 +85,30 @@ class OpenPCDetWaymoDetectionMetricsEstimator(tf.test.TestCase):
 
     def build_config(self):
         config = metrics_pb2.Config()
-        config_text = """
-        breakdown_generator_ids: OBJECT_TYPE
-        difficulties {
-        levels:1
-        levels:2
-        }
-        matcher_type: TYPE_HUNGARIAN
-        iou_thresholds: 0.0
-        iou_thresholds: 0.7
-        iou_thresholds: 0.5
-        iou_thresholds: 0.5
-        iou_thresholds: 0.5
-        box_type: TYPE_3D
-        """
+
+        #check if there is a custom config file, overwrite default if there is
+        import pathlib
+        eval_folder = pathlib.Path(__file__).parent.absolute()
+        eval_config_file = eval_folder / 'waymo_eval_config.txt'
+        if eval_config_file.exists():
+            config_text = open(eval_folder / 'waymo_eval_config.txt', 'r').read()
+            print(" custom config_text: ", config_text)
+
+        else:
+            config_text = """
+            breakdown_generator_ids: OBJECT_TYPE
+            difficulties {
+            levels:1
+            levels:2
+            }
+            matcher_type: TYPE_HUNGARIAN
+            iou_thresholds: 0.0
+            iou_thresholds: 0.7
+            iou_thresholds: 0.5
+            iou_thresholds: 0.5
+            iou_thresholds: 0.5
+            box_type: TYPE_3D
+            """
 
         for x in range(0, 100):
             config.score_cutoffs.append(x * 0.01)
