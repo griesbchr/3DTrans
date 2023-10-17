@@ -361,9 +361,9 @@ class KittiDataset(DatasetTemplate):
             calib = batch_dict['calib'][batch_index]
             image_shape = batch_dict['image_shape'][batch_index].cpu().numpy()
 
-            if self.dataset_cfg.get('SHIFT_COOR', None):
+            #if self.dataset_cfg.get('SHIFT_COOR', None):
                 #print ("*******WARNING FOR SHIFT_COOR:", self.dataset_cfg.SHIFT_COOR)
-                pred_boxes[:, 0:3] -= self.dataset_cfg.SHIFT_COOR
+                #pred_boxes[:, 0:3] -= self.dataset_cfg.SHIFT_COOR
 
             # BOX FILTER
             if self.dataset_cfg.get('TEST', None) and self.dataset_cfg.TEST.BOX_FILTER['FOV_FILTER']:
@@ -491,7 +491,10 @@ class KittiDataset(DatasetTemplate):
         eval_gt_annos = []
         #drop_info = self.dataset_cfg.get('EVAL_REMOVE_CLASSES', None)
         drop_infos = ["DontCare", "Dont_Care", "Other"]
-        for info in self.kitti_infos:
+        for info in self.kitti_infos:            
+            if self.dataset_cfg.get('SHIFT_COOR', None):
+                info["annos"]["gt_boxes_lidar"][:, 0:3] += self.dataset_cfg.SHIFT_COOR
+                info["annos"]["location"] += self.dataset_cfg.SHIFT_COOR
             if partial:
                 if info['point_cloud']['lidar_idx'] not in [det_anno['frame_id'] for det_anno in eval_det_annos]:
                     continue
