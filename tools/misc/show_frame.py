@@ -29,17 +29,17 @@ def main():
 
     fov=True
 
-    dataset = "avltruck"
+    dataset = "avlrooftop"
     checkpoint_path = None
     
     #avlrooftop
     #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output/avlrooftop_models/centerpoint/D1_100epochs_4classes/ckpt/checkpoint_epoch_100.pth"
 
     #zod 
-    #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output/output/zod_models/centerpoint/D16_100epochs_4classes/ckpt/checkpoint_epoch_100.pth"
+    checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output/zod_models/centerpoint/D16_100epochs_4classes/ckpt/checkpoint_epoch_100.pth"
 
     #avltruck
-    checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output/avltruck_models/centerpoint/D6_100epochs_4classes/ckpt/checkpoint_epoch_100.pth"
+    #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output/avltruck_models/centerpoint/D6_100epochs_4classes/ckpt/checkpoint_epoch_100.pth"
 
     if (args.dataset == None):
         args.dataset = dataset
@@ -120,7 +120,7 @@ def main():
 
     
         if args.frame_idx is None:
-            args.frame_idx = '000224'
+            args.frame_idx = '000063'
         
         image_path_frame = args.frame_idx
 
@@ -154,7 +154,7 @@ def main():
         #get model config 
         ckpt_path = Path(args.ckpt)
         cfg_path = [file for file in ckpt_path.parent.parent.glob('*.yaml')]
-        assert len(cfg_path) == 1, "More of less than one config file found"
+        assert len(cfg_path) == 1, "More or less than one config file found"
         cfg_path = cfg_path[0]
 
         #parse config
