@@ -50,3 +50,4 @@ tools/test_okeanos.sh
 tools/viz
 
 output_okeanos/
+tools/multieval_okeanos.py
