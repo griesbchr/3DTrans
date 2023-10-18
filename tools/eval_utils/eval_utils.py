@@ -122,12 +122,56 @@ def eval_one_epoch(cfg, model, dataloader, epoch_id, logger, dist_test=False, sa
         output_path=final_output_dir
     )
 
+    plot_pr_curve(result_dict, result_dir, cfg)
+
     logger.info(result_str)
     ret_dict.update(result_dict)
 
-    logger.info('Result is save to %s' % result_dir)
     logger.info('****************Evaluation done.*****************')
     return ret_dict
+
+def plot_pr_curve(result_dict, result_dir, cfg):
+    import matplotlib.pyplot as plt
+    import os
+    import seaborn as sns
+
+    #find class names
+    class_names = list(set([key.split('_')[0] for key in result_dict if 'AP' in key]))
+
+    #do a subplot for each class in sns for the precision recall curve
+    #to two seperate plots side by side for level 1 and level 2
+    #the dimentionality of the plot grid thus is 2 x len(class_names)
+    fig, axs = plt.subplots(len(class_names),2, figsize=(20, 10))
+    fig.suptitle('Precision Recall for ' + cfg.TAG + "-" + cfg.EXP_GROUP_PATH + "-" + cfg.extra_tag + "@" + cfg.DATA_CONFIG.DATASET, fontsize=16)
+    for i, class_name in enumerate(class_names):
+        for j, level in enumerate(['1', '2']):
+            #get all keys that contain the class name and level
+            keys = [key for key in result_dict if class_name in key and level in key and "PR" in key]
+            
+            #get first value that contain the class name and level
+            values = [result_dict[key] for key in keys][0]
+
+            #get recall and precision values
+            recalls = values[:,1]
+            precisions = values[:,0]
+
+            #plot recall vs. precision
+            axs[i, j].plot(recalls, precisions)
+            axs[i, j].set_title(class_name + ' Level ' + level)
+            axs[i, j].set_xlabel('Recall')
+            axs[i, j].set_ylabel('Precision')
+            axs[i, j].set_ylim([0, 1.01])
+            axs[i, j].set_xlim([0, 1.01])
+            axs[i, j].grid(True)
+
+            #todo plot confusion matrix for new waymo eval
+
+    plt.tight_layout()
+    plt.subplots_adjust(top=0.9)
+    fig_path = os.path.join(result_dir, 'pr_curve.png')
+    plt.savefig(fig_path)
+    print('Saved pr_curve.png to %s' % fig_path)
+    plt.close(fig)   
 
 def eval_one_epoch_parallel(cfg, model, show_db, dataloader_s1, dataloader_s2, epoch_id, logger, dist_test=False, save_to_file=False, result_dir=None):
     result_dir.mkdir(parents=True, exist_ok=True)
