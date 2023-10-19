@@ -3,6 +3,7 @@ from .spconv_backbone import VoxelBackBone8x, VoxelResBackBone8x, VoxelWideResBa
 from .spconv_backbone_unibn import VoxelBackBone8x_UniBN, VoxelResBackBone8x_UniBN
 from .spconv_unet import UNetV2
 from .IASSD_backbone import IASSD_Backbone
+from .dsvt import DSVT
 
 __all__ = {
     'VoxelBackBone8x': VoxelBackBone8x,
@@ -16,4 +17,5 @@ __all__ = {
     'VoxelBackBone8x_UniBN':VoxelBackBone8x_UniBN,
     'VoxelResBackBone8x_UniBN':VoxelResBackBone8x_UniBN,
     'IASSD_Backbone': IASSD_Backbone,
+    'DSVT': DSVT,
 }
