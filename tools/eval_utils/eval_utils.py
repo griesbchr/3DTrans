@@ -124,6 +124,9 @@ def eval_one_epoch(cfg, model, dataloader, epoch_id, logger, dist_test=False, sa
 
     plot_pr_curve(result_dict, result_dir, cfg)
 
+    with open(result_dir / 'eval_results.pkl', 'wb') as f:
+        pickle.dump(result_dict, f)
+
     logger.info(result_str)
     ret_dict.update(result_dict)
 
