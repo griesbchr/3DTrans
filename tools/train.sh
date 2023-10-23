@@ -3,13 +3,13 @@
 #CONFIG_FILE=kitti_models/second.yaml
 #CONFIG_FILE=avltruck_models/IA-SSD.yaml
 #CONFIG_FILE=avltruck_models/second.yaml
-DATASET=avltruck
+DATASET=avlrooftop
 #DATASET=avltruck
 #DATASET=avlrooftop
 #MODEL=IA-SSD
-MODEL=centerpoint
+MODEL=dsvt_voxel
 #MODEL=pointpillar_1x
-EXTRA_TAG=D6_100epochs_truck_delete
+EXTRA_TAG=D1_100epochs_delete
 EPOCHS=100
 SUBSAMPLE=1
 CKPT_SAVE_INTERVAL=100
