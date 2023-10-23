@@ -28,9 +28,7 @@ MODEL:
   DENSE_HEAD:
     NAME: CenterHead
     CLASS_AGNOSTIC: False
-
     CLASS_NAMES_EACH_HEAD: [["Vehicle", "Cyclist", "Pedestrian", "Truck"]]
-
     SHARED_CONV_CHANNEL: 64
     USE_BIAS_BEFORE_NORM: True
     NUM_HM_CONV: 2
