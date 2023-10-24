@@ -5,9 +5,9 @@ levels:2
 }
 matcher_type: TYPE_HUNGARIAN
 iou_thresholds: 0.0        #unknown
-iou_thresholds: 0.7        #vehicle
-iou_thresholds: 0.5        #pedestrian
-iou_thresholds: 0.5        #truck
-iou_thresholds: 0.5        #cyclist
+iou_thresholds: 0.4        #vehicle
+iou_thresholds: 0.2        #pedestrian
+iou_thresholds: 0.4        #truck
+iou_thresholds: 0.2        #cyclist
 box_type: TYPE_3D
         

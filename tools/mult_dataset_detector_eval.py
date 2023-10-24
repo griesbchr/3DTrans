@@ -3,9 +3,14 @@ import subprocess
 import time
 
 source_dataset = "zod"
-model = "centerpoint"
-cfg = "D16_100epochs_4classes"
+model = "second_4classes"
+cfg = "D16_100epochs"
 epoch = "100"
+
+num_gpus = "1"
+batch_size = "32"    
+workers = "2"
+
 
 
 root_path= "/home/cgriesbacher/thesis/3DTrans"
@@ -16,10 +21,11 @@ checkpoint_file = root_path+"/output/"+run_path+"/ckpt/checkpoint_epoch_"+epoch+
 #check if checkpoint exists
 import os.path
 if not os.path.isfile(checkpoint_file):
-    print("checkpoint file not found")
+    print("checkpoint file not found:", checkpoint_file)
     exit()
 
-target_datasets = ["avltruck", "avlrooftop", "zod"]
+#target_datasets = ["avltruck", "avlrooftop", "zod"]
+target_datasets = ["avltruck", "avlrooftop"]
 
 for target_dataset in target_datasets:
 
@@ -36,10 +42,6 @@ for target_dataset in target_datasets:
 
     #build ckpt_save_interval
     ckpt_save_interval = epoch     #only save last checkpoint
-
-    num_gpus = "2"
-    batch_size = "8"    
-    workers = "2"
 
     #build command
     command = "bash scripts/dist_test.sh "+num_gpus+" --cfg_file " + config_file + " --ckpt "+checkpoint_file+" --batch_size "+batch_size+" --workers "+workers+" --extra_tag "+cfg+" --crosseval_dataset_cfg "+eval_dataset_cfg_path+" --eval_tag " + target_dataset

@@ -141,6 +141,9 @@ def plot_pr_curve(result_dict, result_dir, cfg):
     #find class names
     class_names = list(set([key.split('_')[0] for key in result_dict if 'AP' in key]))
 
+    #sort class names alphabetically inverse
+    class_names.sort(reverse=True)
+
     #do a subplot for each class in sns for the precision recall curve
     #to two seperate plots side by side for level 1 and level 2
     #the dimentionality of the plot grid thus is 2 x len(class_names)
