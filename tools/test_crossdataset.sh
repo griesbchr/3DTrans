@@ -1,16 +1,15 @@
 #!/bin/bash
 #################CROSS DATASET TESTING#################
 
-TRAIN_DATASET=avltruck
-MODEL=second_4classes
-CFG_TAG=D6_100epochs
+TRAIN_DATASET=avlrooftop
+MODEL=dsvt_pillar
+CFG_TAG=D1_100epochs
 EPOCH=100
 
-EVAL_DATASET=avltruck
+EVAL_DATASET=zod
 
-NUM_GPUS=1
-BATCHSIZE=16
-NUM_WORKERS=8
+BATCHSIZE=4
+NUM_WORKERS=4
 
 
 #-----------------------------------------------------
@@ -22,8 +21,9 @@ CHECKPOINT_PATH=$ROOT_PATH/output/$RUN_PATH/ckpt/checkpoint_epoch_$EPOCH.pth
 CFG_PATH=$ROOT_PATH/output/$RUN_PATH/$MODEL.yaml
 
 #multi gpu training
+NUM_GPUS=1
 cd "/home/cgriesbacher/thesis/3DTrans/tools"
 bash scripts/dist_test.sh $NUM_GPUS --cfg_file $CFG_PATH --ckpt $CHECKPOINT_PATH --batch_size $BATCHSIZE --workers $NUM_WORKERS --extra_tag $CFG_TAG --crosseval_dataset_cfg $EVAL_DATASET_CFG_PATH --eval_tag $EVAL_DATASET
 
 #single gpu training for debugging
-#python test.py --cfg_file $CFG_PATH --ckpt $CHECKPOINT_PATH --batch_size 6 --workers 6 --extra_tag $CFG_TAG
+#python test.py --cfg_file $CFG_PATH --ckpt $CHECKPOINT_PATH --batch_size $BATCHSIZE --workers $NUM_WORKERS --extra_tag $CFG_TAG --crosseval_dataset_cfg $EVAL_DATASET_CFG_PATH --eval_tag $EVAL_DATASET

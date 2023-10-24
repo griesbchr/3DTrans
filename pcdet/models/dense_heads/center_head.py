@@ -351,6 +351,8 @@ class CenterHead(nn.Module):
 
                 ret_dict[k]['pred_boxes'].append(final_dict['pred_boxes'])
                 ret_dict[k]['pred_scores'].append(final_dict['pred_scores'])
+                ret_dict[k]['pred_labels'].append(final_dict['pred_labels'])
+                
         for k in range(batch_size):
             ret_dict[k]['pred_boxes'] = torch.cat(ret_dict[k]['pred_boxes'], dim=0)
             ret_dict[k]['pred_scores'] = torch.cat(ret_dict[k]['pred_scores'], dim=0)

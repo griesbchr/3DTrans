@@ -2,13 +2,13 @@ import subprocess
 
 import time
 
-source_dataset = "zod"
-model = "second_4classes"
-cfg = "D16_100epochs"
+source_dataset = "avlrooftop"
+model = "dsvt_pillar"
+cfg = "D1_100epochs"
 epoch = "100"
 
 num_gpus = "1"
-batch_size = "32"    
+batch_size = "8"    
 workers = "2"
 
 

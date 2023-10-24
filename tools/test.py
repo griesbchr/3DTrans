@@ -208,6 +208,12 @@ def main():
         import yaml
         from easydict import EasyDict
         dataset_cfg = EasyDict(yaml.safe_load(open(args.crosseval_dataset_cfg)))
+        #if dataset attributes are set in detector config, overwrite in target dataset cfg as well
+        if hasattr(cfg.DATA_CONFIG, "POINT_CLOUD_RANGE"):
+            dataset_cfg.POINT_CLOUD_RANGE = cfg.DATA_CONFIG.POINT_CLOUD_RANGE
+        if hasattr(cfg.DATA_CONFIG, "DATA_PROCESSOR"):
+            dataset_cfg.DATA_PROCESSOR = cfg.DATA_CONFIG.DATA_PROCESSOR
+
         test_set, test_loader, sampler = build_dataloader(
             dataset_cfg=dataset_cfg,
             class_names=cfg.CLASS_NAMES,
