@@ -19,9 +19,14 @@ CONFIG_FILE=${DATASET}_models/$MODEL.yaml
 
 
 #single gpu training
-python train.py --cfg_file cfgs/$CONFIG_FILE --extra_tag $EXTRA_TAG  --epochs $EPOCHS --subsample $SUBSAMPLE --ckpt_save_interval $CKPT_SAVE_INTERVAL --batch_size $BATCHSIZE
+python train.py --cfg_file cfgs/$CONFIG_FILE --extra_tag $EXTRA_TAG  --epochs $EPOCHS --subsample $SUBSAMPLE --ckpt_save_interval $CKPT_SAVE_INTERVAL --batch_size $BATCHSIZE --no_eval True
 
 #multi gpu training
-#NUM_GPUS=1
 #bash scripts/dist_train.sh $NUM_GPUS --cfg_file cfgs/$CONFIG_FILE --extra_tag $EXTRA_TAG  --epochs $EPOCHS --subsample $SUBSAMPLE --ckpt_save_interval $CKPT_SAVE_INTERVAL --batch_size $BATCHSIZE
+
+#multi dataset eval
+NUM_GPUS=1
+EVAL_BATCHSIZE=8
+EVAL_WORKERS=4
+python multi_dataset_eval.py --source_dataset $DATASET --model $MODEL --cfg $EXTRA_TAG --epoch $EPOCHS --num_gpus $NUM_GPUS --batch_size $EVAL_BATCHSIZE --workers $EVAL_WORKERS
 

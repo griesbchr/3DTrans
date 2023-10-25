@@ -27,12 +27,13 @@ def main():
     
     save_image = True
 
-    fov=False
+    fov=True
 
-    dataset = "avltruck"
+    dataset = "avlrooftop"
     checkpoint_path = None
     
     #avlrooftop
+    checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output/avlrooftop_models/dsvt_pillar/D1_100epochs/ckpt/checkpoint_epoch_100.pth"
     #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output/avlrooftop_models/centerpoint/D1_100epochs_4classes/ckpt/checkpoint_epoch_100.pth"
 
     #zod 
@@ -126,7 +127,7 @@ def main():
 
     else:
         raise NotImplementedError("Please specify the dataset path")
-    
+
     if fov is not None:
         dataset_cfg.FOV_POINTS_ONLY = fov
         dataset_cfg.EVAL_FOV_ONLY = fov
@@ -159,6 +160,12 @@ def main():
 
         #parse config
         cfg_from_yaml_file(cfg_path, cfg)
+
+        # some detectors use different range or voxel preprocessing
+        if hasattr(cfg.DATA_CONFIG, "POINT_CLOUD_RANGE"):
+            dataset_cfg.POINT_CLOUD_RANGE = cfg.DATA_CONFIG.POINT_CLOUD_RANGE
+        if hasattr(cfg.DATA_CONFIG, "DATA_PROCESSOR"):
+            dataset_cfg.DATA_PROCESSOR = cfg.DATA_CONFIG.DATA_PROCESSOR
 
         #build dataset
         dataset, train_loader, train_sampler = build_dataloader(dataset_cfg=dataset_cfg,

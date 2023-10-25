@@ -176,7 +176,7 @@ def split_avl_data(data_path, sequence_file_path, train_test_split=0.8):
     with open(sequence_file_path, 'r') as f:
         seqs = f.readlines()
     seqs = [f.strip() for f in seqs]
-    sequence_categories_list = ["_".join(folder.split("_")[:3]) for folder in seqs]
+    sequence_categories_list = ["_".join(folder.split("_")[:1]) for folder in seqs]
     
     #dict with number of occurences of each sequence category
     categories_count = {i:sequence_categories_list.count(i) for i in sequence_categories_list}
@@ -194,17 +194,20 @@ def split_avl_data(data_path, sequence_file_path, train_test_split=0.8):
 
     #assert(len(dirs) == len(seqs), "Sequences in sequence list not found in sequence folder.")
 
+    #if second to last char is an underline, then remove last two chars
+    dirs_ext_sequences = list(set([d[:-2] if d[-2] == "_" else d for d in dirs]))
+
     category_sequences = []
     for category in sequence_categories:
-        category_sequences.append([x for x in dirs if category in x])
+        category_sequences.append([x for x in dirs_ext_sequences if category in x])
 
     #shuffle sequences within each category with fixed seed
     random.seed(42)
     for sequence in category_sequences:
         random.shuffle(sequence)
 
-    train_sequences = []
-    val_sequences = []
+    ext_train_sequences = []
+    ext_val_sequences = []
 
     #split sequences from each category into train and val
     #We train on sequences of each category
@@ -212,13 +215,59 @@ def split_avl_data(data_path, sequence_file_path, train_test_split=0.8):
         print("Number of sequences in category",sequence_categories[i],":", len(category))
         #we can grab the sequences in order because they are already shuffled
         if (len(category) == 1):
-            train_sequences.extend(category)
+            ext_train_seq.extend(category)
             continue
-        train_sequences.extend(category[:int(len(category)*train_test_split)])
-        val_sequences.extend(category[int(len(category)*train_test_split):])
 
-    print("Number of train sequences:", len(train_sequences))
-    print("Number of val sequences:", len(val_sequences))
+        ext_train_sequences.extend(category[:int(len(category)*train_test_split)])
+        ext_val_sequences.extend(category[int(len(category)*train_test_split):])
+
+    # get all sequences that are in ext_sequences
+    train_sequences = []
+    for ext_train_seq in ext_train_sequences:
+        train_sequences += [dir for dir in dirs if ext_train_seq in dir]
+    val_sequences = []
+    for ext_val_seq in ext_val_sequences:
+        val_sequences += [dir for dir in dirs if ext_val_seq in dir]
+
+    print("Number of train sequences:", len(train_sequences), " which is about ", len(train_sequences)/len(dirs)*100, "percent of all sequences")
+    print("Number of val sequences:", len(val_sequences), " which is about ", len(val_sequences)/len(dirs)*100, "percent of all sequences")
+
+
+    #the frame names have the following structure: '/home/cgriesbacher/thesis/3DTrans/data/avlrooftop/sequences/CATEGORY_SUBCATEGORY_SUBSUBCATEGORY_20200528101524'
+    #list all frames in subcategory for train and val
+
+    #for each frame in train, filter the subcategory
+    train_subcategory_list = []
+    for train_seq in train_sequences:
+        train_subcategory_list.append(train_seq.split("/")[-1].split("_")[1])
+    train_subcategories = list(set(train_subcategory_list))
+    for train_subcategory in train_subcategories:
+        print("Number of train frames in subcategory", train_subcategory, ":", len([seq for seq in train_sequences if train_subcategory in seq]))
+    #for each frame in val, filter the subcategory
+    val_subcategory_list = []
+    for val_seq in val_sequences:
+        val_subcategory_list.append(val_seq.split("/")[-1].split("_")[1])
+    val_subcategories = list(set(val_subcategory_list))
+    for val_subcategory in val_subcategories:
+        print("Number of val frames in subcategory", val_subcategory, ":", len([seq for seq in val_sequences if val_subcategory in seq]))
+    
+    print("\n")
+    #for each frame in train, filter the subsubcategory
+    train_subsubcategory = []
+    for train_seq in train_sequences:
+        train_subsubcategory.append(train_seq.split("/")[-1].split("_")[2])
+    train_subcategories = list(set(train_subsubcategory))
+    for train_subcategory in train_subcategories:
+        print("Number of train frames in subcategory", train_subcategory, ":", len([seq for seq in train_sequences if train_subcategory in seq]))
+
+    #for each frame in val, filter the subcategory
+    val_subsubcategory = []
+    for val_seq in val_sequences:
+        val_subsubcategory.append(val_seq.split("/")[-1].split("_")[2])
+    val_subcategories = list(set(val_subsubcategory))
+    for val_subcategory in val_subcategories:
+        print("Number of val frames in subcategory", val_subcategory, ":", len([seq for seq in val_sequences if val_subcategory in seq]))
+        
 
     for split in ['train', 'val']:
         sequences = train_sequences if split == 'train' else val_sequences
@@ -236,6 +285,8 @@ def split_avl_data(data_path, sequence_file_path, train_test_split=0.8):
     print("Number of val frames:", num_val_frames)
     print("Total number of frames:", num_train_frames + num_val_frames)
     print("Train/Val split:", num_train_frames/(num_train_frames + num_val_frames))
+
+
 
 def create_avl_infos(dataset_cfg,
                      class_names,

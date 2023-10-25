@@ -1,14 +1,14 @@
 #!/bin/bash
 #################CROSS DATASET TESTING#################
 
-TRAIN_DATASET=avlrooftop
-MODEL=dsvt_pillar
-CFG_TAG=D1_100epochs
+TRAIN_DATASET=zod
+MODEL=centerpoint
+CFG_TAG=D16_100epochs_4classes
 EPOCH=100
 
-EVAL_DATASET=zod
+EVAL_DATASET=avlrooftop
 
-BATCHSIZE=4
+BATCHSIZE=8
 NUM_WORKERS=4
 
 

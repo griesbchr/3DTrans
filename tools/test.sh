@@ -20,9 +20,9 @@ CFG_PATH=$ROOT_PATH/output/$RUN_PATH/$MODEL.yaml
 
 
 #single gpu training for debugging
-python test.py --cfg_file $CFG_PATH --ckpt $CHECKPOINT_PATH --batch_size 6 --workers 6 --extra_tag $CFG_TAG
+#python test.py --cfg_file $CFG_PATH --ckpt $CHECKPOINT_PATH --batch_size 6 --workers 6 --extra_tag $CFG_TAG
 
 #multi gpu training
-#cd "/home/cgriesbacher/thesis/3DTrans/tools"
-#bash scripts/dist_test.sh $NUM_GPUS --cfg_file $CFG_PATH --ckpt $CHECKPOINT_PATH --batch_size $BATCHSIZE --workers $NUM_WORKERS --extra_tag $CFG_TAG
+cd "/home/cgriesbacher/thesis/3DTrans/tools"
+bash scripts/dist_test.sh $NUM_GPUS --cfg_file $CFG_PATH --ckpt $CHECKPOINT_PATH --batch_size $BATCHSIZE --workers $NUM_WORKERS --extra_tag $CFG_TAG
 
