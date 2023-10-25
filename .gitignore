@@ -24,7 +24,6 @@ output/*
 *.err
 *.out
 *.slurm
-*.ipynb
 
 tools/update_reminder.txt
 
