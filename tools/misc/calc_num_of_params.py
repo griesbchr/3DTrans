@@ -13,3 +13,12 @@ def count_parameters(model):
     print(f"Total Trainable Params: {total_params}")
     return total_params
     
+def calc_flops(model, input):
+    from fvcore.nn import FlopCountAnalysis
+    from fvcore.nn import flop_count_table
+    flops = FlopCountAnalysis(model, input)
+    print(flops.total())
+    print(flops.by_operator())
+    print(flops.by_module())
+    print(flops.by_module_and_operator())
+    print(flop_count_table(flops))

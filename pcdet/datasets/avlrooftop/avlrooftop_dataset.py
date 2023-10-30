@@ -367,5 +367,25 @@ if __name__ == '__main__':
             class_names = class_names,
             data_path=ROOT_DIR / 'data' / 'avlrooftop',
             save_path=ROOT_DIR / 'data' / 'avlrooftop',)
-        
 
+    elif sys.argv.__len__() > 1 and sys.argv[1] == 'debug':
+        import yaml
+        from easydict import EasyDict
+        dataset_cfg = EasyDict(yaml.safe_load(open(sys.argv[2])))
+        class_names = ['Vehicle_Ridable_Bicycle', 'Vehicle_Ridable_Motorcycle', 
+            'LargeVehicle_Truck', 'LargeVehicle_TruckCab', 
+            'Trailer', 'LargeVehicle_Bus', 'LargeVehicle_Bus_Bendy', 
+            'Vehicle_Drivable_Van', 'Vehicle_Drivable_Car', 
+            'Human', 'PPObject', 
+            'PPObject_Stroller', 'PPObject_BikeTrailer', 
+            'Vehicle_PMD']
+        
+        data_path=ROOT_DIR / 'data' / 'avlrooftop'
+
+        dataset = AVLRooftopDataset(dataset_cfg=dataset_cfg,
+                            class_names=class_names,
+                            root_path=data_path,
+                            training=False,
+                            creating_infos=True)
+        import cProfile
+        cProfile.run("for i in range(1000): dataset.__getitem__(1234)", sort="cumtime")

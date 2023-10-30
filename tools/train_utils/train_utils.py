@@ -25,19 +25,6 @@ def train_one_epoch(model, optimizer, train_loader, model_func, lr_scheduler, ac
     for cur_it in range(total_it_each_epoch):
         end = time.time()
         batch = next(dataloader_iter)
-
-        #try:
-        #    batch = next(dataloader_iter)
-        #except (StopIteration, ValueError) as e:
-        #    if logger is not None:
-        #        logger.warning("Skipping batch with sequences:")
-        #        logger.warning(batch["frame_id"])
-        #        logger.warning("error message: ", e)
-        #    else:
-        #        print("[WARNING]Skipping batch with sequences:")
-        #        print(batch["frame_id"])
-        #    dataloader_iter = iter(train_loader)
-        #    batch = next(dataloader_iter)
         
         data_timer = time.time()
         cur_data_time = data_timer - end
@@ -84,7 +71,8 @@ def train_one_epoch(model, optimizer, train_loader, model_func, lr_scheduler, ac
                 if loss_dict_accum is None:
                     loss_dict_accum = {key: value for key, value in zip(tb_dict.keys(), [copy.deepcopy([]) for i in range(len(tb_dict.keys()))])}
                 for key, value in tb_dict.items():
-                    loss_dict_accum[key].append(value)
+                    if key in loss_dict_accum:
+                        loss_dict_accum[key].append(value)
 
                 if (cur_it + 1) % log_interval == 0:
                     loss_dict_avg = {key:np.mean(np.array(val)) for key, val in loss_dict_accum.items()}

@@ -12,6 +12,8 @@ from pcdet.utils import common_utils
 
 from tools.visual_utils import open3d_vis_utils as vis
 
+from tools.misc.calc_num_of_params import count_parameters, calc_flops
+
 def parse_args():
     parser = argparse.ArgumentParser(description='arg parser')
     parser.add_argument('--dataset', type=str, default=None, help='the dataset name')
@@ -33,7 +35,7 @@ def main():
     checkpoint_path = None
     
     #avlrooftop
-    checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output/avlrooftop_models/dsvt_pillar/D1_100epochs/ckpt/checkpoint_epoch_100.pth"
+    checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output/avlrooftop_models/dsvt_pillar/D1_100epochs_old_split/ckpt/checkpoint_epoch_100.pth"
     #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output/avlrooftop_models/centerpoint/D1_100epochs_4classes/ckpt/checkpoint_epoch_100.pth"
 
     #zod 
@@ -104,7 +106,7 @@ def main():
 
     
         if args.frame_idx is None:
-            args.frame_idx = 'sequences/CITY_Sunny_junction_20200319110030/unpacked/lidar/0003.pkl'
+            args.frame_idx = 'sequences/CITY_Normal_Tjunction_20200525095823/unpacked/lidar/0025.pkl'
         
         image_path_frame = args.frame_idx.split("/")[1] + "_" + args.frame_idx.split("/")[-1].split(".")[0]
     elif (args.dataset == "kitti"):

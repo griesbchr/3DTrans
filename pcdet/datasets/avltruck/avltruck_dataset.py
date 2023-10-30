@@ -330,4 +330,4 @@ if __name__ == '__main__':
                             training=False,
                             creating_infos=True)
         import cProfile
-        cProfile.run("dataset.get_infos(sample_id_list=dataset.sample_id_list[:100], has_label=True, count_inside_pts=True)", sort="cumtime")
+        cProfile.run("for i in range(1000): dataset.__getitem__(4850)", sort="cumtime")
