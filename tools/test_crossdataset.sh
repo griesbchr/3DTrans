@@ -1,12 +1,12 @@
 #!/bin/bash
 #################CROSS DATASET TESTING#################
 
-TRAIN_DATASET=avlrooftop
+TRAIN_DATASET=zod
 MODEL=pv_rcnn_plusplus_resnet
-CFG_TAG=D1_100epochs
+CFG_TAG=D16_100epochs
 EPOCH=100
 
-EVAL_DATASET=avltruck
+EVAL_DATASET=avlrooftop
 
 BATCHSIZE=8
 NUM_WORKERS=4
