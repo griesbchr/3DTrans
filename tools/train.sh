@@ -2,7 +2,7 @@
 
 DATASET=avltruck
 MODEL=second_4classes
-EXTRA_TAG=D6_100epochs_delete
+EXTRA_TAG=D6_100epochs_delete_tftest
 SUBSAMPLE=6
 
 EPOCHS=100

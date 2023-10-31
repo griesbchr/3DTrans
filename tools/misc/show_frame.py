@@ -12,7 +12,7 @@ from pcdet.utils import common_utils
 
 from tools.visual_utils import open3d_vis_utils as vis
 
-from tools.misc.calc_num_of_params import count_parameters, calc_flops
+from tools.misc.calc_num_of_params import count_parameters  #, calc_flops
 
 def parse_args():
     parser = argparse.ArgumentParser(description='arg parser')
@@ -31,15 +31,16 @@ def main():
 
     fov=True
 
-    dataset = "avlrooftop"
+    dataset = "avltruck"
     checkpoint_path = None
     
     #avlrooftop
-    checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output/avlrooftop_models/dsvt_pillar/D1_100epochs_old_split/ckpt/checkpoint_epoch_100.pth"
+    #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output/avlrooftop_models/pv_rcnn_plusplus_resnet/D1_100epochs/ckpt/checkpoint_epoch_100.pth"
     #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output/avlrooftop_models/centerpoint/D1_100epochs_4classes/ckpt/checkpoint_epoch_100.pth"
 
     #zod 
-    #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output/zod_models/centerpoint/D16_100epochs_4classes/ckpt/checkpoint_epoch_100.pth"
+    #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output/zod_models/dsvt_pillar/D16_100epochs/ckpt/checkpoint_epoch_100.pth"
+    checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output/zod_models/pv_rcnn_plusplus_resnet/D16_100epochs/ckpt/checkpoint_epoch_100.pth"
 
     #avltruck
     #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output/avltruck_models/centerpoint/D6_100epochs_4classes/ckpt/checkpoint_epoch_100.pth"
@@ -157,7 +158,7 @@ def main():
         #get model config 
         ckpt_path = Path(args.ckpt)
         cfg_path = [file for file in ckpt_path.parent.parent.glob('*.yaml')]
-        assert len(cfg_path) == 1, "More or less than one config file found"
+        assert len(cfg_path) == 1, "More or less than one config file found in "+ckpt_path.parent.parent.__str__()
         cfg_path = cfg_path[0]
 
         #parse config
@@ -183,6 +184,9 @@ def main():
         model.load_params_from_file(filename=args.ckpt, logger=logger, to_cpu=False)
         model.cuda()
         model.eval()
+
+        #calc model params
+        #count_parameters(model)
 
         #find sample index for frame
         sample_id_list = dataset.sample_id_list
