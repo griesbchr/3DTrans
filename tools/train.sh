@@ -1,14 +1,14 @@
 #################TRAINING#################
 
 DATASET=avltruck
-MODEL=second_4classes
-EXTRA_TAG=D6_100epochs_delete_tftest
+MODEL=ia_ssd
+EXTRA_TAG=D6_100epochs_delete
 SUBSAMPLE=6
 
 EPOCHS=100
 CKPT_SAVE_INTERVAL=100
-BATCHSIZE=1
-WORKERS=1
+BATCHSIZE=4
+WORKERS=2
 
 CONFIG_FILE=${DATASET}_models/$MODEL.yaml
 
