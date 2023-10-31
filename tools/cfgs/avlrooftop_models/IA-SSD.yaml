@@ -1,4 +1,4 @@
-CLASS_NAMES: ['Vehicle_Drivable_Car', Vehicle_Drivable_Van, 'Human',  'Vehicle_Ridable_Bicycle', Vehicle_Ridable_Motorcycle]
+CLASS_NAMES: ['Vehicle', Cyclist, 'Pedestrian',  'Truck']
 
 DATA_CONFIG:
     _BASE_CONFIG_: cfgs/dataset_configs/avltruck/OD/avltruck_dataset.yaml
@@ -72,11 +72,10 @@ MODEL:
                 'angle_bin_num': 12,
                 'use_mean_size': True,                
                 'mean_size': [
-                    [4.0, 1.9, 1.5],
-                    [4.7, 2.1, 2],
-                    [0.76, 0.72, 1.65],
-                    [1.80, 0.61, 1.10],
-                    [2.03, 0.61, 1.19]
+                   [4.425499, 2.082867, 1.677022],
+                   [2.187255, 0.808831, 1.755270],
+                   [0.851837, 0.818911, 1.728446],
+                   [9.165524, 3.314212, 3.683593]
                 ]
             }
 
@@ -108,7 +107,7 @@ MODEL:
         SCORE_THRESH: 0.1
         OUTPUT_RAW_SCORE: False
 
-        EVAL_METRIC: kitti
+        EVAL_METRIC: waymo
 
         NMS_CONFIG:
             MULTI_CLASSES_NMS: False
@@ -119,11 +118,11 @@ MODEL:
 
 
 OPTIMIZATION:
-    BATCH_SIZE_PER_GPU: 8
+    BATCH_SIZE_PER_GPU: 4
     NUM_EPOCHS: 80
 
     OPTIMIZER: adam_onecycle
-    LR: 0.01
+    LR: 0.005
     WEIGHT_DECAY: 0.01
     MOMENTUM: 0.9
 
