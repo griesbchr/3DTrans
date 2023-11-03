@@ -1,6 +1,6 @@
 #classes are 'Car Van Truck Pedestrian Person_sitting Cyclist Tram Misc DontCare'
 DATASET: "KittiDataset"
-DATA_PATH: "/data/kitti"
+DATA_PATH: "../data/kitti"
 # OSS_PATH: 's3://${PATH_TO_DATASET}/kitti'
 
 # POINT_CLOUD_RANGE: [0, -40, -3, 70.4, 40, 1]

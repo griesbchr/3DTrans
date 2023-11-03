@@ -31,7 +31,7 @@ def main():
 
     fov=True
 
-    dataset = "avltruck"
+    dataset = "kitti"
     checkpoint_path = None
     
     #avlrooftop
@@ -71,7 +71,7 @@ def main():
         image_path_frame = args.frame_idx.split("/")[1] + "_" + args.frame_idx.split("/")[-1].split(".")[0] 
 
     elif (args.dataset == "zod"):
-        cfg_path =  "cfgs/dataset_configs/zod/OD/zod_dataset.yaml"
+        cfg_path =  "/home/cgriesbacher/thesis/3DTrans/tools/cfgs/dataset_configs/zod/OD/zod_dataset.yaml"
         dataset_cfg = EasyDict(yaml.safe_load(open(cfg_path)))
         
         dataset_class_names = ["Vehicle_Car", 
@@ -90,7 +90,7 @@ def main():
         image_path_frame = args.frame_idx
 
     elif (args.dataset == "avlrooftop"):
-        cfg_path =  "cfgs/dataset_configs/avlrooftop/OD/avlrooftop_dataset.yaml"
+        cfg_path =  "/home/cgriesbacher/thesis/3DTrans/tools/cfgs/dataset_configs/avlrooftop/OD/avlrooftop_dataset.yaml"
         dataset_cfg = EasyDict(yaml.safe_load(open(cfg_path)))
     
         dataset_class_names = ["Vehicle_Drivable_Car",
@@ -111,7 +111,7 @@ def main():
         
         image_path_frame = args.frame_idx.split("/")[1] + "_" + args.frame_idx.split("/")[-1].split(".")[0]
     elif (args.dataset == "kitti"):
-        cfg_path =  "cfgs/dataset_configs/kitti/OD/kitti_dataset.yaml"
+        cfg_path =  "/home/cgriesbacher/thesis/3DTrans/tools/cfgs/dataset_configs/kitti/OD/kitti_dataset.yaml"
         dataset_cfg = EasyDict(yaml.safe_load(open(cfg_path)))
     
         dataset_class_names = ["Car",

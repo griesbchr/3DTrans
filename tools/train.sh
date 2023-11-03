@@ -1,9 +1,9 @@
 #################TRAINING#################
 
-DATASET=avltruck
+DATASET=avlrooftop
 MODEL=ia_ssd
-EXTRA_TAG=D6_100epochs_delete
-SUBSAMPLE=6
+EXTRA_TAG=D1_100epochs_delete
+SUBSAMPLE=1
 
 EPOCHS=100
 CKPT_SAVE_INTERVAL=100

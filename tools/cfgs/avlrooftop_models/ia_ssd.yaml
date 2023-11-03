@@ -1,33 +1,41 @@
-CLASS_NAMES: ['Vehicle', Cyclist, 'Pedestrian',  'Truck']
+CLASS_NAMES: ["Vehicle", "Cyclist", "Pedestrian", "Truck"]
 
 DATA_CONFIG:
     _BASE_CONFIG_: cfgs/dataset_configs/avltruck/OD/avltruck_dataset.yaml
+    POINT_CLOUD_RANGE: [-75.2, -75.2, -2, 75.2, 75.2, 4]
 
 
     DATA_PROCESSOR:
         -   NAME: mask_points_and_boxes_outside_range
             REMOVE_OUTSIDE_BOXES: True
 
-        -   NAME: sample_points
-            NUM_POINTS: {
-                'train': 16384,
-                'test': 16384
-            }
-
         -   NAME: shuffle_points
             SHUFFLE_ENABLED: {
                 'train': True,
                 'test': False
             }
+            
+        -   NAME: sample_points_by_voxels  # after the shuffle_points
+            SAMPLE_TYPE: 'raw'    # 'mean_vfe', 'raw' (default)
+            VOXEL_SIZE: [0.1, 0.1, 0.15]
+            MAX_POINTS_PER_VOXEL: 5            
+            MAX_NUMBER_OF_VOXELS: {
+                'train': 80000,
+                'test': 90000
+                }
+            NUM_POINTS: {
+                'train': 65536,
+                'test': 65536
+                }
 
 MODEL:
     NAME: IASSD
-     
+    
     BACKBONE_3D:
         NAME: IASSD_Backbone
         SA_CONFIG:
             # Sampling setting:
-            NPOINT_LIST: [[4096], [1024], [512], [256], [-1], [256]]
+            NPOINT_LIST: [[16384], [4096], [2048], [1024], [-1], [1024]]
             SAMPLE_RANGE_LIST: [[-1], [-1], [-1], [-1], [-1], [-1]]
             SAMPLE_METHOD_LIST: &sample_method_list [['D-FPS'], ['D-FPS'], ['ctr_aware'], ['ctr_aware'], [], []]
             # Group and Abstraction setting:
@@ -71,12 +79,13 @@ MODEL:
             BOX_CODER_CONFIG: {
                 'angle_bin_num': 12,
                 'use_mean_size': True,                
-                'mean_size': [
-                   [4.425499, 2.082867, 1.677022],
-                   [2.187255, 0.808831, 1.755270],
-                   [0.851837, 0.818911, 1.728446],
-                   [9.165524, 3.314212, 3.683593]
-                ]
+            "mean_size":
+                [
+                [4.188139, 1.896810, 1.619638],
+                [1.942082, 0.755111, 1.599506],
+                [0.756963, 0.714888, 1.648238],
+                [8.590661, 2.838536, 3.458272],
+                ],
             }
 
         LOSS_CONFIG:
@@ -85,7 +94,7 @@ MODEL:
             LOSS_REG: WeightedSmoothL1Loss
             LOSS_INS: WeightedCrossEntropy
             SAMPLE_METHOD_LIST: *sample_method_list
-            LOSS_VOTE_TYPE: 'none'  #'none', 'ver1', 'ver2', 
+            LOSS_VOTE_TYPE: 'ver2'  #'none', 'ver1', 'ver2', 
 
             CORNER_LOSS_REGULARIZATION: True
             CENTERNESS_REGULARIZATION: True
@@ -102,7 +111,6 @@ MODEL:
 
 
     POST_PROCESSING:
-        RECALL_MODE: 'normal'  # 'normal'(default), 'detail', 'speed'(no recall info)
         RECALL_THRESH_LIST: [0.3, 0.5, 0.7]
         SCORE_THRESH: 0.1
         OUTPUT_RAW_SCORE: False
@@ -118,11 +126,11 @@ MODEL:
 
 
 OPTIMIZATION:
-    BATCH_SIZE_PER_GPU: 4
-    NUM_EPOCHS: 80
+    BATCH_SIZE_PER_GPU: 2  # 8
+    NUM_EPOCHS: 30
 
     OPTIMIZER: adam_onecycle
-    LR: 0.005
+    LR: 0.01
     WEIGHT_DECAY: 0.01
     MOMENTUM: 0.9
 
