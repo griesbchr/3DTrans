@@ -1,0 +1,4 @@
+_BASE_CONFIG_: cfgs/zod_models/pvrcnnpp.yaml
+
+#DATA_CONFIG:
+#  _BASE_CONFIG_: cfgs/dataset_configs/zod/OD/zod_dataset.yaml

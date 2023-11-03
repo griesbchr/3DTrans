@@ -1,7 +1,7 @@
 #################TRAINING#################
 
 DATASET=avlrooftop
-MODEL=ia_ssd
+MODEL=pvrcnnpp_ros
 EXTRA_TAG=D1_100epochs_delete
 SUBSAMPLE=1
 
