@@ -781,11 +781,11 @@ def scale_pre_object(gt_boxes, points, scale_perturb, num_try=50):
 
         # relative coordinates
         obj_points[:, 0:3] -= obj_center
-        obj_points = common_utils.rotate_points_along_z(np.expand_dims(obj_points, axis=0), -ry).squeeze(0)
+        obj_points = common_utils.rotate_points_along_z(np.expand_dims(obj_points, axis=0), np.array([-ry])).squeeze(0)
         new_lwh = lwh * scale_noises[k][try_idx]
 
         obj_points[:, 0:3] = obj_points[:, 0:3] * scale_noises[k][try_idx]
-        obj_points = common_utils.rotate_points_along_z(np.expand_dims(obj_points, axis=0), ry).squeeze(0)
+        obj_points = common_utils.rotate_points_along_z(np.expand_dims(obj_points, axis=0), np.array([ry])).squeeze(0)
         # calculate new object center to avoid object float over the road
         obj_center[2] += (new_lwh[2] - lwh[2]) / 2
         obj_points[:, 0:3] += obj_center

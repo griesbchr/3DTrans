@@ -70,7 +70,8 @@ class ZODDataset(DatasetTemplate):
             return
         #get aug name list
         aug_name_list = [aug["NAME"] for aug in self.data_augmentor.augmentor_configs.AUG_CONFIG_LIST]
-        disable_aug_list = self.dataset_cfg.get('DISABLE_AUG_LIST', [])
+        data_augmentor = self.dataset_cfg.get('DATA_AUGMENTOR', {})
+        disable_aug_list = data_augmentor.get('DISABLE_AUG_LIST', [])
         if "gt_sampling" in aug_name_list and "gt_sampling" not in disable_aug_list:
             aug_idx = aug_name_list.index("gt_sampling")
             db_infos = self.data_augmentor.data_augmentor_queue[aug_idx].db_infos
