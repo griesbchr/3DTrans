@@ -1,12 +1,12 @@
 #################TRAINING#################
 
 
-TRAIN_DATASET=zod
-MODEL=pv_rcnn_plusplus_resnet
-EXTRA_TAG=D16_100epochs
-EPOCHS=100
-SUBSAMPLE=16
-CKPT_SAVE_INTERVAL=100
+TRAIN_DATASET=avlrooftop
+MODEL=pvrcnnpp
+EXTRA_TAG=D10_1epochs
+EPOCHS=1
+SUBSAMPLE=10
+CKPT_SAVE_INTERVAL=1
 BATCHSIZE=4
 WORKERS=4
 
@@ -14,7 +14,7 @@ CONFIG_FILE=${TRAIN_DATASET}_models/$MODEL.yaml
 
 
 #single gpu training
-python train.py --cfg_file cfgs/$CONFIG_FILE --extra_tag $EXTRA_TAG  --epochs $EPOCHS --subsample $SUBSAMPLE --ckpt_save_interval $CKPT_SAVE_INTERVAL --batch_size $BATCHSIZE --workers $WORKERS
+python train.py --cfg_file cfgs/$CONFIG_FILE --extra_tag $EXTRA_TAG  --epochs $EPOCHS --subsample $SUBSAMPLE --ckpt_save_interval $CKPT_SAVE_INTERVAL --batch_size $BATCHSIZE --workers $WORKERS --no_eval "True"
 
 #multi gpu training
 #bash scripts/dist_train.sh $NUM_GPUS --cfg_file cfgs/$CONFIG_FILE --extra_tag $EXTRA_TAG  --epochs $EPOCHS --subsample $SUBSAMPLE --ckpt_save_interval $CKPT_SAVE_INTERVAL --batch_size $BATCHSIZE
@@ -30,6 +30,15 @@ EVAL_DATASETS=(avltruck
               zod)
 
 
+
+# Check if the epochs is divisible by the ckpt_save_interval to ensure the latest checkpoint is saved.
+if [[ $((EPOCHS % CKPT_SAVE_INTERVAL)) -ne 0 ]]; then
+    echo "$EPOCHS is not divisible by $CKPT_SAVE_INTERVAL."
+    echo "The latest checkpoint would not be saved!"
+    exit 1
+fi
+
+
 #-----------------------------------------------------
 for EVAL_DATASET in "${EVAL_DATASETS[@]}";
 do
@@ -37,7 +46,7 @@ do
 
     ROOT_PATH=/home/cgriesbacher/thesis/3DTrans
     RUN_PATH=${TRAIN_DATASET}_models/$MODEL/$EXTRA_TAG
-    CHECKPOINT_PATH=$ROOT_PATH/output/$RUN_PATH/ckpt/checkpoint_epoch_$EPOCH.pth
+    CHECKPOINT_PATH=$ROOT_PATH/output/$RUN_PATH/ckpt/checkpoint_epoch_$EPOCHS.pth
     CFG_PATH=$ROOT_PATH/output/$RUN_PATH/$MODEL.yaml
 
     #multi gpu training

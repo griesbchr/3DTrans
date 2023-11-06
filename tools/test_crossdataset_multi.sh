@@ -1,10 +1,10 @@
 #!/bin/bash
 #################CROSS DATASET TESTING#################
 
-TRAIN_DATASET=avltruck
-MODEL=pv_rcnn_plusplus_resnet
-CFG_TAG=D6_100epochs
-EPOCH=100
+TRAIN_DATASET=avlrooftop
+MODEL=pvrcnnpp
+CFG_TAG=D10_1epochs
+EPOCH=1
 
 EVAL_DATASETS=(avltruck
               avlrooftop

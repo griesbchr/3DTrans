@@ -40,7 +40,7 @@ def main():
 
     #zod 
     #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output/zod_models/dsvt_pillar/D16_100epochs/ckpt/checkpoint_epoch_100.pth"
-    checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output/zod_models/pv_rcnn_plusplus_resnet/D16_100epochs/ckpt/checkpoint_epoch_100.pth"
+    checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output/zod_models/pvrcnnpp/D16_100epochs/ckpt/checkpoint_epoch_100.pth"
 
     #avltruck
     #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output/avltruck_models/centerpoint/D6_100epochs_4classes/ckpt/checkpoint_epoch_100.pth"

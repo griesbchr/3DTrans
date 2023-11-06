@@ -48,7 +48,7 @@ def parse_config():
     parser.add_argument('--subsample', type=int, default=None, required=False , help='selects every nth sample for training')
     parser.add_argument('--log_interval', type=int, default=10, required=False , help='logs every nth iteration')
     parser.add_argument('--prefetch_factor', type=int, default=2, help='data samples per worker to be preloaded on cpu')
-    parser.add_argument('--no_eval', action='store_true', default=False, help='do not evaluate')
+    parser.add_argument('--no_eval', type=bool, default=False, required=False, help='do not evaluate')
     args = parser.parse_args()
 
     cfg_from_yaml_file(args.cfg_file, cfg)
