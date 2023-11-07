@@ -1,4 +1,61 @@
 _BASE_CONFIG_: cfgs/zod_models/pvrcnnpp.yaml
 
-#DATA_CONFIG:
-#  _BASE_CONFIG_: cfgs/dataset_configs/zod/OD/zod_dataset.yaml
+DATA_CONFIG:
+  _BASE_CONFIG_: cfgs/dataset_configs/zod/OD/zod_dataset.yaml
+
+  DATA_AUGMENTOR:
+    DISABLE_AUG_LIST: ["placeholder"]
+    #DISABLE_AUG_LIST: ["random_world_flip", "random_world_rotation", "random_world_scaling"]
+    AUG_CONFIG_LIST:
+      - NAME: gt_sampling
+        USE_ROAD_PLANE: False
+        DB_INFO_PATH:
+          - zod_dbinfos_train_full.pkl
+        PREPARE:
+          {
+            filter_by_min_points:
+              [
+                "Vehicle_Car: 5",
+                "Vehicle_Van: 5",
+                "Vehicle_Truck: 5",
+                "Vehicle_Trailer: 5",
+                "Vehicle_Bus: 5",
+                "Vehicle_HeavyEquip: 5",
+                "Vehicle_TramTrain: 5",
+                "VulnerableVehicle_Motorcycle: 5",
+                "VulnerableVehicle_Bicycle: 5",
+                "Pedestrian: 5",
+              ],
+          }
+
+        SAMPLE_GROUPS:
+          #Vehicle: 15, Cyclist: 10, Pedestrian: 10
+          [
+            "Vehicle_Car: 11",
+            "Vehicle_Van: 2",
+            "Vehicle_Truck: 1",
+            "Vehicle_Trailer: 0",
+            "Vehicle_Bus: 1",
+            "Vehicle_HeavyEquip: 0",
+            "Vehicle_TramTrain: 0",
+            "VulnerableVehicle_Motorcycle: 5",
+            "VulnerableVehicle_Bicycle: 5",
+            "Pedestrian: 10",
+          ]
+          # [Vehicle_Car:18, Vehicle_Van:2, VulnerableVehicle_Bicycle:10, Pedestrian:20]
+        NUM_POINT_FEATURES: 4
+        DATABASE_WITH_FAKELIDAR: False
+        REMOVE_EXTRA_WIDTH: [0.0, 0.0, 0.0]
+        LIMIT_WHOLE_SCENE: True
+
+      - NAME: random_world_flip
+        ALONG_AXIS_LIST: ["x", "y"]
+
+      - NAME: random_world_rotation
+        WORLD_ROT_ANGLE: [-0.78539816, 0.78539816] # -45, 45 degrees
+
+      - NAME: random_world_scaling
+        WORLD_SCALE_RANGE: [0.95, 1.05]
+
+      - NAME: random_object_scaling
+        SCALE_UNIFORM_NOISE: [0.9, 1.10]
