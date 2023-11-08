@@ -822,7 +822,7 @@ def normalize_object_size(boxes, points, boxes_mask, size_res):
         obj_points = points[masks > 0]
         obj_center, lwh, ry = boxes[k, 0:3], boxes[k, 3:6], boxes[k, 6]
         obj_points[:, 0:3] -= obj_center
-        obj_points = common_utils.rotate_points_along_z(np.expand_dims(obj_points, axis=0), -ry).squeeze(0)
+        obj_points = common_utils.rotate_points_along_z(np.expand_dims(obj_points, axis=0), np.array([-ry])).squeeze(0)
         new_lwh = lwh + np.array(size_res)
         # skip boxes that shift to have negative
         if (new_lwh < 0).any():
@@ -831,7 +831,7 @@ def normalize_object_size(boxes, points, boxes_mask, size_res):
         scale_lwh = new_lwh / lwh
 
         obj_points[:, 0:3] = obj_points[:, 0:3] * scale_lwh
-        obj_points = common_utils.rotate_points_along_z(np.expand_dims(obj_points, axis=0), ry).squeeze(0)
+        obj_points = common_utils.rotate_points_along_z(np.expand_dims(obj_points, axis=0), np.array([ry])).squeeze(0)
         # calculate new object center to avoid object float over the road
         obj_center[2] += size_res[2] / 2
 

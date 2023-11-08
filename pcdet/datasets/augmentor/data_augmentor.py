@@ -87,6 +87,25 @@ class DataAugmentor(object):
         data_dict['gt_boxes_mask'] = gt_boxes_mask
         data_dict['points'] = points
         return data_dict
+
+    def normalize_object_size_multiclass(self, data_dict=None, config=None):
+        if data_dict is None:
+            return partial(self.normalize_object_size_multiclass, config=config)
+        
+        assert len(self.class_names) == len(config['SIZE_RES'])
+        
+        for i in range(len(self.class_names)):
+
+            #mask for class
+            mask = data_dict['gt_names'] == self.class_names[i]
+
+            points, gt_boxes = augmentor_utils.normalize_object_size(
+                data_dict['gt_boxes'], data_dict['points'], mask, config['SIZE_RES'][i]
+            )
+            data_dict['gt_boxes'] = gt_boxes
+            data_dict['points'] = points
+        
+        return data_dict    
     
     def normalize_object_size(self, data_dict=None, config=None):
         if data_dict is None:
