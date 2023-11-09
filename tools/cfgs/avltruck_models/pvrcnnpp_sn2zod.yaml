@@ -60,5 +60,5 @@ DATA_CONFIG:
         SCALE_UNIFORM_NOISE: [0.9, 1.10]
 
       - NAME: normalize_object_size_multiclass
-        SIZE_RES: [[-0.031, -0.007, -0.018], [-0.144, -0.038,0.119], [-0.143, -0.075, 0.029], [2.102, -0.112, -0.135]]   #Vehicle, Pedestrian, Bicycle, Truck
+        SIZE_RES: [[-0.031, -0.007, -0.018], [-0.143, -0.075, 0.029], [-0.144, -0.038,0.119], [2.102, -0.112, -0.135]]   #Vehicle, Pedestrian, Bicycle, Truck
 
