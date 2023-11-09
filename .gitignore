@@ -53,3 +53,4 @@ tools/multieval_okeanos.py
 tools/test_crossdataset_multi_okeanos.sh
 tools/train_with_multieval_okeanos.sh
 tools/test_multidataset_multi_okeanos.sh
+tools/train_multi_with_pretrained_okeanos.sh
