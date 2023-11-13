@@ -1,3 +1,4 @@
+print('program started',)
 import _init_path
 import argparse
 import datetime
@@ -15,6 +16,7 @@ from pcdet.datasets import build_dataloader
 from pcdet.models import build_network, model_fn_decorator
 from pcdet.utils import common_utils
 from train_utils.optimization import build_optimizer, build_scheduler
+#from train_utils.train_utils import train_model
 from train_utils.train_st_utils import train_model_st
 
 
@@ -27,37 +29,42 @@ def parse_config():
     parser.add_argument('--workers', type=int, default=8, help='number of workers for dataloader')
     parser.add_argument('--extra_tag', type=str, default='default', help='extra tag for this experiment')
     parser.add_argument('--ckpt', type=str, default=None, help='checkpoint to start from')
-    parser.add_argument('--pretrained_model', type=str, default=None, help='pretrained_model')
+    parser.add_argument('--pretrained_model', type=str, default=None, required=True, help='pretrained_model')
     parser.add_argument('--launcher', choices=['none', 'pytorch', 'slurm'], default='none')
     parser.add_argument('--tcp_port', type=int, default=18888, help='tcp port for distrbuted training')
     parser.add_argument('--sync_bn', action='store_true', default=False, help='whether to use sync bn')
     parser.add_argument('--fix_random_seed', action='store_true', default=False, help='')
     parser.add_argument('--ckpt_save_interval', type=int, default=1, help='number of training epochs')
     parser.add_argument('--local_rank', type=int, default=0, help='local rank for distributed training')
+    parser.add_argument('--local-rank', type=int, default=0, help='local rank for distributed training')
     parser.add_argument('--max_ckpt_save_num', type=int, default=30, help='max number of saved checkpoint')
     parser.add_argument('--merge_all_iters_to_one_epoch', action='store_true', default=False, help='')
-    parser.add_argument('--set', dest='set_cfgs', default=None, nargs=argparse.REMAINDER,
-                        help='set extra config keys if needed')
-
+    parser.add_argument('--set', dest='set_cfgs', default=None, nargs=argparse.REMAINDER, help='set extra config keys if needed')
     parser.add_argument('--max_waiting_mins', type=int, default=0, help='max waiting minutes')
     parser.add_argument('--start_epoch', type=int, default=0, help='')
     parser.add_argument('--num_epochs_to_eval', type=int, default=0, help='number of checkpoints to be evaluated')
     parser.add_argument('--save_to_file', action='store_true', default=False, help='')
-
+    parser.add_argument('--subsample', type=int, default=None, required=False , help='selects every nth sample for training')
+    parser.add_argument('--log_interval', type=int, default=10, required=False , help='logs every nth iteration')
+    parser.add_argument('--prefetch_factor', type=int, default=2, help='data samples per worker to be preloaded on cpu')
+    parser.add_argument('--no_eval', type=bool, default=False, required=False, help='do not evaluate')
     args = parser.parse_args()
 
     cfg_from_yaml_file(args.cfg_file, cfg)
     cfg.TAG = Path(args.cfg_file).stem
-    cfg.EXP_GROUP_PATH = '/'.join(args.cfg_file.split('/')[1:-1])  # remove 'cfgs' and 'xxxx.yaml'
+    cfg.EXP_GROUP_PATH = '/'.join(args.cfg_file.split('/')[-2:-1])  # remove 'cfgs' and 'xxxx.yaml'
 
     if args.set_cfgs is not None:
         cfg_from_list(args.set_cfgs, cfg)
+
+    assert cfg.get('SELF_TRAIN', None) is not None, 'SELF_TRAIN is not set in config file'                  #required for self-training
+    assert cfg.get('DATA_CONFIG_TAR', None) is not None, 'DATA_CONFIG_TAR is not set in config file'        #required for self-training
 
     return args, cfg
 
 
 def main():
-    args, cfg = parse_config()    
+    args, cfg = parse_config()
     if args.launcher == 'none':
         dist_train = False
         total_gpus = 1
@@ -76,7 +83,7 @@ def main():
     args.epochs = cfg.OPTIMIZATION.NUM_EPOCHS if args.epochs is None else args.epochs
 
     if args.fix_random_seed:
-        common_utils.set_random_seed(666)
+        common_utils.set_random_seed(666 + cfg.LOCAL_RANK)
 
     output_dir = cfg.ROOT_DIR / 'output' / cfg.EXP_GROUP_PATH / cfg.TAG / args.extra_tag
     ckpt_dir = output_dir / 'ckpt'
@@ -108,12 +115,16 @@ def main():
         dataset_cfg=cfg.DATA_CONFIG,
         class_names=cfg.CLASS_NAMES,
         batch_size=args.batch_size,
-        dist=dist_train, workers=args.workers,
+        dist=dist_train, 
+        workers=args.workers,
         logger=logger,
         training=True,
         merge_all_iters_to_one_epoch=args.merge_all_iters_to_one_epoch,
-        total_epochs=args.epochs
+        total_epochs=args.epochs,
+        sub_sample=args.subsample,
+        prefetch_factor=args.prefetch_factor
     )
+
     if cfg.get('SELF_TRAIN', None):
         target_set, target_loader, target_sampler = build_dataloader(
             cfg.DATA_CONFIG_TAR, cfg.DATA_CONFIG_TAR.CLASS_NAMES, args.batch_size,
@@ -123,17 +134,11 @@ def main():
         target_set = target_loader = target_sampler = None
 
     model = build_network(model_cfg=cfg.MODEL, num_class=len(cfg.CLASS_NAMES), dataset=source_set)
-
     if args.sync_bn:
         model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
-
     model.cuda()
     n_parameters = sum(p.numel() for p in model.parameters() if p.requires_grad)
-    logger.info('model parameters: {}'.format(n_parameters))
-
-
     optimizer = build_optimizer(model, cfg.OPTIMIZATION)
-
 
     # load checkpoint if it is possible
     start_epoch = it = 0
@@ -214,14 +219,20 @@ def main():
     logger.info('**********************End training %s/%s(%s)**********************\n\n\n'
                 % (cfg.EXP_GROUP_PATH, cfg.TAG, args.extra_tag))
 
+    if args.no_eval: return
+    
     logger.info('**********************Start evaluation %s/%s(%s)**********************' %
                 (cfg.EXP_GROUP_PATH, cfg.TAG, args.extra_tag))
     test_set, test_loader, sampler = build_dataloader(
         dataset_cfg=cfg.DATA_CONFIG,
         class_names=cfg.CLASS_NAMES,
         batch_size=args.batch_size,
-        dist=dist_train, workers=args.workers, logger=logger, training=False
+        dist=dist_train,
+        workers=args.workers, 
+        logger=logger, 
+        training=False,
     )
+
     eval_output_dir = output_dir / 'eval' / 'eval_with_train'
     eval_output_dir.mkdir(parents=True, exist_ok=True)
     args.start_epoch = max(args.epochs - args.num_epochs_to_eval, 0)  # Only evaluate the last args.num_epochs_to_eval epochs
@@ -229,7 +240,8 @@ def main():
     repeat_eval_ckpt(
         model.module if dist_train else model,
         test_loader, args, eval_output_dir, logger, ckpt_dir,
-        dist_test=dist_train
+        dist_test=dist_train,
+        eval_latest=False
     )
     logger.info('**********************End evaluation %s/%s(%s)**********************' %
                 (cfg.EXP_GROUP_PATH, cfg.TAG, args.extra_tag))

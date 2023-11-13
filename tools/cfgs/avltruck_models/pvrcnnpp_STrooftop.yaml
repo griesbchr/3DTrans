@@ -1,0 +1,158 @@
+_BASE_CONFIG_: cfgs/avltruck_models/pvrcnnpp.yaml
+
+DATA_CONFIG:
+  _BASE_CONFIG_: cfgs/dataset_configs/avltruck/OD/avltruck_dataset.yaml
+
+  DATA_AUGMENTOR:
+    DISABLE_AUG_LIST: ["random_object_scaling", "normalize_object_size_multiclass", "gt_sampling"]
+
+    AUG_CONFIG_LIST:
+      - NAME: gt_sampling
+        USE_ROAD_PLANE: False
+        DB_INFO_PATH:
+          - avl_dbinfos_train.pkl
+        PREPARE:
+          {
+            filter_by_min_points:
+              [
+                "Vehicle_Drivable_Car:5",
+                "Vehicle_Drivable_Van:5",
+                "Human:5",
+                "Vehicle_Ridable_Motorcycle:5",
+                "Vehicle_Ridable_Bicycle:5",
+                "LargeVehicle_Bus:5",
+                "LargeVehicle_Truck:5",
+                "LargeVehicle_TruckCab:5",
+                "Trailer:5",
+              ],
+          }
+
+        SAMPLE_GROUPS:
+          #Vehicle: 15, Cyclist: 10, Pedestrian: 10
+
+          [
+            "Vehicle_Drivable_Car:11",
+            "Vehicle_Drivable_Van:2",
+            "Human:10",
+            "Vehicle_Ridable_Motorcycle:5",
+            "Vehicle_Ridable_Bicycle:5",
+            "LargeVehicle_Bus:1",
+            "LargeVehicle_Truck:1",
+            "LargeVehicle_TruckCab:0",
+            "Trailer:0",
+          ]
+
+        NUM_POINT_FEATURES: 4
+        DATABASE_WITH_FAKELIDAR: False
+        REMOVE_EXTRA_WIDTH: [0.0, 0.0, 0.0]
+        LIMIT_WHOLE_SCENE: True
+
+      - NAME: random_world_flip
+        ALONG_AXIS_LIST: ["x", "y"]
+
+      - NAME: random_world_rotation
+        WORLD_ROT_ANGLE: [-0.78539816, 0.78539816]
+
+      - NAME: random_world_scaling
+        WORLD_SCALE_RANGE: [0.95, 1.05]
+
+      - NAME: random_object_scaling
+        SCALE_UNIFORM_NOISE: [0.9, 1.10]
+
+      - NAME: normalize_object_size_multiclass
+        SIZE_RES: [[0.225, 0.183, 0.068], [0.14, 0.144, 0.093], [0.231, 0.055, 0.165], [0.502, 0.456, 0.203]]   #Vehicle, Pedestrian, Bicycle, Truck
+
+
+DATA_CONFIG_TAR:
+    _BASE_CONFIG_: cfgs/dataset_configs/avlrooftop/OD/avlrooftop_dataset.yaml
+    TARGET: True
+    USE_PSEUDO_LABEL: True
+
+    DATA_AUGMENTOR:
+      DISABLE_AUG_LIST: ["random_world_scaling", "gt_sampling"]
+      AUG_CONFIG_LIST:
+        - NAME: gt_sampling
+          USE_ROAD_PLANE: False
+          DB_INFO_PATH:
+            - avl_dbinfos_train.pkl
+          PREPARE:
+            {
+              filter_by_min_points:
+                [
+                  "Vehicle_Drivable_Car:5",
+                  "Vehicle_Drivable_Van:5",
+                  "Human:5",
+                  "Vehicle_Ridable_Motorcycle:5",
+                  "Vehicle_Ridable_Bicycle:5",
+                  "LargeVehicle_Bus:5",
+                  "LargeVehicle_Truck:5",
+                  "LargeVehicle_TruckCab:5",
+                  "Trailer:5",
+                ],
+            }
+
+          SAMPLE_GROUPS:
+            #Vehicle: 15, Cyclist: 10, Pedestrian: 10
+            [
+              "Vehicle_Drivable_Car:11",
+              "Vehicle_Drivable_Van:2",
+              "Human:10",
+              "Vehicle_Ridable_Motorcycle:5",
+              "Vehicle_Ridable_Bicycle:5",
+              "LargeVehicle_Bus:1",
+              "LargeVehicle_Truck:1",
+              "LargeVehicle_TruckCab:0",
+              "Trailer:0",
+            ]
+
+          NUM_POINT_FEATURES: 4
+          DATABASE_WITH_FAKELIDAR: False
+          REMOVE_EXTRA_WIDTH: [0.0, 0.0, 0.0]
+          LIMIT_WHOLE_SCENE: True
+
+        - NAME: random_world_flip
+          ALONG_AXIS_LIST: ["x", "y"]
+
+        - NAME: random_world_rotation
+          WORLD_ROT_ANGLE: [-0.78539816, 0.78539816]
+
+        - NAME: random_world_scaling
+          WORLD_SCALE_RANGE: [0.95, 1.05]
+
+
+SELF_TRAIN:
+    SRC:
+        USE_DATA: False
+        USE_GRAD: False
+        LOSS_WEIGHT: 1.0
+    TAR:
+        USE_DATA: True
+        LOSS_WEIGHT: 1.0
+
+    SCORE_THRESH: [0.6]
+    NEG_THRESH: [0.25]
+    UPDATE_PSEUDO_LABEL: [0]
+    UPDATE_PSEUDO_LABEL_INTERVAL: 4
+    INIT_PS: None
+    
+    PROG_AUG:
+        ENABLED: True
+        UPDATE_AUG: [5, 10, 15, 20]
+        SCALE: 1.2
+
+    MEMORY_ENSEMBLE:
+        ENABLED: False
+        NAME: consistency_ensemble
+        IOU_THRESH: 0.1
+
+        NMS_CONFIG:
+            NMS_TYPE: nms_gpu
+            MULTI_CLASSES_NMS: False
+            NMS_PRE_MAXSIZE: 512
+            NMS_POST_MAXSIZE: 100
+            NMS_THRESH: 0.1
+
+        MEMORY_VOTING:
+            ENABLED: False
+            IGNORE_THRESH: 2
+            RM_THRESH: 3
