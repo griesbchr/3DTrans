@@ -1,4 +1,5 @@
 #################TRAINING#################
+# Train a single detector on an arbitrary dataset
 
 DATASET=avlrooftop
 MODEL=pvrcnnpp_ros

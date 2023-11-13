@@ -1,5 +1,6 @@
 #!/bin/bash
 #################TESTING#################
+# Test a single detector on its training dataset
 
 #CONFIG_FILE=kitti_models/second
 #CONFIG_FILE=kitti_models/IA-SSD

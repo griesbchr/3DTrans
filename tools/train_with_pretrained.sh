@@ -1,4 +1,6 @@
-#################TRAINING#################
+#################FINETUNING#################
+# Finetune a single detector on an arbitrary dataset
+
 
 DATASET=avltruck
 MODEL=pvrcnnpp_sn2rooftop

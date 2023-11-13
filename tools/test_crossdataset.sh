@@ -1,5 +1,6 @@
 #!/bin/bash
 #################CROSS DATASET TESTING#################
+# Test a single detector on a single arbitrary dataset
 
 TRAIN_DATASET=avltruck
 MODEL=pvrcnnpp_sn2rooftop
