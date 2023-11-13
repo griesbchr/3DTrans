@@ -59,3 +59,4 @@ tools/test_multidetmultidataset_nosweep_okeanos.sh
 tools/test_multidetmultidataset_okeanos.sh
 tools/train_multi_with_pretrained_nosweep_okeanos.sh
 tools/xtrain_with_multieval_okeanos.sh
+tools/selftrain_okeanos.sh
