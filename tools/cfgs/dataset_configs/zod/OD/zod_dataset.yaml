@@ -42,6 +42,9 @@ DISREGARD_TRUNCATED: True
 #used to shift data to the ground plane when generating infos and at training time (get_lidar)
 LIDAR_Z_SHIFT: -2.08702246
 
+#Subsample the dataset by the given factor
+SUBSAMPLEFACTOR: 16
+
 #height of the data origin above ground plane during detector training, should be at 0.0 if trained correctly
 #shifts the detected boxes to match the ground truth boxes when evaluating a detector
 #TRAINING_Z_SHIFT: 2.08702246

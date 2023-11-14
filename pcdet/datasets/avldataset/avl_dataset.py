@@ -516,6 +516,10 @@ class AVLDataset(DatasetTemplate):
 
                 input_dict['truncated'] = truncated
 
+         # load saved pseudo label for unlabeled data
+        if self.dataset_cfg.get('USE_PSEUDO_LABEL', None) and self.training:
+            self.fill_pseudo_labels(input_dict)
+
         data_dict = self.prepare_data(data_dict=input_dict)
 
 

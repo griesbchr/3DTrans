@@ -43,7 +43,6 @@ def parse_config():
     parser.add_argument('--start_epoch', type=int, default=0, help='')
     parser.add_argument('--num_epochs_to_eval', type=int, default=0, help='number of checkpoints to be evaluated')
     parser.add_argument('--save_to_file', action='store_true', default=False, help='')
-    parser.add_argument('--subsample', type=int, default=None, required=False , help='selects every nth sample for training')
     parser.add_argument('--log_interval', type=int, default=10, required=False , help='logs every nth iteration')
     parser.add_argument('--prefetch_factor', type=int, default=2, help='data samples per worker to be preloaded on cpu')
     parser.add_argument('--no_eval', type=bool, default=False, required=False, help='do not evaluate')
@@ -115,7 +114,7 @@ def main():
         training=True,
         merge_all_iters_to_one_epoch=args.merge_all_iters_to_one_epoch,
         total_epochs=args.epochs,
-        sub_sample=args.subsample,
+        sub_sample=cfg.SUBSAMPLEFACTOR,
         prefetch_factor=args.prefetch_factor
     )
 

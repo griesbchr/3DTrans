@@ -200,7 +200,7 @@ def main():
     if cfg.get('DATA_CONFIG_TAR', None):
         test_set, test_loader, sampler = build_dataloader(
             dataset_cfg=cfg.DATA_CONFIG_TAR,
-            class_names=cfg.DATA_CONFIG_TAR.CLASS_NAMES,
+            class_names=cfg.CLASS_NAMES,
             batch_size=args.batch_size,
             dist=dist_test, workers=args.workers, logger=logger, training=False
         )

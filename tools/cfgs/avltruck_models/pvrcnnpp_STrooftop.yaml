@@ -4,7 +4,7 @@ DATA_CONFIG:
   _BASE_CONFIG_: cfgs/dataset_configs/avltruck/OD/avltruck_dataset.yaml
 
   DATA_AUGMENTOR:
-    DISABLE_AUG_LIST: ["random_object_scaling", "normalize_object_size_multiclass", "gt_sampling"]
+    DISABLE_AUG_LIST: ["gt_sampling", "random_object_scaling", "normalize_object_size_multiclass"]
 
     AUG_CONFIG_LIST:
       - NAME: gt_sampling
@@ -67,9 +67,12 @@ DATA_CONFIG_TAR:
     _BASE_CONFIG_: cfgs/dataset_configs/avlrooftop/OD/avlrooftop_dataset.yaml
     TARGET: True
     USE_PSEUDO_LABEL: True
+    TRAIN_FOV_ONLY: False
+
+    CLASS_NAMES: ['Vehicle', 'Pedestrian', 'Cyclist', 'Truck']
 
     DATA_AUGMENTOR:
-      DISABLE_AUG_LIST: ["random_world_scaling", "gt_sampling"]
+      DISABLE_AUG_LIST: ["gt_sampling"]
       AUG_CONFIG_LIST:
         - NAME: gt_sampling
           USE_ROAD_PLANE: False
@@ -114,10 +117,10 @@ DATA_CONFIG_TAR:
           ALONG_AXIS_LIST: ["x", "y"]
 
         - NAME: random_world_rotation
-          WORLD_ROT_ANGLE: [-0.78539816, 0.78539816]
+          WORLD_ROT_ANGLE: [-0,378760688, 0,378760688]
 
         - NAME: random_world_scaling
-          WORLD_SCALE_RANGE: [0.95, 1.05]
+          WORLD_SCALE_RANGE: [0.97, 1.03]
 
 
 SELF_TRAIN:
@@ -129,15 +132,15 @@ SELF_TRAIN:
         USE_DATA: True
         LOSS_WEIGHT: 1.0
 
-    SCORE_THRESH: [0.6]
-    NEG_THRESH: [0.25]
-    UPDATE_PSEUDO_LABEL: [0]
-    UPDATE_PSEUDO_LABEL_INTERVAL: 4
+    SCORE_THRESH: [0.6, 0.6, 0.6, 0.6]             #Threshold per class
+    NEG_THRESH: [0.25, 0.25, 0.25, 0.25]
+    UPDATE_PSEUDO_LABEL: [0]        # Pseudo label generation epoch
+    UPDATE_PSEUDO_LABEL_INTERVAL: 2
     INIT_PS: None
     
     PROG_AUG:
         ENABLED: True
-        UPDATE_AUG: [5, 10, 15, 20]
+        UPDATE_AUG: [7, 14, 21, 28]
         SCALE: 1.2
 
     MEMORY_ENSEMBLE:

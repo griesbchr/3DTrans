@@ -3,9 +3,9 @@
 # Test a single detector on a single arbitrary dataset
 
 TRAIN_DATASET=avltruck
-MODEL=pvrcnnpp_sn2rooftop
-EXTRA_TAG=D6_1epochs_sn2rooftop_ft_D6_50epochs
-EPOCH=1
+MODEL=pvrcnnpp_STrooftop
+EXTRA_TAG=D6_5epochs_STrooftop_ft_D6_50epochs
+EPOCH=5
 
 EVAL_DATASET=avlrooftop
 

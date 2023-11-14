@@ -295,6 +295,11 @@ class ZODDataset(DatasetTemplate):
             else:
                 print("\nWARNING: truncated not in annos for sample id", sample_idx)
 
+
+        # load saved pseudo label for unlabeled data
+        if self.dataset_cfg.get('USE_PSEUDO_LABEL', None) and self.training:
+            self.fill_pseudo_labels(input_dict)
+            
         data_dict = self.prepare_data(data_dict=input_dict)
 
         #do z shift after data preparation to be able to use pc range and anchor sizes for unified coordinate system

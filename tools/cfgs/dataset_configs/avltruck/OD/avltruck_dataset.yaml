@@ -70,6 +70,9 @@ DISREGARD_TRUNCATED: True
 #removed dets and gts that are truncated not in fov before evaluation
 EVAL_FOV_ONLY: True
 
+#Subsample the dataset by the given factor
+SUBSAMPLEFACTOR: 6
+
 #height of the data origin above ground plane during detector training, should be at 0.0 if trained correctly
 #positive z value means the data origin is above the ground plane
 #shifts the detected boxes to match the ground truth boxes

@@ -44,7 +44,7 @@ def parse_config():
     parser.add_argument('--start_epoch', type=int, default=0, help='')
     parser.add_argument('--num_epochs_to_eval', type=int, default=0, help='number of checkpoints to be evaluated')
     parser.add_argument('--save_to_file', action='store_true', default=False, help='')
-    parser.add_argument('--subsample', type=int, default=None, required=False , help='selects every nth sample for training')
+    #parser.add_argument('--subsample', type=int, default=None, required=False , help='selects every nth sample for training')
     parser.add_argument('--log_interval', type=int, default=10, required=False , help='logs every nth iteration')
     parser.add_argument('--prefetch_factor', type=int, default=2, help='data samples per worker to be preloaded on cpu')
     parser.add_argument('--no_eval', type=bool, default=False, required=False, help='do not evaluate')
@@ -56,6 +56,9 @@ def parse_config():
 
     if args.set_cfgs is not None:
         cfg_from_list(args.set_cfgs, cfg)
+
+    #if args.subsample is not None:
+    #    cfg.subsamplefactor = args.subsample
 
     assert cfg.get('SELF_TRAIN', None) is not None, 'SELF_TRAIN is not set in config file'                  #required for self-training
     assert cfg.get('DATA_CONFIG_TAR', None) is not None, 'DATA_CONFIG_TAR is not set in config file'        #required for self-training
@@ -121,14 +124,20 @@ def main():
         training=True,
         merge_all_iters_to_one_epoch=args.merge_all_iters_to_one_epoch,
         total_epochs=args.epochs,
-        sub_sample=args.subsample,
+        sub_sample=cfg.DATA_CONFIG.SUBSAMPLEFACTOR,
         prefetch_factor=args.prefetch_factor
     )
 
     if cfg.get('SELF_TRAIN', None):
         target_set, target_loader, target_sampler = build_dataloader(
-            cfg.DATA_CONFIG_TAR, cfg.DATA_CONFIG_TAR.CLASS_NAMES, args.batch_size,
-            dist_train, workers=args.workers, logger=logger, training=True
+            cfg.DATA_CONFIG_TAR, 
+            cfg.DATA_CONFIG_TAR.CLASS_NAMES, 
+            args.batch_size,
+            dist_train, 
+            workers=args.workers, 
+            logger=logger, 
+            training=True,
+            sub_sample=cfg.DATA_CONFIG_TAR.SUBSAMPLEFACTOR,
         )
     else:
         target_set = target_loader = target_sampler = None
@@ -224,8 +233,8 @@ def main():
     logger.info('**********************Start evaluation %s/%s(%s)**********************' %
                 (cfg.EXP_GROUP_PATH, cfg.TAG, args.extra_tag))
     test_set, test_loader, sampler = build_dataloader(
-        dataset_cfg=cfg.DATA_CONFIG,
-        class_names=cfg.CLASS_NAMES,
+        dataset_cfg=cfg.DATA_CONFIG_TAR,
+        class_names=cfg.DATA_CONFIG_TAR.CLASS_NAMES,
         batch_size=args.batch_size,
         dist=dist_train,
         workers=args.workers, 
