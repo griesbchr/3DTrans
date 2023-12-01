@@ -237,7 +237,8 @@ class DatasetTemplate(torch_data.Dataset):
         input_dict['pos_ps_bbox'] = (gt_classes > 0).sum()
         input_dict['ign_ps_bbox'] = gt_boxes.shape[0] - input_dict['pos_ps_bbox']
         input_dict.pop('num_points_in_gt', None)
-        input_dict.pop('truncated')
+        if 'truncated' in input_dict:
+            input_dict.pop('truncated')
 
     def merge_all_iters_to_one_epoch(self, merge=True, epochs=None):
         if merge:
