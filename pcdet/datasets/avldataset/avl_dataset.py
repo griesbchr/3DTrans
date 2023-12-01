@@ -52,6 +52,9 @@ class AVLDataset(DatasetTemplate):
         if subsamplefactor is not None and subsamplefactor > 1:
             self.sample_id_list = self.sample_id_list[::subsamplefactor]
 
+            #filter infors for subsampled samples
+            self.avl_infos = [info for info in self.avl_infos if info['point_cloud']['lidar_idx'] in self.sample_id_list]
+
     def map_merge_classes(self):
         if self.dataset_cfg.get('MAP_MERGE_CLASS', None) is None:
             return
