@@ -152,7 +152,8 @@ def draw_scenes(points, gt_boxes=None, ref_boxes=None, ref_labels=None, ref_scor
     vis.get_render_option().point_size = 2.0
     #light grey color
     light_grey = np.array([0.7, 0.7, 0.7])
-    vis.get_render_option().background_color = light_grey
+    white = np.array([1, 1, 1])
+    vis.get_render_option().background_color = white
 
     # draw origin
     if draw_origin:

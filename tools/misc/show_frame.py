@@ -13,6 +13,7 @@ from pcdet.utils import common_utils
 from tools.visual_utils import open3d_vis_utils as vis
 
 from tools.misc.calc_num_of_params import count_parameters  #, calc_flops
+import os
 
 def parse_args():
     parser = argparse.ArgumentParser(description='arg parser')
@@ -25,25 +26,28 @@ def parse_args():
     return args
 
 def main():
+    os.chdir("/home/cgriesbacher/thesis/3DTrans/tools")
     args = parse_args()
     
     save_image = True
 
     fov=True
 
-    dataset = "kitti"
+    dataset = "avlrooftop"
     checkpoint_path = None
     
     #avlrooftop
-    #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output/avlrooftop_models/pv_rcnn_plusplus_resnet/D1_100epochs/ckpt/checkpoint_epoch_100.pth"
-    #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output/avlrooftop_models/centerpoint/D1_100epochs_4classes/ckpt/checkpoint_epoch_100.pth"
+    checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output_okeanos/output/avltruck_models/pvrcnnpp_STrooftop/D1_5epochs_STrooftop_ft_D6_50epochs_ros_06_015_thresh_high_lr/ckpt/checkpoint_epoch_4.pth"
+    #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output_okeanos/output/avltruck_models/pvrcnnpp_ros/D6_50epochs/ckpt/checkpoint_epoch_50.pth"
+    #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output_okeanos/output/avlrooftop_models/pvrcnnpp/D1_50epochs/ckpt/checkpoint_epoch_50.pth"
 
     #zod 
     #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output/zod_models/dsvt_pillar/D16_100epochs/ckpt/checkpoint_epoch_100.pth"
-    checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output/zod_models/pvrcnnpp/D16_100epochs/ckpt/checkpoint_epoch_100.pth"
+    #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output/zod_models/pvrcnnpp/D16_100epochs/ckpt/checkpoint_epoch_100.pth"
 
     #avltruck
     #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output/avltruck_models/centerpoint/D6_100epochs_4classes/ckpt/checkpoint_epoch_100.pth"
+    #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output/avltruck_models/pvrcnnpp/D6_100epochs/ckpt/checkpoint_epoch_100.pth"
 
     if (args.dataset == None):
         args.dataset = dataset
@@ -107,7 +111,7 @@ def main():
 
     
         if args.frame_idx is None:
-            args.frame_idx = 'sequences/CITY_Normal_Tjunction_20200525095823/unpacked/lidar/0025.pkl'
+            args.frame_idx = 'sequences/CITY_Normal_roundabout_20200320100220_1/unpacked/lidar/0019.pkl'
         
         image_path_frame = args.frame_idx.split("/")[1] + "_" + args.frame_idx.split("/")[-1].split(".")[0]
     elif (args.dataset == "kitti"):

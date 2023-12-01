@@ -62,6 +62,9 @@ def check_already_exsit_pseudo_label(ps_label_dir, start_epoch):
 
     return None
 
+def print_pseudo_label_stats(model, val_loader, rank, leave_pbar, ps_label_dir, cur_epoch, source_loader):
+    pass   
+
 
 def save_pseudo_label_epoch(model, val_loader, rank, leave_pbar, ps_label_dir, cur_epoch):
     """
