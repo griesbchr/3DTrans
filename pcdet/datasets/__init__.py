@@ -110,9 +110,9 @@ def build_dataloader(dataset_cfg, class_names, batch_size, dist, root_path=None,
         logger=logger,
     )
 
-    if sub_sample is not None:
-        subsamples = list(range(0, len(dataset), sub_sample))
-        dataset =  CustomSubset(dataset, subsamples)
+    #if sub_sample is not None:
+    #    subsamples = list(range(0, len(dataset), sub_sample))
+    #    dataset =  CustomSubset(dataset, subsamples)
 
     if merge_all_iters_to_one_epoch:
         assert hasattr(dataset, 'merge_all_iters_to_one_epoch')

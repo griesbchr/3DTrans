@@ -48,6 +48,10 @@ class AVLDataset(DatasetTemplate):
         
         self.map_class_to_kitti = self.dataset_cfg.get('MAP_CLASS_TO_KITTI',None)
 
+        subsamplefactor = self.dataset_cfg.get('SUBSAMPLEFACTOR', None)
+        if subsamplefactor is not None and subsamplefactor > 1:
+            self.sample_id_list = self.sample_id_list[::subsamplefactor]
+
     def map_merge_classes(self):
         if self.dataset_cfg.get('MAP_MERGE_CLASS', None) is None:
             return

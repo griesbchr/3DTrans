@@ -54,6 +54,10 @@ class ZODDataset(DatasetTemplate):
 
         self.disregard_truncated = self.dataset_cfg.get('DISREGARD_TRUNCATED',True)
 
+        subsamplefactor = self.dataset_cfg.get('SUBSAMPLEFACTOR', None)
+        if subsamplefactor is not None and subsamplefactor > 1:
+            self.sample_id_list = self.sample_id_list[::subsamplefactor]
+
     def map_merge_classes(self):
         if self.dataset_cfg.get('MAP_MERGE_CLASS', None) is None:
             return
