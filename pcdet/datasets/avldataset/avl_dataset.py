@@ -323,7 +323,7 @@ class AVLDataset(DatasetTemplate):
         #remove_le_points = self.dataset_cfg.get('EVAL_REMOVE_LESS_OR_EQ_POINTS', None)
         remove_le_points = 0
         #ignore_classes = self.dataset_cfg.get('EVAL_IGNORE_CLASSES', None)
-        ignore_classes = []
+        ignore_classes = ["Cyclist", "Pedestrian", "Truck"]
         #ignore_classes = []
         #remove_overlapping = self.dataset_cfg.get('EVAL_REMOVE_OVERLAPPING_BEV_IOU', None)
         min_remove_overlap_bev_iou = 0.5
