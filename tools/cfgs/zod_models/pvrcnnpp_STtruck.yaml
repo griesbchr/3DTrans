@@ -1,9 +1,9 @@
-_BASE_CONFIG_: cfgs/avltruck_models/pvrcnnpp.yaml
+_BASE_CONFIG_: cfgs/zod_models/pvrcnnpp.yaml
 
 CLASS_NAMES: ['Vehicle', 'Pedestrian', 'Cyclist', 'Truck']
 
 DATA_CONFIG:
-  _BASE_CONFIG_: cfgs/dataset_configs/avltruck/OD/avltruck_dataset.yaml
+  _BASE_CONFIG_: cfgs/dataset_configs/zod/OD/zod_dataset.yaml
 
   DATA_AUGMENTOR:
     DISABLE_AUG_LIST: ["gt_sampling", "random_object_scaling", "normalize_object_size_multiclass"]
@@ -66,7 +66,7 @@ DATA_CONFIG:
 
 
 DATA_CONFIG_TAR:
-    _BASE_CONFIG_: cfgs/dataset_configs/zod/OD/zod_dataset.yaml
+    _BASE_CONFIG_: cfgs/dataset_configs/avltruck/OD/avltruck_dataset.yaml
     TARGET: True
     USE_PSEUDO_LABEL: True
     TRAIN_FOV_ONLY: False
@@ -135,9 +135,9 @@ SELF_TRAIN:
         LOSS_WEIGHT: 1.0
 
 
-    SCORE_THRESH: [0.5, 0.8, 0.7, 0.9]             #Threshold per class
+    SCORE_THRESH: [0.5, 0.8, 0.7, 1]             #Threshold per class
     #SCORE_THRESH: [0.8, 1, 1, 1]             #Threshold per class
-    NEG_THRESH: [0.2, 0.8, 0.7, 0.9]
+    NEG_THRESH: [0.2, 0.2, 0.2, 1]
     #NEG_THRESH: [0.2, 1, 1, 1]
 
     UPDATE_PSEUDO_LABEL: [0, 1]        # Pseudo label generation epoch
@@ -169,7 +169,7 @@ SELF_TRAIN:
 
 OPTIMIZATION:
     OPTIMIZER: adam_onecycle
-    LR: 0.005
+    LR: 0.001
     WEIGHT_DECAY: 0.002
     MOMENTUM: 0.9
 
