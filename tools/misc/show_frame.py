@@ -33,21 +33,22 @@ def main():
 
     fov=True
 
-    dataset = "avlrooftop"
+    dataset = "zod"
     checkpoint_path = None
     
     #avlrooftop
-    checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output_okeanos/output/avltruck_models/pvrcnnpp_STrooftop/D1_5epochs_STrooftop_ft_D6_50epochs_ros_06_015_thresh_high_lr/ckpt/checkpoint_epoch_4.pth"
+    #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output_okeanos/output/avltruck_models/pvrcnnpp_STrooftop/D1_5epochs_STrooftop_ft_D6_50epochs_ros_06_015_thresh_high_lr/ckpt/checkpoint_epoch_4.pth"
     #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output_okeanos/output/avltruck_models/pvrcnnpp_ros/D6_50epochs/ckpt/checkpoint_epoch_50.pth"
     #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output_okeanos/output/avlrooftop_models/pvrcnnpp/D1_50epochs/ckpt/checkpoint_epoch_50.pth"
 
     #zod 
     #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output/zod_models/dsvt_pillar/D16_100epochs/ckpt/checkpoint_epoch_100.pth"
-    #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output/zod_models/pvrcnnpp/D16_100epochs/ckpt/checkpoint_epoch_100.pth"
+    # checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output_okeanos/output/zod_models/pvrcnnpp/D16_50epochs/ckpt/checkpoint_epoch_50.pth"
 
     #avltruck
     #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output/avltruck_models/centerpoint/D6_100epochs_4classes/ckpt/checkpoint_epoch_100.pth"
-    #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output/avltruck_models/pvrcnnpp/D6_100epochs/ckpt/checkpoint_epoch_100.pth"
+    #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output/avltruck_models/pvrcnnpp/D6_50epochs/ckpt/checkpoint_epoch_50.pth"
+    checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output_okeanos/output/avltruck_models/pvrcnnpp_STzod/D6_5epochs_STzod_ft_D16_50epochs_ros/ckpt/checkpoint_epoch_3.pth"
 
     if (args.dataset == None):
         args.dataset = dataset
@@ -89,7 +90,7 @@ def main():
                        "VulnerableVehicle_Motorcycle",
                        "Pedestrian"]
         if args.frame_idx is None:
-            args.frame_idx = "022786"
+            args.frame_idx = "055261"
         
         image_path_frame = args.frame_idx
 
@@ -223,7 +224,7 @@ def main():
 
         points4 = dataset.extract_fov_data(points4, 120, 0)
 
-
+        scores = eval_det_annos[0]["score"]
         points = points4[:,:3]
         gt_boxes_lidar = gt_boxes
         color = points4[:,-1]
@@ -253,7 +254,7 @@ def main():
         color=points4[:,-1]
         points=points4[:,:3]
         det_boxes=None
-
+        scores = None      
     if save_image:
         #insert image view here, can be copied by pressing Ctrl+C in open3d window and paste in editor file
         
@@ -267,9 +268,9 @@ def main():
 			"zoom" : 0.079999999999999613
 		}
 
-        vis.draw_scenes(points, gt_boxes_lidar,det_boxes ,point_colors=color, view_control=view_control, image_path=image_path)
+        vis.draw_scenes(points, gt_boxes_lidar,det_boxes ,point_colors=color, view_control=view_control, image_path=image_path, ref_scores=scores)
     else:
-        vis.draw_scenes(points, gt_boxes_lidar,det_boxes ,point_colors=color)
+        vis.draw_scenes(points, gt_boxes_lidar,det_boxes ,point_colors=color, ref_scores=scores)
 
     return
 
