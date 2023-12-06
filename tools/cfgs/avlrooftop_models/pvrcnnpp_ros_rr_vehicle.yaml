@@ -1,0 +1,63 @@
+_BASE_CONFIG_: cfgs/avlrooftop_models/pvrcnnpp.yaml
+
+DATA_CONFIG:
+    _BASE_CONFIG_: cfgs/dataset_configs/avlrooftop/OD/avlrooftop_dataset.yaml
+
+    DATA_AUGMENTOR:
+        DISABLE_AUG_LIST: ["placeholder"]
+        AUG_CONFIG_LIST:
+            - NAME: gt_sampling
+              USE_ROAD_PLANE: False
+              DB_INFO_PATH:
+                - avl_dbinfos_train.pkl
+              PREPARE:
+                {
+                filter_by_min_points:
+                    [
+                    "Vehicle_Drivable_Car:5",
+                    "Vehicle_Drivable_Van:5",
+                    "Human:5",
+                    "Vehicle_Ridable_Motorcycle:5",
+                    "Vehicle_Ridable_Bicycle:5",
+                    "LargeVehicle_Bus:5",
+                    "LargeVehicle_Truck:5",
+                    "LargeVehicle_TruckCab:5",
+                    "Trailer:5",
+                    ],
+                }
+
+              SAMPLE_GROUPS:
+                #Vehicle: 15, Cyclist: 10, Pedestrian: 10
+                [
+                "Vehicle_Drivable_Car:11",
+                "Vehicle_Drivable_Van:2",
+                "Human:10",
+                "Vehicle_Ridable_Motorcycle:5",
+                "Vehicle_Ridable_Bicycle:5",
+                "LargeVehicle_Bus:1",
+                "LargeVehicle_Truck:1",
+                "LargeVehicle_TruckCab:0",
+                "Trailer:0",
+                ]
+
+              NUM_POINT_FEATURES: 4
+              DATABASE_WITH_FAKELIDAR: False
+              REMOVE_EXTRA_WIDTH: [0.0, 0.0, 0.0]
+              LIMIT_WHOLE_SCENE: True
+
+            - NAME: random_world_flip
+              ALONG_AXIS_LIST: ["x", "y"]
+
+            - NAME: random_world_rotation
+              WORLD_ROT_ANGLE: [-0.78539816, 0.78539816]
+
+            - NAME: random_world_scaling
+              WORLD_SCALE_RANGE: [0.95, 1.05]
+
+            - NAME: random_object_scaling
+              SCALE_UNIFORM_NOISE: [0.9, 1.10]
+
+            - NAME: random_object_rotation
+              ROT_PROB: 0.8
+              ROT_UNIFORM_NOISE: [ -0.38539816, 0.38539816 ]
+
