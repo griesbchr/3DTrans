@@ -1,0 +1,7 @@
+2023-12-07 14:10:56,259 gace_utils.py gace_info 24  INFO  [GACE]	 Demo for Geometry Aware Confidence Enhancement (GACE)
+2023-12-07 14:10:56,259 gace_utils.py gace_info 24  INFO  [GACE]	 Dataset:	 ZODDataset
+2023-12-07 14:11:00,149 gace_utils.py gace_info 24  INFO  [GACE]	 Base-Detector:	 PVRCNNPlusPlus
+2023-12-07 14:11:00,149 gace_utils.py gace_info 24  INFO  [GACE]	 Data Folder:	 data
+2023-12-07 14:11:00,149 gace_utils.py gace_info 24  INFO  [GACE]	 Output Folder:	 gace_output/2023-12-07_14-10-56
+2023-12-07 14:11:00,149 gace_utils.py gace_info 24  INFO  [GACE]	 Generate GACE training data:	data/ZODDataset_PVRCNNPlusPlus_train.pkl
+2023-12-07 14:11:00,153 gace_utils.py info 20  INFO  Loading ZOD dataset.
