@@ -135,13 +135,13 @@ SELF_TRAIN:
         LOSS_WEIGHT: 1.0
 
 
-    SCORE_THRESH: [0.5, 0.8, 0.7, 1]             #Threshold per class
+    SCORE_THRESH: [0.55, 0.8, 0.7, 1]             #Threshold per class
     #SCORE_THRESH: [0.8, 1, 1, 1]             #Threshold per class
-    NEG_THRESH: [0.2, 0.2, 0.2, 1]
+    NEG_THRESH: [0.15, 0.2, 0.2, 1]
     #NEG_THRESH: [0.2, 1, 1, 1]
 
-    UPDATE_PSEUDO_LABEL: [0, 1]        # Pseudo label generation epoch
-    UPDATE_PSEUDO_LABEL_INTERVAL: 100
+    UPDATE_PSEUDO_LABEL: [0, 1, 3]        # Pseudo label generation epoch
+    UPDATE_PSEUDO_LABEL_INTERVAL: 5 
     INIT_PS: None
     
     PROG_AUG:

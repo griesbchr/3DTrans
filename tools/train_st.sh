@@ -2,13 +2,13 @@
 # Finetune a single detector on an arbitrary dataset
 
 
-DATASET=avltruck
-MODEL=pvrcnnpp_STrooftop
-EXTRA_TAG=D1_60epochs_STrooftop_ft_D6_50epochs
-PRETRAINED=/home/cgriesbacher/thesis/3DTrans/output/avltruck_models/pvrcnnpp/D6_50epochs/ckpt/checkpoint_epoch_50.pth
+DATASET=zod
+MODEL=pvrcnnpp_STtruck
+EXTRA_TAG=D6_30epochs_STtruck_ft_D16_50epochs_ros
+PRETRAINED=/home/cgriesbacher/thesis/3DTrans/output_okeanos/output/zod_models/pvrcnnpp_ros/D16_50epochs/ckpt/checkpoint_epoch_50.pth
 
-EPOCHS=60
-CKPT_SAVE_INTERVAL=60
+EPOCHS=30
+CKPT_SAVE_INTERVAL=1
 BATCHSIZE=4
 WORKERS=4
 
