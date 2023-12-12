@@ -16,20 +16,28 @@ from pcdet.ops.iou3d_nms.iou3d_nms_utils import boxes_iou3d_gpu
 from pcdet.models.model_utils.model_nms_utils import class_agnostic_nms
 
 
+#INSTANCE_PROP = [
+#    'class_veh', 'class_ped', 'class_cyc', 'base_det_score', 
+#    'cx', 'cy', 'cz', 'dx', 'dy', 'dz', 'heading_cos', 'heading_sin', 
+#    'dist', 'alpha_cos', 'alpha_sin', 'nr_pts',
+#    'min_x', 'min_y', 'min_z', 'min_refl', 'min_elongation',
+#    'max_x', 'max_y', 'max_z', 'max_refl', 'max_elongation',
+#    'mean_x', 'mean_y', 'mean_z', 'mean_refl', 'mean_elongation',
+#    'std_x', 'std_y', 'std_z', 'std_refl', 'std_elongation',
+#]
 INSTANCE_PROP = [
-    'class_veh', 'class_ped', 'class_cyc', 'base_det_score', 
+    'class_veh', 'class_ped', 'class_cyc', 'class_tru', 'base_det_score', 
     'cx', 'cy', 'cz', 'dx', 'dy', 'dz', 'heading_cos', 'heading_sin', 
     'dist', 'alpha_cos', 'alpha_sin', 'nr_pts',
-    'min_x', 'min_y', 'min_z', 'min_refl', 'min_elongation',
-    'max_x', 'max_y', 'max_z', 'max_refl', 'max_elongation',
-    'mean_x', 'mean_y', 'mean_z', 'mean_refl', 'mean_elongation',
-    'std_x', 'std_y', 'std_z', 'std_refl', 'std_elongation',
+    'min_x', 'min_y', 'min_z', 'min_refl',
+    'max_x', 'max_y', 'max_z', 'max_refl', 
+    'mean_x', 'mean_y', 'mean_z', 'mean_refl', 
+    'std_x', 'std_y', 'std_z', 'std_refl',
 ]
-
 CONTEXT_PROP = [
     'dist', 'dir_to_nb_x', 'dir_to_nb_y', 'dir_to_nb_z',
     'diff_heading_cos', 'diff_heading_sin', 'nb_det_scores',
-    'nb_class_veh', 'nb_class_ped', 'nb_class_cyc'
+    'nb_class_veh', 'nb_class_ped', 'nb_class_cy', 'nb_class_tru'
 ]
 
 # category: 1 true positive detection, 0 false positive detection
@@ -148,6 +156,7 @@ class GACEDataset(Dataset):
         cp_data[:, :, cpd.nb_class_veh] = nb_ip_data[:, :, ipd.class_veh]
         cp_data[:, :, cpd.nb_class_ped] = nb_ip_data[:, :, ipd.class_ped]
         cp_data[:, :, cpd.nb_class_cyc] = nb_ip_data[:, :, ipd.class_cyc]
+        cp_data[:, :, cpd.nb_class_tru] = nb_ip_data[:, :, ipd.class_tru]
 
         cp_data[mask, :] = 0
 
@@ -163,20 +172,25 @@ class GACEDataset(Dataset):
                     norm_factor_veh = norm_factor[0]
                     norm_factor_ped = norm_factor[1]
                     norm_factor_cyc = norm_factor[2]
+                    norm_factor_tru = norm_factor[3]
 
                     veh_mask = ip_data[:, ipd.class_veh] == 1
                     ped_mask = ip_data[:, ipd.class_ped] == 1
                     cyc_mask = ip_data[:, ipd.class_cyc] == 1
+                    tru_mask = ip_data[:, ipd.class_tru] == 1
                     ip_data_n[veh_mask, ipd[ip_name]] /= norm_factor_veh 
                     ip_data_n[ped_mask, ipd[ip_name]] /= norm_factor_ped
                     ip_data_n[cyc_mask, ipd[ip_name]] /= norm_factor_cyc
+                    ip_data_n[tru_mask, ipd[ip_name]] /= norm_factor_tru
 
                     veh_mask_nb = nb_ip_data[:, :, ipd.class_veh] == 1
                     ped_mask_nb = nb_ip_data[:, :, ipd.class_ped] == 1
                     cyc_mask_nb = nb_ip_data[:, :, ipd.class_cyc] == 1
+                    tru_mask_nb = nb_ip_data[:, :, ipd.class_tru] == 1
                     nb_ip_data_n[veh_mask_nb, ipd[ip_name]] /= norm_factor_veh
                     nb_ip_data_n[ped_mask_nb, ipd[ip_name]] /= norm_factor_ped
                     nb_ip_data_n[cyc_mask_nb, ipd[ip_name]] /= norm_factor_cyc
+                    nb_ip_data_n[tru_mask_nb, ipd[ip_name]] /= norm_factor_tru
 
                 else:
                     ip_data_n[:, ipd[ip_name]] /= norm_factor
@@ -299,10 +313,8 @@ class GACEDataset(Dataset):
             same_class = det_labels[:, None] == gt_labels[None, :]
             iou = iou * same_class
 
-            category[det_labels == 1] = np.max(
-                (iou[det_labels==1, :] >= 0.7).astype(np.float32), axis=1)
-            category[det_labels != 1] = np.max(
-                (iou[det_labels!=1, :] >= 0.5).astype(np.float32), axis=1)
+            category[det_labels == 1] = np.max((iou[det_labels==1, :] >= 0.7).astype(np.float32), axis=1)
+            category[det_labels != 1] = np.max((iou[det_labels!=1, :] >= 0.5).astype(np.float32), axis=1)
 
             data[:, td.iou_w_gt] = np.max(iou, axis=1)
             data[:, td.category] = category
@@ -325,6 +337,7 @@ class GACEDataset(Dataset):
         data[:, ipd.class_veh] = (det_labels == 1).astype(np.float32)
         data[:, ipd.class_ped] = (det_labels == 2).astype(np.float32)
         data[:, ipd.class_cyc] = (det_labels == 3).astype(np.float32)
+        data[:, ipd.class_tru] = (det_labels == 4).astype(np.float32)
 
         data[:, ipd.base_det_score] = det_scores
 
@@ -377,25 +390,25 @@ class GACEDataset(Dataset):
             data[i, ipd.min_y] = np.min(pcl_in_box[:, 1])
             data[i, ipd.min_z] = np.min(pcl_in_box[:, 2])
             data[i, ipd.min_refl] = np.min(pcl_in_box[:, 3])
-            data[i, ipd.min_elongation] = np.min(pcl_in_box[:, 4])
+            #data[i, ipd.min_elongation] = np.min(pcl_in_box[:, 4])
 
             data[i, ipd.max_x] = np.max(pcl_in_box[:, 0])
             data[i, ipd.max_y] = np.max(pcl_in_box[:, 1])
             data[i, ipd.max_z] = np.max(pcl_in_box[:, 2])
             data[i, ipd.max_refl] = np.max(pcl_in_box[:, 3])
-            data[i, ipd.max_elongation] = np.max(pcl_in_box[:, 4])
+            #data[i, ipd.max_elongation] = np.max(pcl_in_box[:, 4])
 
             data[i, ipd.mean_x] = np.mean(pcl_in_box[:, 0])
             data[i, ipd.mean_y] = np.mean(pcl_in_box[:, 1])
             data[i, ipd.mean_z] = np.mean(pcl_in_box[:, 2])
             data[i, ipd.mean_refl] = np.mean(pcl_in_box[:, 3])
-            data[i, ipd.mean_elongation] = np.mean(pcl_in_box[:, 4])
+            #data[i, ipd.mean_elongation] = np.mean(pcl_in_box[:, 4])
 
             data[i, ipd.std_x] = np.std(pcl_in_box[:, 0])
             data[i, ipd.std_y] = np.std(pcl_in_box[:, 1])
             data[i, ipd.std_z] = np.std(pcl_in_box[:, 2])
             data[i, ipd.std_refl] = np.std(pcl_in_box[:, 3])
-            data[i, ipd.std_elongation] = np.std(pcl_in_box[:, 4])
+            #data[i, ipd.std_elongation] = np.std(pcl_in_box[:, 4])
 
         return data
 
@@ -405,22 +418,29 @@ class GACEDataset(Dataset):
         data_cfg = deepcopy(self.cfg.DATA_CONFIG) 
         model_cfg = deepcopy(self.cfg.MODEL)
         
-        # INIT WAYMO DATASET AND DATALOADER
+        # INIT DATASET AND DATALOADER
         if self.train:
             # inference on training set with base detector without any augmentation
             # therefore we use the test cfg for training set inference
-            data_cfg.DATA_SPLIT['test'] = data_cfg.DATA_SPLIT['train']
+            #data_cfg.DATA_SPLIT['test'] = data_cfg.DATA_SPLIT['train']
             #data_cfg.SAMPLED_INTERVAL['test'] = data_cfg.SAMPLED_INTERVAL['train']
             model_cfg.POST_PROCESSING.NMS_CONFIG.NMS_THRESH = 0.1
             tqdm_desc = '[GACE] train data generation'
+            dataset, dataloader, sampler = build_dataloader(
+                dataset_cfg=data_cfg, class_names=self.cfg.CLASS_NAMES, 
+                batch_size=self.args.batch_size_dg, dist=False, 
+                workers=self.args.workers, logger=self.logger, training=True)
+            dataloader.dataset.eval()
         else:
             tqdm_desc = '[GACE] val data generation'
             det_annos = []
+            dataset, dataloader, sampler = build_dataloader(
+                dataset_cfg=data_cfg, class_names=self.cfg.CLASS_NAMES, 
+                batch_size=self.args.batch_size_dg, dist=False, 
+                workers=self.args.workers, logger=self.logger, training=False)
+            dataloader.dataset.eval()
 
-        dataset, dataloader, sampler = build_dataloader(
-            dataset_cfg=data_cfg, class_names=self.cfg.CLASS_NAMES, 
-            batch_size=self.args.batch_size_dg, dist=False, 
-            workers=self.args.workers, logger=self.logger, training=False)
+
         
         # INIT BASE DETECTOR
         base_det_model = build_network(model_cfg=model_cfg, num_class=len(self.cfg.CLASS_NAMES), 

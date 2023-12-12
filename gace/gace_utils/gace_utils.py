@@ -9,6 +9,7 @@ from pcdet.datasets import build_dataloader
 from pcdet.utils.loss_utils import SigmoidFocalClassificationLoss
 from gace.gace_utils.gace_model import GACEModel
 
+import copy
 
 class GACELogger(object):
 
@@ -96,7 +97,7 @@ def train_gace_model(dataset_train, args, cfg, logger):
     return gace_model
 
 
-def evaluate_gace_model(gace_model, dataset_val, args, cfg, logger):
+def evaluate_gace_model(gace_model, dataset_val, args, cfg, logger, eval_old=True):
 
     base_dataset = build_dataloader(
         dataset_cfg=cfg.DATA_CONFIG,
@@ -152,6 +153,7 @@ def evaluate_gace_model(gace_model, dataset_val, args, cfg, logger):
     progress_bar.close()
     
     det_annos = dataset_val.get_det_annos()
+    old_det_annos = copy.deepcopy(det_annos)
 
     det_count = 0
     
@@ -162,7 +164,14 @@ def evaluate_gace_model(gace_model, dataset_val, args, cfg, logger):
     result_str, result_dict = base_dataset.evaluation(
         det_annos, cfg.CLASS_NAMES, eval_metric=cfg.MODEL.POST_PROCESSING.EVAL_METRIC,
         output_dir=None)
-
-    return result_str
+    
+    if eval_old:
+        result_str_old, result_dict_old = base_dataset.evaluation(
+            old_det_annos, cfg.CLASS_NAMES, eval_metric=cfg.MODEL.POST_PROCESSING.EVAL_METRIC,
+            output_dir=None)
+    else:
+        result_str_old = None
+    
+    return result_str, result_str_old
 
 

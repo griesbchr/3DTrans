@@ -62,3 +62,6 @@ tools/xtrain_with_multieval_okeanos.sh
 tools/selftrain_okeanos.sh
 tools/train_st_okeanos.sh
 tools/scripts/ST/dist_train_st.sh
+
+gace_output/*
+gace/data/*

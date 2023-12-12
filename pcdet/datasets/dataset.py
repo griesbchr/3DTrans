@@ -430,3 +430,4 @@ class DatasetTemplate(torch_data.Dataset):
     def train(self):
         self.training = True
         self.data_processor.train()
+        

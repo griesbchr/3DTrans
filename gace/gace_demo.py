@@ -55,19 +55,30 @@ def main():
     #overwrite data path in dataset cfg by removing the initial ..
     cfg.DATA_CONFIG.DATA_PATH = cfg.DATA_CONFIG.DATA_PATH[3:]
     gace_dataset_train = GACEDataset(args, cfg, logger, train=True)
+    # TODO: Split eval cfg 
     gace_dataset_val = GACEDataset(args, cfg, logger, train=False)
     
-    logger.gace_info('Start training confidence enhancement model')
-    gace_model = train_gace_model(gace_dataset_train, args, cfg, logger)
+    if args.gace_ckpt is not None:
+        logger.gace_info(f'Load GACE model from {args.gace_ckpt}')
+        gace_model = torch.load(args.gace_ckpt)
+        logger.gace_info(f'GACE model loaded from {args.gace_ckpt}')
+    else:
+        logger.gace_info('Start training confidence enhancement model')
+        gace_model = train_gace_model(gace_dataset_train, args, cfg, logger)
+        
+        #store the trained model
+        gace_model_path = args.gace_output_folder / 'gace_model.pth'
+        torch.save(gace_model, gace_model_path)
+        logger.gace_info(f'GACE model saved to {gace_model_path}')
+
     
     logger.gace_info('Start evaluation with new confidence scores')
-    result_str = evaluate_gace_model(gace_model, gace_dataset_val, args, cfg, logger)
+    result_str, result_str_old = evaluate_gace_model(gace_model, gace_dataset_val, args, cfg, logger, eval_old=True)
+    if result_str_old is not None:
+        logger.gace_info('Evaluation Results without GACE:')
+        logger.gace_info(result_str_old)
     logger.gace_info('Evaluation Results including GACE:')
     logger.gace_info(result_str)
-
-    gace_model_path = args.gace_output_folder / 'gace_model.pth'
-    torch.save(gace_model, gace_model_path)
-    logger.gace_info(f'GACE model saved to {gace_model_path}')
 
     return
 
