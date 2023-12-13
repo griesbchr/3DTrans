@@ -1,2 +1,0 @@
-2023-12-07 13:59:45,710 gace_utils.py gace_info 24  INFO  [GACE]	 Demo for Geometry Aware Confidence Enhancement (GACE)
-2023-12-07 13:59:45,711 gace_utils.py gace_info 24  INFO  [GACE]	 Dataset:	 ZODDataset

@@ -2,6 +2,7 @@ import argparse
 import torch
 from datetime import datetime
 from pathlib import Path
+import pickle
 
 from pcdet.config import cfg, cfg_from_yaml_file
 
@@ -12,14 +13,14 @@ import os
 def parse_config():
     parser = argparse.ArgumentParser(description='arg parser')
     parser.add_argument('--cfg_file', type=str, default='cfgs/gace_demo.yaml', help='demo config file')
-    parser.add_argument('--base_detector_ckpt', type=str, required=True,help='base detector model weights')
+    parser.add_argument('--base_detector_ckpt', type=str ,help='base detector model weights')
     parser.add_argument('--gace_ckpt', type=str, default=None,help='gace model weights')
     parser.add_argument('--batch_size_dg', type=int, default=8, help='batch size for data generation (model inference)')
     parser.add_argument('--batch_size_gace', type=int, default=2048, help='batch size for GACE training')
     parser.add_argument('--workers', type=int, default=4, help='number of workers for dataloader')
     parser.add_argument('--gace_data_folder', type=str, default='gace_data/', help='folder for generated train/val data and model')
     parser.add_argument('--gace_output_folder', type=str, default='gace_output/',help='folder for gace output')
-    parser.add_argument('--results_path', type=str, default='None', help='path to detection results for pseudo label generation')
+    parser.add_argument('--results_path', type=str, required=True, default=None, help='path to detection results for pseudo label generation')
 
     args = parser.parse_args()
 
@@ -35,6 +36,7 @@ def main():
     args.gace_output_folder = Path(args.gace_output_folder) / datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     args.gace_output_folder.mkdir(parents=True, exist_ok=True)
 
+    # XXX: Fix this ugly hack
     cfg.MODEL = cfg.MODEL.MODEL
 
     logger = GACELogger(args.gace_output_folder)
@@ -44,31 +46,20 @@ def main():
     logger.gace_info(f'Data Folder:\t {args.gace_data_folder}')
     logger.gace_info(f'Output Folder:\t {args.gace_output_folder}')
     
-    #Load gace model
-    if args.gace_ckpt is not None:
-        args.gace_ckpt = "/home/cgriesbacher/thesis/3DTrans/gace_output/2023-12-12_10-03-19/gace_model.pth"
-        logger.gace_info(f'Load GACE model from {args.gace_ckpt}')
-        gace_model = torch.load(args.gace_ckpt)
-        logger.gace_info(f'GACE model loaded from {args.gace_ckpt}')
-    else:
-        #Train gace model
-        gace_dataset_train = GACEDataset(args, cfg, logger, train=True)
-        logger.gace_info('Start training confidence enhancement model')
-        gace_model = train_gace_model(gace_dataset_train, args, cfg, logger)
-        
-        #store the trained model
-        gace_model_path = args.gace_output_folder / 'gace_model.pth'
-        torch.save(gace_model, gace_model_path)
-        logger.gace_info(f'GACE model saved to {gace_model_path}')
+    #overwrite data path in dataset cfg by removing the initial ..
+    cfg.DATA_CONFIG.DATA_PATH = cfg.DATA_CONFIG.DATA_PATH[3:]
 
-    if cfg.DATA_CONFIG_TAR is not None:
-        cfg.DATA_CONFIG_TAR.DATA_PATH = cfg.DATA_CONFIG_TAR.DATA_PATH[3:]
-    else:
-        cfg.DATA_CONFIG.DATA_PATH = cfg.DATA_CONFIG.DATA_PATH[3:]
+    #load results (pickle file)
+    logger.gace_info(f'Load results from {args.results_path}')
+    with open(args.results_path, 'rb') as f:
+        results = pickle.load(f)
 
+    gace_dataset_val = GACEDataset(args, cfg, results, logger, train=False)
     
-    gace_dataset_val = GACEDataset(args, cfg, logger, train=False)
-    
+    logger.gace_info(f'Load GACE model from {args.gace_ckpt}')
+    gace_model = torch.load(args.gace_ckpt)
+    logger.gace_info(f'GACE model loaded from {args.gace_ckpt}')
+
     
     logger.gace_info('Start evaluation with new confidence scores')
     result_str, result_str_old = evaluate_gace_model(gace_model, gace_dataset_val, args, cfg, logger, eval_old=True)

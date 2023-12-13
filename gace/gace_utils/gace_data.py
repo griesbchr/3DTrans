@@ -37,7 +37,7 @@ INSTANCE_PROP = [
 CONTEXT_PROP = [
     'dist', 'dir_to_nb_x', 'dir_to_nb_y', 'dir_to_nb_z',
     'diff_heading_cos', 'diff_heading_sin', 'nb_det_scores',
-    'nb_class_veh', 'nb_class_ped', 'nb_class_cy', 'nb_class_tru'
+    'nb_class_veh', 'nb_class_ped', 'nb_class_cyc', 'nb_class_tru'
 ]
 
 # category: 1 true positive detection, 0 false positive detection
@@ -64,7 +64,10 @@ class GACEDataset(Dataset):
         self.cp_dict = edict({k: i for i, k in enumerate(CONTEXT_PROP)})
         self.target_dict = edict({k: i for i, k in enumerate(TARGETS)})
         
-        exp_id = f'{cfg.DATA_CONFIG.DATASET}_{cfg.MODEL.NAME}'
+        if cfg.DATA_CONFIG_TAR is not None:
+            exp_id = f'{cfg.DATA_CONFIG.DATASET}_{cfg.DATA_CONFIG_TAR.DATASET}_{cfg.MODEL.NAME}'
+        else:
+            exp_id = f'{cfg.DATA_CONFIG.DATASET}_{cfg.MODEL.NAME}'
         self.data_file = self.data_folder / f'{exp_id}_{"train" if train else "val"}.pkl'
         
         if not train:
@@ -415,11 +418,11 @@ class GACEDataset(Dataset):
 
     def generate_data(self):
         
-        data_cfg = deepcopy(self.cfg.DATA_CONFIG) 
         model_cfg = deepcopy(self.cfg.MODEL)
         
         # INIT DATASET AND DATALOADER
         if self.train:
+            data_cfg = deepcopy(self.cfg.DATA_CONFIG) 
             # inference on training set with base detector without any augmentation
             # therefore we use the test cfg for training set inference
             #data_cfg.DATA_SPLIT['test'] = data_cfg.DATA_SPLIT['train']
@@ -432,6 +435,10 @@ class GACEDataset(Dataset):
                 workers=self.args.workers, logger=self.logger, training=True)
             dataloader.dataset.eval()
         else:
+            if self.cfg.DATA_CONFIG_TAR is not None:
+                data_cfg = deepcopy(self.cfg.DATA_CONFIG_TAR)
+            else:
+                data_cfg = deepcopy(self.cfg.DATA_CONFIG)
             tqdm_desc = '[GACE] val data generation'
             det_annos = []
             dataset, dataloader, sampler = build_dataloader(

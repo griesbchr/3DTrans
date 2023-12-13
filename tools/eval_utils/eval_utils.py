@@ -73,9 +73,6 @@ def eval_one_epoch(cfg, model, dataloader, epoch_id, logger, dist_test=False, sa
             if cfg.LOCAL_RANK == 0:
                 progress_bar.set_postfix(disp_dict)
                 progress_bar.update()
-        ##load det_annos from results.pkl
-        #with open(result_dir / 'result.pkl', 'rb') as f:
-        #    det_annos = pickle.load(f)
 
         if cfg.LOCAL_RANK == 0:
             progress_bar.close()

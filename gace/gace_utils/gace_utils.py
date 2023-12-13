@@ -99,8 +99,12 @@ def train_gace_model(dataset_train, args, cfg, logger):
 
 def evaluate_gace_model(gace_model, dataset_val, args, cfg, logger, eval_old=True):
 
+    if cfg.DATA_CONFIG_TAR is not None:
+        data_cfg = cfg.DATA_CONFIG_TAR
+    else:
+        data_cfg = cfg.DATA_CONFIG
     base_dataset = build_dataloader(
-        dataset_cfg=cfg.DATA_CONFIG,
+        dataset_cfg=data_cfg,
         class_names=cfg.CLASS_NAMES,
         batch_size=args.batch_size_dg,
         dist=False, workers=args.workers,
@@ -160,6 +164,15 @@ def evaluate_gace_model(gace_model, dataset_val, args, cfg, logger, eval_old=Tru
     for da in det_annos:
         da['score'] = new_scores[det_count:det_count+da['score'].shape[0]]
         det_count += da['score'].shape[0]
+    
+    #store old detection annos as pickle
+    import pickle as pkl
+    with open(args.gace_output_folder / 'det_annos.pkl', 'wb') as f:
+        pkl.dump(old_det_annos, f)
+    
+    #store improved detection annos as pickle
+    with open(args.gace_output_folder / 'det_annos_gace.pkl', 'wb') as f:
+        pkl.dump(det_annos, f)
 
     result_str, result_dict = base_dataset.evaluation(
         det_annos, cfg.CLASS_NAMES, eval_metric=cfg.MODEL.POST_PROCESSING.EVAL_METRIC,
@@ -173,5 +186,4 @@ def evaluate_gace_model(gace_model, dataset_val, args, cfg, logger, eval_old=Tru
         result_str_old = None
     
     return result_str, result_str_old
-
 

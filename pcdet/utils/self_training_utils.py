@@ -92,6 +92,8 @@ def save_pseudo_label_epoch(model, val_loader, rank, leave_pbar, ps_label_dir, c
     # 'random_object_rotation', 'random_object_scaling', 'normalize_object_size' are not used 
     model.eval()
 
+    target_batches = []
+    predictions_dicts = []
     for cur_it in range(total_it_each_epoch):
         try:
             target_batch = next(val_dataloader_iter)
@@ -103,6 +105,9 @@ def save_pseudo_label_epoch(model, val_loader, rank, leave_pbar, ps_label_dir, c
         with torch.no_grad():
             load_data_to_gpu(target_batch)
             pred_dicts, ret_dict = model(target_batch)
+
+        target_batches.append(target_batch.cpu().numpy())
+        predictions_dicts.append(pred_dicts.cpu().numpy())
 
         pos_ps_batch, ign_ps_batch = save_pseudo_label_batch(
             target_batch, pred_dicts=pred_dicts,
@@ -124,6 +129,17 @@ def save_pseudo_label_epoch(model, val_loader, rank, leave_pbar, ps_label_dir, c
 
     if rank == 0:
         pbar.close()
+
+    # store target_batches and predictions_dicts as pkl
+    if rank == 0:
+        path = os.path.join(ps_label_dir, "target_batches_e{}.pkl".format(cur_epoch))
+        with open(path, 'wb') as f:
+            pkl.dump(target_batches, f)
+
+        path = os.path.join(ps_label_dir, "predictions_dicts_e{}.pkl".format(cur_epoch))
+        with open(path, 'wb') as f:
+            pkl.dump(predictions_dicts, f)
+
 
     gather_and_dump_pseudo_label_result(rank, ps_label_dir, cur_epoch)
     print(len(PSEUDO_LABELS))

@@ -36,8 +36,13 @@ GACE:
         H_F_HIDDEN_DIM: 256
     
     TRAIN:
-        NUM_EPOCHS: 20 
+        NUM_EPOCHS: 30 
         LR: 0.002
         IOU_LOSS_W: 0.5
         SFL_ALPHA: 0.5
         SFL_GAMMA: 1
+
+DATA_CONFIG_TAR:
+    _BASE_CONFIG_: tools/cfgs/dataset_configs/avltruck/OD/avltruck_dataset.yaml
+    TARGET: True
+
