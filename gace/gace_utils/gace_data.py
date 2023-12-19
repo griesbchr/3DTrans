@@ -16,6 +16,7 @@ from pcdet.ops.iou3d_nms.iou3d_nms_utils import boxes_iou3d_gpu
 from pcdet.models.model_utils.model_nms_utils import class_agnostic_nms
 
 
+#with elongation and without truck class
 #INSTANCE_PROP = [
 #    'class_veh', 'class_ped', 'class_cyc', 'base_det_score', 
 #    'cx', 'cy', 'cz', 'dx', 'dy', 'dz', 'heading_cos', 'heading_sin', 
@@ -25,6 +26,7 @@ from pcdet.models.model_utils.model_nms_utils import class_agnostic_nms
 #    'mean_x', 'mean_y', 'mean_z', 'mean_refl', 'mean_elongation',
 #    'std_x', 'std_y', 'std_z', 'std_refl', 'std_elongation',
 #]
+
 INSTANCE_PROP = [
     'class_veh', 'class_ped', 'class_cyc', 'class_tru', 'base_det_score', 
     'cx', 'cy', 'cz', 'dx', 'dy', 'dz', 'heading_cos', 'heading_sin', 
@@ -34,6 +36,18 @@ INSTANCE_PROP = [
     'mean_x', 'mean_y', 'mean_z', 'mean_refl', 
     'std_x', 'std_y', 'std_z', 'std_refl',
 ]
+
+#without detection score
+#INSTANCE_PROP = [
+#    'class_veh', 'class_ped', 'class_cyc', 'class_tru', 
+#    'cx', 'cy', 'cz', 'dx', 'dy', 'dz', 'heading_cos', 'heading_sin', 
+#    'dist', 'alpha_cos', 'alpha_sin', 'nr_pts',
+#    'min_x', 'min_y', 'min_z', 'min_refl',
+#    'max_x', 'max_y', 'max_z', 'max_refl', 
+#    'mean_x', 'mean_y', 'mean_z', 'mean_refl', 
+#    'std_x', 'std_y', 'std_z', 'std_refl',
+#]
+
 CONTEXT_PROP = [
     'dist', 'dir_to_nb_x', 'dir_to_nb_y', 'dir_to_nb_z',
     'diff_heading_cos', 'diff_heading_sin', 'nb_det_scores',
@@ -122,6 +136,18 @@ class GACEDataset(Dataset):
         ip_data = self.ip_data[idx, :]
         cp_nb_ids = self.cp_nb_ids[idx, :]
         target_data = self.target_data[idx, :]
+        
+        #add noise to ip_data base_det_score
+        if self.train:
+           noise = np.random.uniform(-0.2, 0.2, size=(ip_data.shape[0]))
+           score_mask = ip_data[:, ipd.base_det_score] > 0
+           noise[np.logical_not(score_mask)] = 0
+
+           ip_data[:, ipd.base_det_score] += noise
+
+           ##clip scores to [0.1, 1]
+           ip_data[:, ipd.base_det_score] = np.clip(ip_data[:, ipd.base_det_score], 0.1, 1)
+            
 
         box_center = ip_data[:, [ipd.cx, ipd.cy, ipd.cz]]
         box_heading_dir = ip_data[:, [ipd.heading_cos, ipd.heading_sin]]

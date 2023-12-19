@@ -19,17 +19,22 @@ def parse_config():
     parser.add_argument('--workers', type=int, default=4, help='number of workers for dataloader')
     parser.add_argument('--gace_data_folder', type=str, default='gace_data/', help='folder for generated train/val data and model')
     parser.add_argument('--gace_output_folder', type=str, default='gace_output/',help='folder for gace output')
-    parser.add_argument('--results_path', type=str, default='None', help='path to detection results for pseudo label generation')
+    parser.add_argument('--results_path', type=str, default=None, help='path to detection results for pseudo label generation')
+    parser.add_argument('--epochs', type=int, default=None, help='commandline epochs overwrite')
 
     args = parser.parse_args()
 
     cfg_from_yaml_file(args.cfg_file, cfg)
 
+    #add command line arguments to cfg
+    if args.epochs is not None:
+        cfg.GACE.TRAIN.NUM_EPOCHS = args.epochs
+
     return args, cfg
 
 
 def main():
-    os.chdir('/home/cgriesbacher/thesis/3DTrans')
+    os.chdir('/home/cgriesbacher/thesis/3DTrans/gace')
     args, cfg = parse_config()
     
     args.gace_output_folder = Path(args.gace_output_folder) / datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
@@ -43,7 +48,14 @@ def main():
     logger.gace_info(f'Base-Detector:\t {cfg.MODEL.NAME}')
     logger.gace_info(f'Data Folder:\t {args.gace_data_folder}')
     logger.gace_info(f'Output Folder:\t {args.gace_output_folder}')
-    
+    if args.gace_ckpt is not None:
+        logger.gace_info(f'GACE model:\t {args.gace_ckpt}')
+    if args.results_path is not None:
+        logger.gace_info(f'Results:\t {args.results_path}')
+    if cfg.DATA_CONFIG_TAR is not None:
+        logger.gace_info(f'Target Dataset:\t {cfg.DATA_CONFIG_TAR.DATASET}')
+        logger.gace_info(f'Target Data Path:\t {cfg.DATA_CONFIG_TAR.DATA_PATH}')
+    logger.gace_info(f'Epochs:\t {cfg.GACE.TRAIN.NUM_EPOCHS}')
     #Load gace model
     if args.gace_ckpt is not None:
         args.gace_ckpt = "/home/cgriesbacher/thesis/3DTrans/gace_output/2023-12-12_10-03-19/gace_model.pth"
@@ -61,17 +73,12 @@ def main():
         torch.save(gace_model, gace_model_path)
         logger.gace_info(f'GACE model saved to {gace_model_path}')
 
-    if cfg.DATA_CONFIG_TAR is not None:
-        cfg.DATA_CONFIG_TAR.DATA_PATH = cfg.DATA_CONFIG_TAR.DATA_PATH[3:]
-    else:
-        cfg.DATA_CONFIG.DATA_PATH = cfg.DATA_CONFIG.DATA_PATH[3:]
-
     
     gace_dataset_val = GACEDataset(args, cfg, logger, train=False)
     
     
     logger.gace_info('Start evaluation with new confidence scores')
-    result_str, result_str_old = evaluate_gace_model(gace_model, gace_dataset_val, args, cfg, logger, eval_old=True)
+    result_str, result_str_old = evaluate_gace_model(gace_model, gace_dataset_val, args, cfg, logger, eval_old=False)
     if result_str_old is not None:
         logger.gace_info('Evaluation Results without GACE:')
         logger.gace_info(result_str_old)

@@ -64,4 +64,5 @@ tools/train_st_okeanos.sh
 tools/scripts/ST/dist_train_st.sh
 
 gace_output/*
+gace/gace_output/*
 gace/data/*
