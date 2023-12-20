@@ -27,8 +27,19 @@ from pcdet.models.model_utils.model_nms_utils import class_agnostic_nms
 #    'std_x', 'std_y', 'std_z', 'std_refl', 'std_elongation',
 #]
 
+#INSTANCE_PROP = [
+#    'class_veh', 'class_ped', 'class_cyc', 'class_tru', 'base_det_score', 
+#    'cx', 'cy', 'cz', 'dx', 'dy', 'dz', 'heading_cos', 'heading_sin', 
+#    'dist', 'alpha_cos', 'alpha_sin', 'nr_pts',
+#    'min_x', 'min_y', 'min_z', 'min_refl',
+#    'max_x', 'max_y', 'max_z', 'max_refl', 
+#    'mean_x', 'mean_y', 'mean_z', 'mean_refl', 
+#    'std_x', 'std_y', 'std_z', 'std_refl',
+#]
+
+#only car
 INSTANCE_PROP = [
-    'class_veh', 'class_ped', 'class_cyc', 'class_tru', 'base_det_score', 
+    'class_veh', 'base_det_score', 
     'cx', 'cy', 'cz', 'dx', 'dy', 'dz', 'heading_cos', 'heading_sin', 
     'dist', 'alpha_cos', 'alpha_sin', 'nr_pts',
     'min_x', 'min_y', 'min_z', 'min_refl',
@@ -47,11 +58,18 @@ INSTANCE_PROP = [
 #    'mean_x', 'mean_y', 'mean_z', 'mean_refl', 
 #    'std_x', 'std_y', 'std_z', 'std_refl',
 #]
+#
+#CONTEXT_PROP = [
+#    'dist', 'dir_to_nb_x', 'dir_to_nb_y', 'dir_to_nb_z',
+#    'diff_heading_cos', 'diff_heading_sin', 'nb_det_scores',
+#    'nb_class_veh', 'nb_class_ped', 'nb_class_cyc', 'nb_class_tru'
+#]
 
+#only car
 CONTEXT_PROP = [
     'dist', 'dir_to_nb_x', 'dir_to_nb_y', 'dir_to_nb_z',
     'diff_heading_cos', 'diff_heading_sin', 'nb_det_scores',
-    'nb_class_veh', 'nb_class_ped', 'nb_class_cyc', 'nb_class_tru'
+    'nb_class_veh'
 ]
 
 # category: 1 true positive detection, 0 false positive detection
@@ -138,15 +156,15 @@ class GACEDataset(Dataset):
         target_data = self.target_data[idx, :]
         
         #add noise to ip_data base_det_score
-        if self.train:
-           noise = np.random.uniform(-0.2, 0.2, size=(ip_data.shape[0]))
-           score_mask = ip_data[:, ipd.base_det_score] > 0
-           noise[np.logical_not(score_mask)] = 0
-
-           ip_data[:, ipd.base_det_score] += noise
-
-           ##clip scores to [0.1, 1]
-           ip_data[:, ipd.base_det_score] = np.clip(ip_data[:, ipd.base_det_score], 0.1, 1)
+        #if self.train:
+        #   noise = np.random.uniform(-0.1, 0.1, size=(ip_data.shape[0]))
+        #   score_mask = ip_data[:, ipd.base_det_score] > 0
+        #   noise[np.logical_not(score_mask)] = 0
+#
+        #   ip_data[:, ipd.base_det_score] += noise
+#
+        #   ##clip scores to [0.1, 1]
+        #   ip_data[:, ipd.base_det_score] = np.clip(ip_data[:, ipd.base_det_score], 0.1, 1)
             
 
         box_center = ip_data[:, [ipd.cx, ipd.cy, ipd.cz]]
@@ -183,9 +201,9 @@ class GACEDataset(Dataset):
         cp_data[:, :, cpd.nb_det_scores] = nb_ip_data[:, :, ipd.base_det_score]
 
         cp_data[:, :, cpd.nb_class_veh] = nb_ip_data[:, :, ipd.class_veh]
-        cp_data[:, :, cpd.nb_class_ped] = nb_ip_data[:, :, ipd.class_ped]
-        cp_data[:, :, cpd.nb_class_cyc] = nb_ip_data[:, :, ipd.class_cyc]
-        cp_data[:, :, cpd.nb_class_tru] = nb_ip_data[:, :, ipd.class_tru]
+        #cp_data[:, :, cpd.nb_class_ped] = nb_ip_data[:, :, ipd.class_ped]
+        #cp_data[:, :, cpd.nb_class_cyc] = nb_ip_data[:, :, ipd.class_cyc]
+        #cp_data[:, :, cpd.nb_class_tru] = nb_ip_data[:, :, ipd.class_tru]
 
         cp_data[mask, :] = 0
 
@@ -199,27 +217,27 @@ class GACEDataset(Dataset):
                 
                 if isinstance(norm_factor, list):
                     norm_factor_veh = norm_factor[0]
-                    norm_factor_ped = norm_factor[1]
-                    norm_factor_cyc = norm_factor[2]
-                    norm_factor_tru = norm_factor[3]
+                    #norm_factor_ped = norm_factor[1]
+                    #norm_factor_cyc = norm_factor[2]
+                    #norm_factor_tru = norm_factor[3]
 
                     veh_mask = ip_data[:, ipd.class_veh] == 1
-                    ped_mask = ip_data[:, ipd.class_ped] == 1
-                    cyc_mask = ip_data[:, ipd.class_cyc] == 1
-                    tru_mask = ip_data[:, ipd.class_tru] == 1
+                    #ped_mask = ip_data[:, ipd.class_ped] == 1
+                    #cyc_mask = ip_data[:, ipd.class_cyc] == 1
+                    #tru_mask = ip_data[:, ipd.class_tru] == 1
                     ip_data_n[veh_mask, ipd[ip_name]] /= norm_factor_veh 
-                    ip_data_n[ped_mask, ipd[ip_name]] /= norm_factor_ped
-                    ip_data_n[cyc_mask, ipd[ip_name]] /= norm_factor_cyc
-                    ip_data_n[tru_mask, ipd[ip_name]] /= norm_factor_tru
+                    #ip_data_n[ped_mask, ipd[ip_name]] /= norm_factor_ped
+                    #ip_data_n[cyc_mask, ipd[ip_name]] /= norm_factor_cyc
+                    #ip_data_n[tru_mask, ipd[ip_name]] /= norm_factor_tru
 
                     veh_mask_nb = nb_ip_data[:, :, ipd.class_veh] == 1
-                    ped_mask_nb = nb_ip_data[:, :, ipd.class_ped] == 1
-                    cyc_mask_nb = nb_ip_data[:, :, ipd.class_cyc] == 1
-                    tru_mask_nb = nb_ip_data[:, :, ipd.class_tru] == 1
+                    #ped_mask_nb = nb_ip_data[:, :, ipd.class_ped] == 1
+                    #cyc_mask_nb = nb_ip_data[:, :, ipd.class_cyc] == 1
+                    #tru_mask_nb = nb_ip_data[:, :, ipd.class_tru] == 1
                     nb_ip_data_n[veh_mask_nb, ipd[ip_name]] /= norm_factor_veh
-                    nb_ip_data_n[ped_mask_nb, ipd[ip_name]] /= norm_factor_ped
-                    nb_ip_data_n[cyc_mask_nb, ipd[ip_name]] /= norm_factor_cyc
-                    nb_ip_data_n[tru_mask_nb, ipd[ip_name]] /= norm_factor_tru
+                    #nb_ip_data_n[ped_mask_nb, ipd[ip_name]] /= norm_factor_ped
+                    #nb_ip_data_n[cyc_mask_nb, ipd[ip_name]] /= norm_factor_cyc
+                    #nb_ip_data_n[tru_mask_nb, ipd[ip_name]] /= norm_factor_tru
 
                 else:
                     ip_data_n[:, ipd[ip_name]] /= norm_factor
@@ -364,9 +382,9 @@ class GACEDataset(Dataset):
         det_boxes[:, 6] = np.mod(det_boxes[:, 6], 2*np.pi)
 
         data[:, ipd.class_veh] = (det_labels == 1).astype(np.float32)
-        data[:, ipd.class_ped] = (det_labels == 2).astype(np.float32)
-        data[:, ipd.class_cyc] = (det_labels == 3).astype(np.float32)
-        data[:, ipd.class_tru] = (det_labels == 4).astype(np.float32)
+        #data[:, ipd.class_ped] = (det_labels == 2).astype(np.float32)
+        #data[:, ipd.class_cyc] = (det_labels == 3).astype(np.float32)
+        #data[:, ipd.class_tru] = (det_labels == 4).astype(np.float32)
 
         data[:, ipd.base_det_score] = det_scores
 
@@ -476,9 +494,11 @@ class GACEDataset(Dataset):
 
         
         # INIT BASE DETECTOR
-        base_det_model = build_network(model_cfg=model_cfg, num_class=len(self.cfg.CLASS_NAMES), 
+        #base_det_model = build_network(model_cfg=model_cfg, num_class=len(self.cfg.CLASS_NAMES), 
+        #                               dataset=dataset)
+        dataset.class_names = ['Vehicle', 'Pedestrian', 'Cyclist', 'Truck']
+        base_det_model = build_network(model_cfg=model_cfg, num_class=4, 
                                        dataset=dataset)
-    
         base_det_model.load_params_from_file(filename=self.args.base_detector_ckpt, logger=self.logger, 
                                              to_cpu=False)
         base_det_model.cuda()
@@ -500,7 +520,6 @@ class GACEDataset(Dataset):
         progress_bar = tqdm.tqdm(total=len(dataloader), leave=True, 
                                  desc=tqdm_desc, dynamic_ncols=True, 
                                  smoothing=0.1)
-        
         sample_idx = 0
         for batch_dict in dataloader:
             load_data_to_gpu(batch_dict)
@@ -508,10 +527,36 @@ class GACEDataset(Dataset):
             with torch.no_grad():
                 pred_dicts, _ = base_det_model(batch_dict)
 
+            ##loop over all detections and replace gt box 
+            #for batch_idx, pred_dict in enumerate(pred_dicts):
+            #    for cls in range(1, len(self.cfg.CLASS_NAMES)+1):
+            #        det_mask = pred_dict['pred_labels'] == cls
+            #        if det_mask.sum() == 0:
+            #            continue
+#
+            #        gt_mask = batch_dict['gt_boxes'][batch_idx, :, -1] == cls
+            #        if gt_mask.sum() == 0:
+            #            continue
+#
+            #        det_boxes = pred_dict['pred_boxes'][det_mask, :].cpu().numpy()
+            #        gt_boxes = batch_dict['gt_boxes'][batch_idx, gt_mask, :-1].cpu().numpy()
+            #        iou = boxes_iou3d_gpu(torch.from_numpy(det_boxes).cuda(),
+            #                                torch.from_numpy(gt_boxes).cuda()).cpu().numpy()
+            #        max_ious = np.max(iou, axis=1)
+            #        max_iou_inds = np.argmax(iou, axis=1)
+#
+            #        for i in range(det_boxes.shape[0]):
+            #            if max_ious[i] > 0.1:
+            #                gt_box = gt_boxes[max_iou_inds[i], :]
+            #                det_mask_indices = torch.nonzero(det_mask)
+            #                pred_dict['pred_boxes'][det_mask_indices[i], :] = torch.from_numpy(gt_box).cuda()
+
+
             if not self.train:
                 # store annos for post evaluation
+                class_names = ['Vehicle', 'Pedestrian', 'Cyclist', 'Truck']
                 annos = dataset.generate_prediction_dicts(
-                    deepcopy(batch_dict), deepcopy(pred_dicts), self.cfg.CLASS_NAMES)
+                    deepcopy(batch_dict), deepcopy(pred_dicts), class_names)
                 det_annos += annos
             
             # de-collate batch

@@ -58,7 +58,7 @@ def main():
     logger.gace_info(f'Epochs:\t {cfg.GACE.TRAIN.NUM_EPOCHS}')
     #Load gace model
     if args.gace_ckpt is not None:
-        args.gace_ckpt = "/home/cgriesbacher/thesis/3DTrans/gace_output/2023-12-12_10-03-19/gace_model.pth"
+        args.gace_ckpt = "/home/cgriesbacher/thesis/3DTrans/gace/gace_output/2023-12-20_11-42-57/gace_model.pth"
         logger.gace_info(f'Load GACE model from {args.gace_ckpt}')
         gace_model = torch.load(args.gace_ckpt)
         logger.gace_info(f'GACE model loaded from {args.gace_ckpt}')
@@ -78,7 +78,7 @@ def main():
     
     
     logger.gace_info('Start evaluation with new confidence scores')
-    result_str, result_str_old = evaluate_gace_model(gace_model, gace_dataset_val, args, cfg, logger, eval_old=False)
+    result_str, result_str_old = evaluate_gace_model(gace_model, gace_dataset_val, args, cfg, logger, eval_old=True)
     if result_str_old is not None:
         logger.gace_info('Evaluation Results without GACE:')
         logger.gace_info(result_str_old)
