@@ -37,7 +37,11 @@ def main():
     os.chdir('/home/cgriesbacher/thesis/3DTrans/gace')
     args, cfg = parse_config()
     
-    args.gace_output_folder = Path(args.gace_output_folder) / datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    if cfg.DATA_CONFIG_TAR is not None:
+        filename = cfg.DATA_CONFIG.DATASET + "_" + cfg.DATA_CONFIG_TAR.DATASET + "_" + str(cfg.GACE.TRAIN.NUM_EPOCHS)
+    else:
+        filename = cfg.DATA_CONFIG.DATASET +  "_" + cfg.GACE.TRAIN.NUM_EPOCHS
+    args.gace_output_folder = Path(args.gace_output_folder) / (datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + "_" + filename)
     args.gace_output_folder.mkdir(parents=True, exist_ok=True)
 
     cfg.MODEL = cfg.MODEL.MODEL

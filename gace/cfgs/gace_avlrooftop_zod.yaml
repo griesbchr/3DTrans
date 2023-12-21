@@ -1,11 +1,10 @@
 CLASS_NAMES: ['Vehicle', 'Pedestrian', 'Cyclist', 'Truck']
 
 DATA_CONFIG:
-    _BASE_CONFIG_: ../tools/cfgs/dataset_configs/zod/OD/zod_dataset.yaml
-    SUBSAMPLEFACTOR: 16
+    _BASE_CONFIG_: ../tools/cfgs/dataset_configs/avlrooftop/OD/avlrooftop_dataset.yaml
 
 MODEL:
-    _BASE_CONFIG_: ../tools/cfgs/zod_models/pvrcnnpp.yaml
+    _BASE_CONFIG_: ../tools/cfgs/avlrooftop_models/pvrcnnpp.yaml
 
 GACE:
     NR_MAX_DET_PER_SAMPLE: 500
@@ -37,13 +36,13 @@ GACE:
         H_F_HIDDEN_DIM: 256
     
     TRAIN:
-        NUM_EPOCHS: 5 
+        NUM_EPOCHS: 10 
         LR: 0.002
         IOU_LOSS_W: 0.5
         SFL_ALPHA: 0.5
         SFL_GAMMA: 1
 
 DATA_CONFIG_TAR:
-    _BASE_CONFIG_: ../tools/cfgs/dataset_configs/avltruck/OD/avltruck_dataset.yaml
+    _BASE_CONFIG_: ../tools/cfgs/dataset_configs/zod/OD/zod_dataset.yaml
     TARGET: True
 
