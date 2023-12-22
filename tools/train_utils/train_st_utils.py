@@ -141,7 +141,7 @@ def train_model_st(model, optimizer, source_loader, target_loader, model_func, l
                 print ("***********update pseudo label**********")
                 self_training_utils.save_pseudo_label_epoch(
                     model, target_loader, rank,
-                    leave_pbar=True, ps_label_dir=ps_label_dir, cur_epoch=cur_epoch
+                    leave_pbar=True, ps_label_dir=ps_label_dir, cur_epoch=cur_epoch, logger=logger
                 )
                 target_loader.dataset.train()
             

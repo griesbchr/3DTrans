@@ -134,13 +134,50 @@ SELF_TRAIN:
         USE_DATA: True
         LOSS_WEIGHT: 1.0
 
+    GACE:
+      ENABLED: True
+
+      CKPT: /home/cgriesbacher/thesis/3DTrans/gace/gace_output/2023-12-18_15-16-02/gace_model.pth
+
+      NR_MAX_DET_PER_SAMPLE: 500
+      
+      NORM_FACTORS: {
+          'cx': 123.2,
+          'cy': 75.2,
+          'cz': 4.0,
+          #veh, ped, cyc, tru
+          'dx': [6.019, 1.142, 2.494, 27.699],
+          'dy': [2.394, 0.982, 1.072, 3.652], 
+          'dz': [2.661, 2.000, 2.000, 4.529],
+          'dist': 144.3,
+          'nr_pts': [5000.0, 1000.0, 1000.0, 60000.0],
+      }
+
+      NORM_FACTORS_CP: {
+          'dist': 249.0,
+      }
+      
+      CONTEXT_RADIUS: 20
+      MAX_NR_NEIGHBORS: 30
+    
+      MODEL:
+          H_I_HIDDEN_DIM: 256
+          H_I_OUTPUT_DIM: 128
+          H_C_HIDDEN_DIM: 256
+          H_C_OUTPUT_DIM: 64
+          H_F_HIDDEN_DIM: 256
+      
+      TRAIN:
+          NUM_EPOCHS: 10 
+          LR: 0.002
+          IOU_LOSS_W: 0.5
+          SFL_ALPHA: 0.5
+          SFL_GAMMA: 1 
 
     SCORE_THRESH: [0.5, 0.8, 0.7, 0.9]             #Threshold per class
-    #SCORE_THRESH: [0.8, 1, 1, 1]             #Threshold per class
     NEG_THRESH: [0.2, 0.8, 0.7, 0.9]
-    #NEG_THRESH: [0.2, 1, 1, 1]
 
-    UPDATE_PSEUDO_LABEL: [0, 1]        # Pseudo label generation epoch
+    UPDATE_PSEUDO_LABEL: [0]        # Pseudo label generation epoch
     UPDATE_PSEUDO_LABEL_INTERVAL: 100
     INIT_PS: None
     

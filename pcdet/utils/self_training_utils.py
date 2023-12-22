@@ -10,6 +10,11 @@ from pcdet.utils import common_utils, commu_utils, memory_ensemble_utils
 import pickle as pkl
 import re
 
+from gace.gace_utils.gace_dataloader import GACEDataset
+#import gace.gace_utils.gace_utils as gace_utils
+
+
+
 #PSEUDO_LABELS = {}
 from multiprocessing import Manager
 
@@ -66,7 +71,7 @@ def print_pseudo_label_stats(model, val_loader, rank, leave_pbar, ps_label_dir, 
     pass   
 
 
-def save_pseudo_label_epoch(model, val_loader, rank, leave_pbar, ps_label_dir, cur_epoch):
+def save_pseudo_label_epoch(model, val_loader, rank, leave_pbar, ps_label_dir, cur_epoch, logger=None):
     """
     Generate pseudo label with given model.
 
@@ -92,8 +97,21 @@ def save_pseudo_label_epoch(model, val_loader, rank, leave_pbar, ps_label_dir, c
     # 'random_object_rotation', 'random_object_scaling', 'normalize_object_size' are not used 
     model.eval()
 
-    target_batches = []
-    predictions_dicts = []
+    # init gace
+    if cfg.SELF_TRAIN.get('GACE', None) and cfg.SELF_TRAIN.GACE.ENABLED:
+        # TODO: train gace model if there is no checkpoint
+
+        # load gace model
+        #check if ckpt exists
+        assert os.path.exists(cfg.SELF_TRAIN.GACE.CKPT), "GACE ckpt not found"
+        gace_model = torch.load(cfg.SELF_TRAIN.GACE.CKPT)
+        logger.info(f'GACE model loaded from {cfg.SELF_TRAIN.GACE.CKPT}')
+        gace_model.cuda()   
+        gace_model.eval()
+
+        #init gace dataloader
+        gace_dataloader = GACEDataset(cfg, logger, train=False)    
+
     for cur_it in range(total_it_each_epoch):
         try:
             target_batch = next(val_dataloader_iter)
@@ -106,8 +124,24 @@ def save_pseudo_label_epoch(model, val_loader, rank, leave_pbar, ps_label_dir, c
             load_data_to_gpu(target_batch)
             pred_dicts, ret_dict = model(target_batch)
 
-        target_batches.append(target_batch.cpu().numpy())
-        predictions_dicts.append(pred_dicts.cpu().numpy())
+        # add gace score correction
+        if cfg.SELF_TRAIN.get('GACE', None) and cfg.SELF_TRAIN.GACE.ENABLED:
+            
+            ip_data, cp_data, nb_ip_data, cat, iou = gace_dataloader.process_data_batch(target_batch, pred_dicts)
+
+            # predict
+            with torch.no_grad():
+                f_n_I = gace_model.H_I(nb_ip_data)
+                f_I = gace_model.H_I(ip_data)
+                f_n_C = gace_model.H_C(torch.cat([cp_data, f_n_I.detach()], dim=1))
+                gace_output = gace_model.H_F(torch.cat([f_I, f_n_C], dim=1))
+                    
+                scores = torch.sigmoid(gace_output[:, 0, ...]).flatten()
+            # update pseudo label
+            det_count = 0
+            for b_idx in range(len(pred_dicts)):
+                pred_dicts[b_idx]['pred_scores'] = scores[det_count:det_count+pred_dicts[b_idx]['pred_scores'].shape[0]]
+
 
         pos_ps_batch, ign_ps_batch = save_pseudo_label_batch(
             target_batch, pred_dicts=pred_dicts,
@@ -129,16 +163,6 @@ def save_pseudo_label_epoch(model, val_loader, rank, leave_pbar, ps_label_dir, c
 
     if rank == 0:
         pbar.close()
-
-    # store target_batches and predictions_dicts as pkl
-    if rank == 0:
-        path = os.path.join(ps_label_dir, "target_batches_e{}.pkl".format(cur_epoch))
-        with open(path, 'wb') as f:
-            pkl.dump(target_batches, f)
-
-        path = os.path.join(ps_label_dir, "predictions_dicts_e{}.pkl".format(cur_epoch))
-        with open(path, 'wb') as f:
-            pkl.dump(predictions_dicts, f)
 
 
     gather_and_dump_pseudo_label_result(rank, ps_label_dir, cur_epoch)
