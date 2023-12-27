@@ -1,15 +1,14 @@
 #################FINETUNING#################
-# Finetune a single detector on an arbitrary dataset
+# Finetune a single detector on an arbitrary dataset with self-training
 
+DATASET=avltruck
+MODEL=pvrcnnpp_STzod
+EXTRA_TAG=D16_10epochs_STzod_ft_D6_50epochs_ros
+PRETRAINED=/home/cgriesbacher/thesis/3DTrans/output_okeanos/output/avltruck_models/pvrcnnpp_ros/D6_50epochs/ckpt/checkpoint_epoch_50.pth
 
-DATASET=zod
-MODEL=pvrcnnpp_STtruck
-EXTRA_TAG=D6_30epochs_STtruck_ft_D16_50epochs_ros
-PRETRAINED=/home/cgriesbacher/thesis/3DTrans/output_okeanos/output/zod_models/pvrcnnpp_ros/D16_50epochs/ckpt/checkpoint_epoch_50.pth
-
-EPOCHS=30
+EPOCHS=10
 CKPT_SAVE_INTERVAL=1
-BATCHSIZE=4
+BATCHSIZE=2
 WORKERS=4
 
 CONFIG_FILE=${DATASET}_models/$MODEL.yaml

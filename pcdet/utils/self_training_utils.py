@@ -9,6 +9,7 @@ from pcdet.models import load_data_to_gpu
 from pcdet.utils import common_utils, commu_utils, memory_ensemble_utils
 import pickle as pkl
 import re
+from copy import deepcopy
 
 from gace.gace_utils.gace_dataloader import GACEDataset
 #import gace.gace_utils.gace_utils as gace_utils
@@ -70,6 +71,49 @@ def check_already_exsit_pseudo_label(ps_label_dir, start_epoch):
 def print_pseudo_label_stats(model, val_loader, rank, leave_pbar, ps_label_dir, cur_epoch, source_loader):
     pass   
 
+def store_det_annos(det_annos, det_annos_gace):
+    global det_annos_gobal
+    global det_annos_gace_global
+    
+    #init global var det_annos and det_annos_gace if not initialized
+    if not("det_annos_gobal" in globals()):
+        det_annos_gobal = []
+        det_annos_gace_global = []
+
+    #check if each dict entry is cpu, if not, convert to cpu
+    for i in range(len(det_annos)):
+        for key in det_annos[i].keys():
+            if isinstance(det_annos[i][key], torch.Tensor):
+                det_annos[i][key] = det_annos[i][key].cpu().numpy()
+    for i in range(len(det_annos_gace)):
+        for key in det_annos_gace[i].keys():
+            if isinstance(det_annos_gace[i][key], torch.Tensor):
+                det_annos_gace[i][key] = det_annos_gace[i][key].cpu().numpy()
+
+    #store det_annos and det_annos_gace
+    det_annos_gobal += det_annos
+    det_annos_gace_global += det_annos_gace
+
+    return
+
+def save_det_annos(path, cur_epoch):
+
+    global det_annos_gobal
+    global det_annos_gace_global
+
+    #save det_annos and det_annos_gace to path
+    path_no_gace = os.path.join(path, "det_annos_e{}.pkl".format(cur_epoch))
+    path_gace = os.path.join(path, "det_annos_gace_e{}.pkl".format(cur_epoch))
+    with open(path_no_gace, 'wb') as f:
+        pkl.dump(det_annos_gobal, f)
+    with open(path_gace, 'wb') as f:
+        pkl.dump(det_annos_gace_global, f)
+    
+    #reset det_annos and det_annos_gace
+    det_annos_gobal = []
+    det_annos_gace_global = []
+    return
+
 
 def save_pseudo_label_epoch(model, val_loader, rank, leave_pbar, ps_label_dir, cur_epoch, logger=None):
     """
@@ -127,6 +171,7 @@ def save_pseudo_label_epoch(model, val_loader, rank, leave_pbar, ps_label_dir, c
         # add gace score correction
         if cfg.SELF_TRAIN.get('GACE', None) and cfg.SELF_TRAIN.GACE.ENABLED:
             
+            store_detections = cfg.SELF_TRAIN.GACE.STORE_DETECTIONS 
             ip_data, cp_data, nb_ip_data, cat, iou = gace_dataloader.process_data_batch(target_batch, pred_dicts)
 
             # predict
@@ -137,11 +182,19 @@ def save_pseudo_label_epoch(model, val_loader, rank, leave_pbar, ps_label_dir, c
                 gace_output = gace_model.H_F(torch.cat([f_I, f_n_C], dim=1))
                     
                 scores = torch.sigmoid(gace_output[:, 0, ...]).flatten()
+            
+            if store_detections: 
+                pred_dicts_old = deepcopy(pred_dicts)
+
             # update pseudo label
             det_count = 0
             for b_idx in range(len(pred_dicts)):
                 pred_dicts[b_idx]['pred_scores'] = scores[det_count:det_count+pred_dicts[b_idx]['pred_scores'].shape[0]]
 
+            if store_detections:
+                det_annos = val_loader.dataset.generate_prediction_dicts(deepcopy(target_batch), deepcopy(pred_dicts_old), cfg.CLASS_NAMES)
+                det_annos_gace = val_loader.dataset.generate_prediction_dicts(deepcopy(target_batch), deepcopy(pred_dicts), cfg.CLASS_NAMES)
+                store_det_annos(det_annos, det_annos_gace)
 
         pos_ps_batch, ign_ps_batch = save_pseudo_label_batch(
             target_batch, pred_dicts=pred_dicts,
@@ -149,6 +202,7 @@ def save_pseudo_label_epoch(model, val_loader, rank, leave_pbar, ps_label_dir, c
                          cfg.SELF_TRAIN.MEMORY_ENSEMBLE.ENABLED and
                          cur_epoch > 0)
         )
+
 
         # log to console and tensorboard
         pos_ps_meter.update(pos_ps_batch)
@@ -161,9 +215,14 @@ def save_pseudo_label_epoch(model, val_loader, rank, leave_pbar, ps_label_dir, c
             pbar.set_postfix(disp_dict)
             pbar.refresh()
 
+        #if cur_it == 1:
+        #    break
+
     if rank == 0:
         pbar.close()
 
+    if cfg.SELF_TRAIN.get('GACE', None) and cfg.SELF_TRAIN.GACE.ENABLED and cfg.SELF_TRAIN.GACE.STORE_DETECTIONS:
+        save_det_annos(ps_label_dir, cur_epoch)
 
     gather_and_dump_pseudo_label_result(rank, ps_label_dir, cur_epoch)
     print(len(PSEUDO_LABELS))

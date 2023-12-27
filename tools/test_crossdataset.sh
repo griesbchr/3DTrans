@@ -2,12 +2,12 @@
 #################CROSS DATASET TESTING#################
 # Test a single detector on a single arbitrary dataset
 
-TRAIN_DATASET=zod
-MODEL=pvrcnnpp_STtruck
-EXTRA_TAG=D6_30epochs_STtruck_ft_D16_50epochs_ros
-EPOCHS=(1 2 3 4 5 6 7 8 9 10 11)
+TRAIN_DATASET=avltruck
+MODEL=pvrcnnpp_ros
+EXTRA_TAG=D6_50epochs
+EPOCHS=(50)
 
-EVAL_DATASET=avltruck
+EVAL_DATASET=zod
 
 BATCHSIZE=4
 NUM_WORKERS=2
