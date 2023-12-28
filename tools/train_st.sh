@@ -6,9 +6,9 @@ MODEL=pvrcnnpp_STzod
 EXTRA_TAG=D16_10epochs_STzod_ft_D6_50epochs_ros
 PRETRAINED=/home/cgriesbacher/thesis/3DTrans/output_okeanos/output/avltruck_models/pvrcnnpp_ros/D6_50epochs/ckpt/checkpoint_epoch_50.pth
 
-EPOCHS=10
+EPOCHS=15
 CKPT_SAVE_INTERVAL=1
-BATCHSIZE=2
+BATCHSIZE=4
 WORKERS=4
 
 CONFIG_FILE=${DATASET}_models/$MODEL.yaml
