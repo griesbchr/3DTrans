@@ -157,6 +157,8 @@ def main():
         logger.info('**********************Loading pretrained model**********************')
 
     if args.ckpt is not None:
+        #assert that checkpoint exists
+        assert os.path.isfile(args.ckpt), 'Checkpoint %s does not exist' % args.ckpt
         it, start_epoch = model.load_params_with_optimizer(args.ckpt, to_cpu=dist_train, optimizer=optimizer, logger=logger)
         logger.info('**********************Loading pretrained model**********************')
         last_epoch = start_epoch + 1
