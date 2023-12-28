@@ -62,7 +62,7 @@ def main():
     logger.gace_info(f'Epochs:\t {cfg.GACE.TRAIN.NUM_EPOCHS}')
     #Load gace model
     if args.gace_ckpt is not None:
-        args.gace_ckpt = "/home/cgriesbacher/thesis/3DTrans/gace/gace_output/2023-12-20_11-42-57/gace_model.pth"
+        args.gace_ckpt = "/home/cgriesbacher/thesis/3DTrans/gace/gace_output/2023-12-18_15-16-02/gace_model.pth"
         logger.gace_info(f'Load GACE model from {args.gace_ckpt}')
         gace_model = torch.load(args.gace_ckpt)
         logger.gace_info(f'GACE model loaded from {args.gace_ckpt}')
