@@ -156,6 +156,9 @@ def save_pseudo_label_epoch(model, val_loader, rank, leave_pbar, ps_label_dir, c
         #init gace dataloader
         gace_dataloader = GACEDataset(cfg, logger, train=False)    
 
+        #init flag to store detections
+        store_detections = cfg.SELF_TRAIN.GACE.STORE_DETECTIONS 
+
     for cur_it in range(total_it_each_epoch):
         try:
             target_batch = next(val_dataloader_iter)
@@ -171,10 +174,9 @@ def save_pseudo_label_epoch(model, val_loader, rank, leave_pbar, ps_label_dir, c
         # add gace score correction
         if cfg.SELF_TRAIN.get('GACE', None) and cfg.SELF_TRAIN.GACE.ENABLED:
             
-            store_detections = cfg.SELF_TRAIN.GACE.STORE_DETECTIONS 
             ip_data, cp_data, nb_ip_data, cat, iou = gace_dataloader.process_data_batch(target_batch, pred_dicts)
 
-            # predict
+            # predict updated scores
             with torch.no_grad():
                 f_n_I = gace_model.H_I(nb_ip_data)
                 f_I = gace_model.H_I(ip_data)
@@ -190,6 +192,7 @@ def save_pseudo_label_epoch(model, val_loader, rank, leave_pbar, ps_label_dir, c
             det_count = 0
             for b_idx in range(len(pred_dicts)):
                 pred_dicts[b_idx]['pred_scores'] = scores[det_count:det_count+pred_dicts[b_idx]['pred_scores'].shape[0]]
+                det_count += pred_dicts[b_idx]['pred_scores'].shape[0]
 
             if store_detections:
                 det_annos = val_loader.dataset.generate_prediction_dicts(deepcopy(target_batch), deepcopy(pred_dicts_old), cfg.CLASS_NAMES)

@@ -499,7 +499,7 @@ class GACEDataset(Dataset):
             dataset, dataloader, sampler = build_dataloader(
                 dataset_cfg=data_cfg, class_names=self.cfg.CLASS_NAMES, 
                 batch_size=self.args.batch_size_dg, dist=False, 
-                workers=self.args.workers, logger=self.logger, training=False)
+                workers=self.args.workers, logger=self.logger, training=False)          #change this to eval on training set
             dataloader.dataset.eval()
 
 
@@ -508,8 +508,8 @@ class GACEDataset(Dataset):
         base_det_model = build_network(model_cfg=model_cfg, num_class=len(self.cfg.CLASS_NAMES), 
                                        dataset=dataset)
         #dataset.class_names = ['Vehicle', 'Pedestrian', 'Cyclist', 'Truck']
-        base_det_model = build_network(model_cfg=model_cfg, num_class=4, 
-                                       dataset=dataset)
+        #base_det_model = build_network(model_cfg=model_cfg, num_class=4, 
+        #                               dataset=dataset)
         base_det_model.load_params_from_file(filename=self.args.base_detector_ckpt, logger=self.logger, 
                                              to_cpu=False)
         base_det_model.cuda()

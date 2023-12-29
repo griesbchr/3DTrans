@@ -4,21 +4,44 @@ import numpy as np
 import open3d as o3d
 from open3d.cuda.pybind.visualization import O3DVisualizer
 from open3d.visualization import gui
-
+import torch
 import pickle
 
 
-def show_scene(pts_coors, result=None, pts_feature=None):
+def show_scene(pts_coors, pred_dicts=None, pts_feature=None, batch=0):
     '''
     make sure to open display first if X11 forwarding is used!
 
-    pts_coors: numpy array of type float64, shape (#points, 3)
+    pts_coors: numpy array of type float64, shape (#points, 3) 
+               or (#points, 4) if first dim is batch dim 
+               or (#points, 5) if first dim is batch dim and last dim is intensity
     pts_feature: numpy array of shape (#points, XXXX)
 
     
     the following conversions might be useful
     pts = points[0][:,:3].cpu().numpy().astype(np.float64)
     '''
+    
+    # Check if it's a PyTorch Tensor
+    if isinstance(pts_coors, torch.Tensor):
+        if pts_coors.device.type == 'cuda':
+            # to cpu
+            pts_coors = pts_coors.cpu().numpy()
+        else:
+            # to numpy
+            pts_coors = pts_coors.numpy()
+
+    #if type of points is not float64, convert
+    if pts_coors.dtype != np.float64:
+        pts_coors = pts_coors.astype(np.float64)
+
+    # if point dim is 4, select rows where first dim is 0
+    if pts_coors.shape[1] == 4:
+        pts_coors = pts_coors[pts_coors[:,0]==batch][:,1:]
+
+    # if point dim is 5, select rows where first dim is 0 and leace out intensity
+    if pts_coors.shape[1] == 5:
+        pts_coors = pts_coors[pts_coors[:,0]==batch][:,1:4]
 
     ###check point cloud validity###
     #check if number of points matches in features and coordinate array
@@ -31,7 +54,7 @@ def show_scene(pts_coors, result=None, pts_feature=None):
     assert len(pts_coors.shape) == 2, "pts has more than two dims. Should be (#points, 3)"
 
     #check if last dimention is 3
-    assert pts_coors.shape[-1] == 3, "last dimension is not 3"
+    assert pts_coors.shape[-1] == 3, "last dimension is not 3, but {}".format(pts_coors.shape[-1])
 
     ###set up vizualization###
     #create visualization
@@ -61,12 +84,18 @@ def show_scene(pts_coors, result=None, pts_feature=None):
     vis.add_geometry(pcd)
 
     #add bounding boxes if results is not none
-    if result:
-        lidar_boxes = result['boxes_3d']
-        scores = result['scores_3d'].detach().cpu().numpy()
-        labels = result['labels_3d'].detach().cpu().numpy()
-        boxes = lidar_boxes.tensor.detach().cpu().numpy()
-        show_boxes_o3d(boxes, vis)
+    if pred_dicts:
+        boxes = pred_dicts[batch]["pred_boxes"]
+        # Check if it's a PyTorch Tensor
+        if isinstance(boxes, torch.Tensor):
+            if boxes.device.type == 'cuda':
+                # to cpu
+                boxes = boxes.cpu().numpy()
+            else:
+                # to numpy
+                boxes = boxes.numpy()
+        green_color = np.asarray([0, 1, 0])
+        show_boxes_o3d(boxes, vis, color=green_color)
     vis.run()
     vis.destroy_window()
 

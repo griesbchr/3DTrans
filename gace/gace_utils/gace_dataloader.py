@@ -571,10 +571,10 @@ class GACEDataset(Dataset):
         cp_nb_ids = cp_nb_ids[:sample_idx, :]
 
         # save data to pickle file
-        data = edict()
-        data.ip_data = ip_data
-        data.target_data = target_data
-        data.cp_nb_ids = cp_nb_ids
+        #data = edict()
+        #data.ip_data = ip_data
+        #data.target_data = target_data
+        #data.cp_nb_ids = cp_nb_ids
         
         #with open(self.data_file, 'wb') as f:
         #    pickle.dump(data, f)
