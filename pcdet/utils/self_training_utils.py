@@ -11,8 +11,9 @@ import pickle as pkl
 import re
 from copy import deepcopy
 
-from gace.gace_utils.gace_dataloader import GACEDataset
-#import gace.gace_utils.gace_utils as gace_utils
+from gace.gace_utils.gace_dataloader import GACEDataset as GACEEEvalDataset
+from gace.gace_utils.gace_dataloader_train import GACEDataset as GACETrainDataset
+from gace.gace_utils.gace_utils_train import train_gace_model
 
 
 
@@ -115,7 +116,7 @@ def save_det_annos(path, cur_epoch):
     return
 
 
-def save_pseudo_label_epoch(model, val_loader, rank, leave_pbar, ps_label_dir, cur_epoch, logger=None):
+def save_pseudo_label_epoch(model, source_loader, val_loader, rank, leave_pbar, ps_label_dir, cur_epoch, logger=None):
     """
     Generate pseudo label with given model.
 
@@ -143,18 +144,35 @@ def save_pseudo_label_epoch(model, val_loader, rank, leave_pbar, ps_label_dir, c
 
     # init gace
     if cfg.SELF_TRAIN.get('GACE', None) and cfg.SELF_TRAIN.GACE.ENABLED:
-        # TODO: train gace model if there is no checkpoint
+        logger.info('GACE enabled')
 
-        # load gace model
-        #check if ckpt exists
-        assert os.path.exists(cfg.SELF_TRAIN.GACE.CKPT), "GACE ckpt not found"
-        gace_model = torch.load(cfg.SELF_TRAIN.GACE.CKPT)
-        logger.info(f'GACE model loaded from {cfg.SELF_TRAIN.GACE.CKPT}')
+        if not getattr(cfg.SELF_TRAIN.GACE, 'CKPT', None):
+            logger.info('training GACE model')
+
+            #init gace dataloader and preprocess data
+            prev_nms_thresh = model.model_cfg.POST_PROCESSING.NMS_CONFIG.NMS_THRESH
+            model.model_cfg.POST_PROCESSING.NMS_CONFIG.NMS_THRESH = 0.1
+
+            gace_train_dataset = GACETrainDataset(cfg, model, source_loader, logger, train=True)
+
+            model.model_cfg.POST_PROCESSING.NMS_CONFIG.NMS_THRESH = prev_nms_thresh
+
+            #train gace model
+            batch_size_gace = getattr(cfg.SELF_TRAIN.GACE, 'BATCH_SIZE', None)
+            num_workers_gace = getattr(cfg.SELF_TRAIN.GACE, 'NUM_WORKERS', None)
+            gace_model = train_gace_model(cfg, gace_train_dataset, logger, batch_size_gace=batch_size_gace, num_workers=num_workers_gace)
+
+        else: 
+            # load gace model
+            #check if ckpt exists
+            assert os.path.exists(cfg.SELF_TRAIN.GACE.CKPT), "GACE ckpt not found"
+            gace_model = torch.load(cfg.SELF_TRAIN.GACE.CKPT)
+            logger.info(f'GACE model loaded from {cfg.SELF_TRAIN.GACE.CKPT}')
         gace_model.cuda()   
         gace_model.eval()
 
-        #init gace dataloader
-        gace_dataloader = GACEDataset(cfg, logger, train=False)    
+        #init gace dataset
+        gace_eval_dataset = GACEEEvalDataset(cfg, logger, train=False)    
 
         #init flag to store detections
         store_detections = cfg.SELF_TRAIN.GACE.STORE_DETECTIONS 
@@ -174,7 +192,7 @@ def save_pseudo_label_epoch(model, val_loader, rank, leave_pbar, ps_label_dir, c
         # add gace score correction
         if cfg.SELF_TRAIN.get('GACE', None) and cfg.SELF_TRAIN.GACE.ENABLED:
             
-            ip_data, cp_data, nb_ip_data, cat, iou = gace_dataloader.process_data_batch(target_batch, pred_dicts)
+            ip_data, cp_data, nb_ip_data, cat, iou = gace_eval_dataset.process_data_batch(target_batch, pred_dicts)
 
             # predict updated scores
             with torch.no_grad():

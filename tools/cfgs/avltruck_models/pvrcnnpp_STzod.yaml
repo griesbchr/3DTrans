@@ -136,8 +136,10 @@ SELF_TRAIN:
 
     GACE:
       ENABLED: True
-      STORE_DETECTIONS: True
-      CKPT: /home/cgriesbacher/thesis/3DTrans/gace/gace_output/2023-12-18_15-16-02/gace_model.pth
+      STORE_DETECTIONS: True    # Works only single GPU training
+      #CKPT: /home/cgriesbacher/thesis/3DTrans/gace/gace_output/2023-12-18_15-16-02/gace_model.pth
+      BATCH_SIZE: 2048
+      NUM_WORKERS: 4
 
       NR_MAX_DET_PER_SAMPLE: 500
       
@@ -177,7 +179,7 @@ SELF_TRAIN:
     SCORE_THRESH: [0.85, 0.75, 0.9, 0.95]             #Threshold per class
     NEG_THRESH: [0.3, 0.4, 0.6, 0.65]
 
-    UPDATE_PSEUDO_LABEL: [0]        # Pseudo label generation epoch
+    UPDATE_PSEUDO_LABEL: [0, 1]        # Pseudo label generation epoch
     UPDATE_PSEUDO_LABEL_INTERVAL: 100
     INIT_PS: None
     
