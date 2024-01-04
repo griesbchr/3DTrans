@@ -389,7 +389,7 @@ class ZODDataset(DatasetTemplate):
             return 'No ground-truth boxes for evaluation', {}
         
         if (len(det_annos) != len(self.zod_infos)):
-            print("Number of frames in det_annos and zod_infos do not match")
+            print("Number of frames in det_annos and zod_infos do not match: %d vs %d" % (len(det_annos), len(self.zod_infos)))
             partial = True
         else:
             partial = False

@@ -242,7 +242,7 @@ class AVLDataset(DatasetTemplate):
             return 'No ground-truth boxes for evaluation', {}
 
         if (len(det_annos) != len(self.avl_infos)):
-            print("Number of frames in det_annos and avl_infos do not match")
+            print("Number of frames in det_annos and avl_infos do not match: ", len(det_annos), "vs.", len(self.avl_infos))
             partial = True
         else:
             partial = False

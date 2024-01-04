@@ -145,8 +145,8 @@ def save_pseudo_label_epoch(model, source_loader, val_loader, rank, leave_pbar, 
     # init gace
     if cfg.SELF_TRAIN.get('GACE', None) and cfg.SELF_TRAIN.GACE.ENABLED:
         logger.info('GACE enabled')
-
-        if not getattr(cfg.SELF_TRAIN.GACE, 'CKPT', None):
+        
+        if not getattr(cfg.SELF_TRAIN.GACE, 'CKPT', None) and ((cfg.SELF_TRAIN.GACE.RETRAIN_GACE) or (not cfg.SELF_TRAIN.GACE.RETRAIN_GACE and cur_epoch == 0)):
             logger.info('training GACE model')
 
             #init gace dataloader and preprocess data
@@ -162,12 +162,23 @@ def save_pseudo_label_epoch(model, source_loader, val_loader, rank, leave_pbar, 
             num_workers_gace = getattr(cfg.SELF_TRAIN.GACE, 'NUM_WORKERS', None)
             gace_model = train_gace_model(cfg, gace_train_dataset, logger, batch_size_gace=batch_size_gace, num_workers=num_workers_gace)
 
+            #store the trained model
+            if cfg.SELF_TRAIN.get('GACE', None) and (cfg.SELF_TRAIN.GACE.STORE_GACE or cfg.SELF_TRAIN.GACE.RETRAIN_GACE):
+                gace_model_path = os.path.join(cfg.SELF_TRAIN.GACE.OUTPUT_FOLDER, 'gace_model.pth')
+                torch.save(gace_model, gace_model_path)
+                logger.info(f'GACE model stored at {gace_model_path}')
+
         else: 
             # load gace model
+            if getattr(cfg.SELF_TRAIN.GACE, 'CKPT', None):
+                ckpt_path = cfg.SELF_TRAIN.GACE.CKPT
+            elif not cfg.SELF_TRAIN.GACE.RETRAIN_GACE:
+                ckpt_path = os.path.join(cfg.SELF_TRAIN.GACE.OUTPUT_FOLDER, 'gace_model.pth')
+            
             #check if ckpt exists
-            assert os.path.exists(cfg.SELF_TRAIN.GACE.CKPT), "GACE ckpt not found"
-            gace_model = torch.load(cfg.SELF_TRAIN.GACE.CKPT)
-            logger.info(f'GACE model loaded from {cfg.SELF_TRAIN.GACE.CKPT}')
+            assert os.path.exists(ckpt_path), "GACE ckpt not found"
+            gace_model = torch.load(ckpt_path)
+            logger.info(f'GACE model loaded from {ckpt_path}')
         gace_model.cuda()   
         gace_model.eval()
 

@@ -3,10 +3,10 @@
 
 DATASET=avltruck
 MODEL=pvrcnnpp_STzod
-EXTRA_TAG=D16_15epochs_STzod_ft_D6_50epochs_gace
+EXTRA_TAG=D16_20epochs_STzod_ft_D6_50epochs_gace_fov_newoptimparams
 PRETRAINED=/home/cgriesbacher/thesis/3DTrans/output_okeanos/output/avltruck_models/pvrcnnpp_ros/D6_50epochs/ckpt/checkpoint_epoch_50.pth
 
-EPOCHS=15
+EPOCHS=20
 CKPT_SAVE_INTERVAL=1
 BATCHSIZE=4
 WORKERS=4
