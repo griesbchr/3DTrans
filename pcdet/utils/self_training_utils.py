@@ -164,7 +164,7 @@ def save_pseudo_label_epoch(model, source_loader, val_loader, rank, leave_pbar, 
 
             #store the trained model
             if cfg.SELF_TRAIN.get('GACE', None) and (cfg.SELF_TRAIN.GACE.STORE_GACE or cfg.SELF_TRAIN.GACE.RETRAIN_GACE):
-                gace_model_path = os.path.join(cfg.SELF_TRAIN.GACE.OUTPUT_FOLDER, 'gace_model.pth')
+                gace_model_path = os.path.join(ps_label_dir, 'gace_model.pth')
                 torch.save(gace_model, gace_model_path)
                 logger.info(f'GACE model stored at {gace_model_path}')
 
@@ -173,7 +173,7 @@ def save_pseudo_label_epoch(model, source_loader, val_loader, rank, leave_pbar, 
             if getattr(cfg.SELF_TRAIN.GACE, 'CKPT', None):
                 ckpt_path = cfg.SELF_TRAIN.GACE.CKPT
             elif not cfg.SELF_TRAIN.GACE.RETRAIN_GACE:
-                ckpt_path = os.path.join(cfg.SELF_TRAIN.GACE.OUTPUT_FOLDER, 'gace_model.pth')
+                ckpt_path = os.path.join(ps_label_dir, 'gace_model.pth')
             
             #check if ckpt exists
             assert os.path.exists(ckpt_path), "GACE ckpt not found"
