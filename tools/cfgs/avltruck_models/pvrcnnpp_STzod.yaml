@@ -172,17 +172,17 @@ SELF_TRAIN:
           H_F_HIDDEN_DIM: 256
       
       TRAIN:
-          NUM_EPOCHS: 10 
+          NUM_EPOCHS: 25 
           LR: 0.002
           IOU_LOSS_W: 0.5
           SFL_ALPHA: 0.5
           SFL_GAMMA: 1 
 
-    SCORE_THRESH: [0.85, 0.75, 0.9, 0.95]             #Threshold per class
-    NEG_THRESH: [0.3, 0.4, 0.6, 0.65]
+    SCORE_THRESH: [0.85, 0.75, 0.85, 0.90]             #Threshold per class
+    NEG_THRESH: [0.3, 0.4, 0.5, 0.6]
 
     UPDATE_PSEUDO_LABEL: [0, 1]        # Pseudo label generation epoch
-    UPDATE_PSEUDO_LABEL_INTERVAL: 100
+    UPDATE_PSEUDO_LABEL_INTERVAL: 4
     INIT_PS: None
     
     PROG_AUG:
