@@ -1,4 +1,4 @@
-_BASE_CONFIG_: cfgs/avltruck_models/pvrcnnpp.yaml
+_BASE_CONFIG_: cfgs/avltruck_models/second.yaml
 
 CLASS_NAMES: ['Vehicle', 'Pedestrian', 'Cyclist', 'Truck']
 
@@ -66,7 +66,7 @@ DATA_CONFIG:
 
 
 DATA_CONFIG_TAR:
-    _BASE_CONFIG_: cfgs/dataset_configs/avlrooftop/OD/avlrooftop_dataset.yaml
+    _BASE_CONFIG_: cfgs/dataset_configs/zod/OD/zod_dataset.yaml
     TARGET: True
     USE_PSEUDO_LABEL: True
     TRAIN_FOV_ONLY: True
@@ -209,23 +209,22 @@ SELF_TRAIN:
 
 
 OPTIMIZATION:
-    OPTIMIZER: adam_onecycle
-    LR: 0.005
-    WEIGHT_DECAY: 0.002
-    MOMENTUM: 0.9
+  BATCH_SIZE_PER_GPU: 4
 
-    MOMS: [0.95, 0.85]
-    PCT_START: 0.4
-    DIV_FACTOR: 10
-    DECAY_STEP_LIST: [15]
-    LR_DECAY: 0.1
-    LR_CLIP: 0.0000001
+  OPTIMIZER: adam_onecycle
+  LR: 0.003
+  WEIGHT_DECAY: 0.01
+  MOMENTUM: 0.9
 
-    LR_WARMUP: False
-    WARMUP_EPOCH: 1
+  MOMS: [0.95, 0.85]
+  PCT_START: 0.4
+  DIV_FACTOR: 10
+  DECAY_STEP_LIST: [35, 45]
+  LR_DECAY: 0.1
+  LR_CLIP: 0.0000001
 
-    GRAD_NORM_CLIP: 10
-    TAR_LOSS_SCALE: 1.0
+  LR_WARMUP: False
+  WARMUP_EPOCH: 1
 
-    SAMPLE_LOSS_SCALE: 1.0
+  GRAD_NORM_CLIP: 10
 

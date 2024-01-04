@@ -163,10 +163,10 @@ def save_pseudo_label_epoch(model, source_loader, val_loader, rank, leave_pbar, 
             gace_model = train_gace_model(cfg, gace_train_dataset, logger, batch_size_gace=batch_size_gace, num_workers=num_workers_gace)
 
             #store the trained model
-            if cfg.SELF_TRAIN.get('GACE', None) and (cfg.SELF_TRAIN.GACE.STORE_GACE or cfg.SELF_TRAIN.GACE.RETRAIN_GACE):
-                gace_model_path = os.path.join(ps_label_dir, 'gace_model.pth')
-                torch.save(gace_model, gace_model_path)
-                logger.info(f'GACE model stored at {gace_model_path}')
+            #if cfg.SELF_TRAIN.GACE.STORE_GACE or cfg.SELF_TRAIN.GACE.RETRAIN_GACE:
+            gace_model_path = os.path.join(ps_label_dir, 'gace_model.pth')
+            torch.save(gace_model, gace_model_path)
+            logger.info(f'GACE model stored at {gace_model_path}')
 
         else: 
             # load gace model

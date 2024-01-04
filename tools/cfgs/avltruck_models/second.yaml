@@ -5,7 +5,7 @@
 #             ]
 
 #anything not in class_names will be treated as background
-CLASS_NAMES: ["Vehicle", "Cyclist", "Pedestrian"]
+CLASS_NAMES: ["Vehicle", "Cyclist", "Pedestrian", "Truck"]
 
 DATA_CONFIG:
   _BASE_CONFIG_: cfgs/dataset_configs/avltruck/OD/avltruck_dataset.yaml
@@ -45,7 +45,7 @@ MODEL:
       [
         {
           "class_name": "Vehicle",
-          "anchor_sizes": [[4.083542, 1.868335, 1.544695]],
+          "anchor_sizes": [[4.188139, 1.896810, 1.619638]],
           "anchor_rotations": [0, 1.57],
           "anchor_bottom_heights": [0],
           "align_center": False,
@@ -55,7 +55,7 @@ MODEL:
         },
         {
           "class_name": "Cyclist",
-          "anchor_sizes": [[1.830747, 0.678374, 1.577888]],
+          "anchor_sizes": [[1.942082, 0.755111, 1.599506]],
           "anchor_rotations": [0, 1.57],
           "anchor_bottom_heights": [0],
           "align_center": False,
@@ -65,13 +65,23 @@ MODEL:
         },
         {
           "class_name": "Pedestrian",
-          "anchor_sizes": [[0.782185, 0.726423, 1.628466]],
+          "anchor_sizes": [[0.756963, 0.714888, 1.648238]],
           "anchor_rotations": [0, 1.57],
           "anchor_bottom_heights": [0],
           "align_center": False,
           "feature_map_stride": 8,
           "matched_threshold": 0.5,
           "unmatched_threshold": 0.35,
+        },
+        {
+          "class_name": "Truck",
+          "anchor_sizes": [[8.590661, 2.838536, 3.458272]],
+          "anchor_rotations": [0, 1.57],
+          "anchor_bottom_heights": [0],
+          "align_center": False,
+          "feature_map_stride": 8,
+          "matched_threshold": 0.55,
+          "unmatched_threshold": 0.4,
         },
       ]
 
@@ -97,7 +107,7 @@ MODEL:
     SCORE_THRESH: 0.1
     OUTPUT_RAW_SCORE: False
 
-    EVAL_METRIC: kitti
+    EVAL_METRIC: waymo
 
     NMS_CONFIG:
       MULTI_CLASSES_NMS: False
