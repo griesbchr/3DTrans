@@ -138,8 +138,8 @@ SELF_TRAIN:
       ENABLED: True
       STORE_DETECTIONS: True    # Works only single GPU training
       #CKPT: /home/cgriesbacher/thesis/3DTrans/gace/gace_output/2023-12-18_15-16-02/gace_model.pth
-      #STORE_GACE: True
-      #RETRAIN_GACE: False
+      STORE_GACE: False
+      RETRAIN_GACE: False
       BATCH_SIZE: 2048
       NUM_WORKERS: 4
 
