@@ -188,9 +188,9 @@ MODEL:
                 NMS_THRESH: 0.7
                 SCORE_THRESH: 0.1
 
-#                NMS_PRE_MAXSIZE: 4096
-#                NMS_POST_MAXSIZE: 500
-#                NMS_THRESH: 0.85
+                #NMS_PRE_MAXSIZE: 4096
+                #NMS_POST_MAXSIZE: 500
+                #NMS_THRESH: 0.85
 
 
         ROI_GRID_POOL:
