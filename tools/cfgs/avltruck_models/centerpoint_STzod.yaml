@@ -1,0 +1,230 @@
+_BASE_CONFIG_: cfgs/avltruck_models/centerpoint.yaml
+
+CLASS_NAMES: ['Vehicle', 'Pedestrian', 'Cyclist', 'Truck']
+
+DATA_CONFIG:
+  _BASE_CONFIG_: cfgs/dataset_configs/avltruck/OD/avltruck_dataset.yaml
+
+  DATA_AUGMENTOR:
+    DISABLE_AUG_LIST: ["gt_sampling", "random_object_scaling", "normalize_object_size_multiclass"]
+
+    AUG_CONFIG_LIST:
+      - NAME: gt_sampling
+        USE_ROAD_PLANE: False
+        DB_INFO_PATH:
+          - avl_dbinfos_train.pkl
+        PREPARE:
+          {
+            filter_by_min_points:
+              [
+                "Vehicle_Drivable_Car:5",
+                "Vehicle_Drivable_Van:5",
+                "Human:5",
+                "Vehicle_Ridable_Motorcycle:5",
+                "Vehicle_Ridable_Bicycle:5",
+                "LargeVehicle_Bus:5",
+                "LargeVehicle_Truck:5",
+                "LargeVehicle_TruckCab:5",
+                "Trailer:5",
+              ],
+          }
+
+        SAMPLE_GROUPS:
+          #Vehicle: 15, Cyclist: 10, Pedestrian: 10
+
+          [
+            "Vehicle_Drivable_Car:11",
+            "Vehicle_Drivable_Van:2",
+            "Human:10",
+            "Vehicle_Ridable_Motorcycle:5",
+            "Vehicle_Ridable_Bicycle:5",
+            "LargeVehicle_Bus:1",
+            "LargeVehicle_Truck:1",
+            "LargeVehicle_TruckCab:0",
+            "Trailer:0",
+          ]
+
+        NUM_POINT_FEATURES: 4
+        DATABASE_WITH_FAKELIDAR: False
+        REMOVE_EXTRA_WIDTH: [0.0, 0.0, 0.0]
+        LIMIT_WHOLE_SCENE: True
+
+      - NAME: random_world_flip
+        ALONG_AXIS_LIST: ["x", "y"]
+
+      - NAME: random_world_rotation
+        WORLD_ROT_ANGLE: [-0.78539816, 0.78539816]
+
+      - NAME: random_world_scaling
+        WORLD_SCALE_RANGE: [0.95, 1.05]
+
+      - NAME: random_object_scaling
+        SCALE_UNIFORM_NOISE: [0.9, 1.10]
+
+      - NAME: normalize_object_size_multiclass
+        SIZE_RES: [[0.225, 0.183, 0.068], [0.14, 0.144, 0.093], [0.231, 0.055, 0.165], [0.502, 0.456, 0.203]]   #Vehicle, Pedestrian, Bicycle, Truck
+
+
+DATA_CONFIG_TAR:
+    _BASE_CONFIG_: cfgs/dataset_configs/zod/OD/zod_dataset.yaml
+    TARGET: True
+    USE_PSEUDO_LABEL: True
+    TRAIN_FOV_ONLY: True
+
+    CLASS_NAMES: ['Vehicle', 'Pedestrian', 'Cyclist', 'Truck']
+
+    DATA_AUGMENTOR:
+      DISABLE_AUG_LIST: ["gt_sampling"]
+      AUG_CONFIG_LIST:
+        - NAME: gt_sampling
+          USE_ROAD_PLANE: False
+          DB_INFO_PATH:
+            - avl_dbinfos_train.pkl
+          PREPARE:
+            {
+              filter_by_min_points:
+                [
+                  "Vehicle_Drivable_Car:5",
+                  "Vehicle_Drivable_Van:5",
+                  "Human:5",
+                  "Vehicle_Ridable_Motorcycle:5",
+                  "Vehicle_Ridable_Bicycle:5",
+                  "LargeVehicle_Bus:5",
+                  "LargeVehicle_Truck:5",
+                  "LargeVehicle_TruckCab:5",
+                  "Trailer:5",
+                ],
+            }
+
+          SAMPLE_GROUPS:
+            #Vehicle: 15, Cyclist: 10, Pedestrian: 10
+            [
+              "Vehicle_Drivable_Car:11",
+              "Vehicle_Drivable_Van:2",
+              "Human:10",
+              "Vehicle_Ridable_Motorcycle:5",
+              "Vehicle_Ridable_Bicycle:5",
+              "LargeVehicle_Bus:1",
+              "LargeVehicle_Truck:1",
+              "LargeVehicle_TruckCab:0",
+              "Trailer:0",
+            ]
+
+          NUM_POINT_FEATURES: 4
+          DATABASE_WITH_FAKELIDAR: False
+          REMOVE_EXTRA_WIDTH: [0.0, 0.0, 0.0]
+          LIMIT_WHOLE_SCENE: True
+
+        - NAME: random_world_flip
+          ALONG_AXIS_LIST: ["x", "y"]
+
+        - NAME: random_world_rotation
+          WORLD_ROT_ANGLE: [-0.378760688, 0.378760688]
+
+        - NAME: random_world_scaling
+          WORLD_SCALE_RANGE: [0.97, 1.03]
+
+
+SELF_TRAIN:
+    SRC:
+        USE_DATA: False
+        USE_GRAD: False
+        LOSS_WEIGHT: 1.0
+    TAR:
+        USE_DATA: True
+        LOSS_WEIGHT: 1.0
+
+    GACE:
+      ENABLED: True
+      STORE_DETECTIONS: True    # Works only single GPU training
+      #CKPT: /home/cgriesbacher/thesis/3DTrans/gace/gace_output/2023-12-18_15-16-02/gace_model.pth
+      STORE_GACE: False
+      RETRAIN_GACE: False
+      BATCH_SIZE: 2048
+      NUM_WORKERS: 4
+
+      NR_MAX_DET_PER_SAMPLE: 500
+      
+      NORM_FACTORS: {
+          'cx': 123.2,
+          'cy': 75.2,
+          'cz': 4.0,
+          #veh, ped, cyc, tru
+          'dx': [6.019, 1.142, 2.494, 27.699],
+          'dy': [2.394, 0.982, 1.072, 3.652], 
+          'dz': [2.661, 2.000, 2.000, 4.529],
+          'dist': 144.3,
+          'nr_pts': [5000.0, 1000.0, 1000.0, 60000.0],
+      }
+
+      NORM_FACTORS_CP: {
+          'dist': 249.0,
+      }
+      
+      CONTEXT_RADIUS: 20
+      MAX_NR_NEIGHBORS: 30
+    
+      MODEL:
+          H_I_HIDDEN_DIM: 256
+          H_I_OUTPUT_DIM: 128
+          H_C_HIDDEN_DIM: 256
+          H_C_OUTPUT_DIM: 64
+          H_F_HIDDEN_DIM: 256
+      
+      TRAIN:
+          NUM_EPOCHS: 25 
+          LR: 0.002
+          IOU_LOSS_W: 0.5
+          SFL_ALPHA: 0.5
+          SFL_GAMMA: 1 
+
+    SCORE_THRESH: [0.85, 0.75, 0.85, 0.90]             #Threshold per class
+    NEG_THRESH: [0.3, 0.4, 0.5, 0.6]
+
+    UPDATE_PSEUDO_LABEL: [0, 1]        # Pseudo label generation epoch
+    UPDATE_PSEUDO_LABEL_INTERVAL: 4
+    INIT_PS: None
+    
+    PROG_AUG:
+        ENABLED: False
+        UPDATE_AUG: [4, 8]
+        SCALE: 1.2
+
+    MEMORY_ENSEMBLE:
+        ENABLED: False
+        NAME: consistency_ensemble
+        IOU_THRESH: 0.1
+
+        NMS_CONFIG:
+            NMS_TYPE: nms_gpu
+            MULTI_CLASSES_NMS: False
+            NMS_PRE_MAXSIZE: 512
+            NMS_POST_MAXSIZE: 100
+            NMS_THRESH: 0.1
+
+        MEMORY_VOTING:
+            ENABLED: False
+            IGNORE_THRESH: 2
+            RM_THRESH: 3
+
+
+OPTIMIZATION:
+  BATCH_SIZE_PER_GPU: 2
+  NUM_EPOCHS: 80
+
+  OPTIMIZER: adam_onecycle
+  LR: 0.01
+  WEIGHT_DECAY: 0.01
+  MOMENTUM: 0.9
+
+  MOMS: [0.95, 0.85]
+  PCT_START: 0.4
+  DIV_FACTOR: 10
+  DECAY_STEP_LIST: [35, 45]
+  LR_DECAY: 0.1
+  LR_CLIP: 0.0000001
+
+  LR_WARMUP: False
+  WARMUP_EPOCH: 1
+
+  GRAD_NORM_CLIP: 10

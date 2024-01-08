@@ -3,9 +3,9 @@
 # Test a single detector on a single arbitrary dataset
 
 TRAIN_DATASET=avltruck
-MODEL=second
-EXTRA_TAG=D6_100epochs
-EPOCHS=(100)
+MODEL=pvrcnnpp_STzod_ped
+EXTRA_TAG=D16_20epochs_STzod_ft_D6_50epochs_fov_gace_labelupdate_nogace
+EPOCHS=(1 2 3 4)
 
 EVAL_DATASET=zod
 
