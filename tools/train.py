@@ -114,7 +114,7 @@ def main():
         training=True,
         merge_all_iters_to_one_epoch=args.merge_all_iters_to_one_epoch,
         total_epochs=args.epochs,
-        sub_sample=cfg.SUBSAMPLEFACTOR,
+        sub_sample=cfg.DATA_CONFIG.SUBSAMPLEFACTOR,
         prefetch_factor=args.prefetch_factor
     )
 

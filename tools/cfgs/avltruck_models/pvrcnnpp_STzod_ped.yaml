@@ -1,6 +1,6 @@
 _BASE_CONFIG_: cfgs/avltruck_models/pvrcnnpp.yaml
 
-CLASS_NAMES: ['Vehicle', 'Pedestrian', 'Cyclist', 'Truck']
+CLASS_NAMES: ['Pedestrian']
 
 DATA_CONFIG:
   _BASE_CONFIG_: cfgs/dataset_configs/avltruck/OD/avltruck_dataset.yaml
@@ -71,7 +71,7 @@ DATA_CONFIG_TAR:
     USE_PSEUDO_LABEL: True
     TRAIN_FOV_ONLY: True
 
-    CLASS_NAMES: ['Vehicle', 'Pedestrian', 'Cyclist', 'Truck']
+    CLASS_NAMES: ['Pedestrian']
 
     DATA_AUGMENTOR:
       DISABLE_AUG_LIST: ["gt_sampling"]
@@ -135,7 +135,7 @@ SELF_TRAIN:
         LOSS_WEIGHT: 1.0
 
     GACE:
-      ENABLED: True
+      ENABLED: False
       STORE_DETECTIONS: True    # Works only single GPU training
       #CKPT: /home/cgriesbacher/thesis/3DTrans/gace/gace_output/2023-12-18_15-16-02/gace_model.pth
       STORE_GACE: False
@@ -177,10 +177,9 @@ SELF_TRAIN:
           IOU_LOSS_W: 0.5
           SFL_ALPHA: 0.5
           SFL_GAMMA: 1 
+    SCORE_THRESH: [0.75]             #Threshold per class
+    NEG_THRESH: [0.4]
 
-    SCORE_THRESH: [1.0, 0.75, 1.0, 1.0]             #Threshold per class
-    NEG_THRESH: [0.0, 0.4, 0.0, 0.0]
-    
     UPDATE_PSEUDO_LABEL: [0]        # Pseudo label generation epoch
     UPDATE_PSEUDO_LABEL_INTERVAL: 5
     INIT_PS: None
