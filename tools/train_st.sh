@@ -2,11 +2,11 @@
 # Finetune a single detector on an arbitrary dataset with self-training
 
 DATASET=avltruck
-MODEL=centerpoint_STzod
-EXTRA_TAG=D16_20epochs_STzod_ft_D6_50epochs_gace_fov
-PRETRAINED=/home/cgriesbacher/thesis/3DTrans/output/avltruck_models/centerpoint/D6_100epochs_4classes/ckpt/checkpoint_epoch_100.pth
+MODEL=pvrcnnpp_STzod_ped
+EXTRA_TAG=D16_21epochs_STzod_ft_D6_50epochs_fov_gace_labelupdate_ped
+PRETRAINED=/home/cgriesbacher/thesis/3DTrans/output/avltruck_models/pvrcnnpp_ros_ped/D6_50epochs/ckpt/checkpoint_epoch_50.pth
 
-EPOCHS=20
+EPOCHS=21
 CKPT_SAVE_INTERVAL=1
 BATCHSIZE=4
 WORKERS=4

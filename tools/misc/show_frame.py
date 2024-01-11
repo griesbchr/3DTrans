@@ -32,13 +32,14 @@ def main():
     save_image = True
 
     fov=True
-
+    training = True
+    no_detection = True
     dataset = "zod"
     checkpoint_path = None
     
     #avlrooftop
     #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output_okeanos/output/avltruck_models/pvrcnnpp_STrooftop/D1_5epochs_STrooftop_ft_D6_50epochs_ros_06_015_thresh_high_lr/ckpt/checkpoint_epoch_4.pth"
-    #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output_okeanos/output/avltruck_models/pvrcnnpp_ros/D6_50epochs/ckpt/checkpoint_epoch_50.pth"
+    checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output_okeanos/output/avltruck_models/pvrcnnpp_ros/D6_50epochs/ckpt/checkpoint_epoch_50.pth"
     #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output_okeanos/output/avlrooftop_models/pvrcnnpp/D1_50epochs/ckpt/checkpoint_epoch_50.pth"
 
     #zod 
@@ -51,7 +52,7 @@ def main():
     #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output_okeanos/output/avltruck_models/pvrcnnpp_STzod/D6_5epochs_STzod_ft_D16_50epochs_ros/ckpt/checkpoint_epoch_3.pth"
 
     # ST avltruck -> zod
-    checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output_okeanos/output/avltruck_models/pvrcnnpp_STzod/D16_20epochs_STzod_ft_D6_50epochs_fov_gace_labelupdate_nogaceretrain_1/ckpt/checkpoint_epoch_1.pth"
+    #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output_okeanos/output/avltruck_models/pvrcnnpp_STzod/D16_20epochs_STzod_ft_D6_50epochs_fov_gace_labelupdate_nogaceretrain_1/ckpt/checkpoint_epoch_1.pth"
     
     if (args.dataset == None):
         args.dataset = dataset
@@ -93,7 +94,10 @@ def main():
                        "VulnerableVehicle_Motorcycle",
                        "Pedestrian"]
         if args.frame_idx is None:
-            args.frame_idx = "055261"
+            if training:
+                args.frame_idx = '009375'
+            else:
+                args.frame_idx = "055261"
         
         image_path_frame = args.frame_idx
 
@@ -185,7 +189,7 @@ def main():
                                     dist=False,
                                     workers=0,
                                     logger=logger,
-                                    training=False) 
+                                    training=training) 
         
         #build model
         model = build_network(model_cfg=cfg.MODEL, num_class=len(cfg.CLASS_NAMES), dataset=dataset)
@@ -201,8 +205,10 @@ def main():
         list_index = sample_id_list.index(args.frame_idx)
         #get data from info files -> is in detector class name space
         data_dict = dataset.__getitem__(list_index)
-
-
+        if no_detection:
+            import tools.visual_utils.open3d_vis_utils as vis
+            vis.draw_scenes(data_dict["points"][:,:3], point_colors=data_dict["points"][:,3], gt_boxes=data_dict["gt_boxes"])
+            return
         data_dict = dataset.collate_batch([data_dict])
 
         #get eval frame        
@@ -221,7 +227,7 @@ def main():
         print("remaining gt boxes for nontruncated method:", dataset.extract_fov_gt_nontruncated(data_dict["gt_boxes"][0,:,:7].cpu().numpy(), 120, 0).sum())
         print("remaining gt boxes for center method:", dataset.extract_fov_gt(data_dict["gt_boxes"][0,:,:7].cpu().numpy(), 120, 0).sum())
         
-        points4 = data_dict['points'].detach().cpu().numpy()[:,1:]
+        points4 = data_dict['points'].detach().cpu().numpy()[:,1:]  #get rid of batch dim
         gt_boxes = eval_gt_annos[0]["gt_boxes_lidar"]
         det_boxes = eval_det_annos[0]["boxes_lidar"]
 
@@ -238,7 +244,7 @@ def main():
                                         dist=False,
                                         workers=0,
                                         logger=logger,
-                                        training=False) 
+                                        training=training) 
         points4 = dataset.get_lidar(args.frame_idx)
         gt_boxes_lidar = dataset.get_label(args.frame_idx)["gt_boxes_lidar"]
         #filter out gt boxes that are out of range

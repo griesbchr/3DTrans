@@ -11,6 +11,8 @@ from ..dataset import DatasetTemplate
 from zod import ZodFrames
 from zod.constants import AnnotationProject, TRAIN, VAL
 
+from collections import defaultdict
+
 class ZODDataset(DatasetTemplate):
     def __init__(self, dataset_cfg, class_names, training=True, root_path=None, logger=None, creating_infos=False):
         """
@@ -60,6 +62,55 @@ class ZODDataset(DatasetTemplate):
 
             #filter infors for subsampled samples
             self.zod_infos = [info for info in self.zod_infos if info['point_cloud']['lidar_idx'] in self.sample_id_list]
+
+        #diode indixes with INCREASING elevation angle
+        #the angles between the diodes are uneven: for the first and last two blocks the 
+        #angle decreases/increases. For the middle blocks the angle is roughly constant
+        #examples: 
+        #angle between diodes 46 and 69: 5.418 deg
+        #angle between diodes 8 and 105:  0.11 deg
+        diode_indices_blocked = [
+        [36, 69, 54, 87],
+        [0, 97, 18, 115, 44, 77, 62, 95],
+        [8, 105, 26, 123, 100, 21, 118, 39],
+        [64, 49, 82, 3, 108, 29, 126, 47],
+        [72, 57, 90, 11, 52, 85, 6, 103],
+        [16, 113, 34, 67, 60, 93, 14, 111],
+        [24, 121, 42, 75, 116, 37, 70, 55],
+        [80, 1, 98, 19, 124, 45, 78, 63],
+        [88, 9, 106, 27, 4, 101, 22, 119],
+        [32, 65, 50, 83, 12, 109, 30, 127],
+        [40, 73, 58, 91, 68, 53, 86, 7],
+        [96, 17, 114, 35, 76, 61, 94, 15],
+        [104, 25, 122, 43, 20, 117, 38, 71],
+        [48, 81, 2, 99, 28, 125, 46, 79],
+        [56, 89, 10, 107, 84, 5, 102, 23],
+        [112, 33, 66, 51, 92, 13, 110, 31],
+        [120, 41, 74, 59]
+        ]
+
+        #ignore_blocks = [0, 1, 15, 16]      #leave out blocks that are less dense
+        ignore_blocks = []      #leave out blocks that are less dense
+
+        #concat all diode indices but the ones in ignore_blocks
+        diode_indices = np.concatenate([diode_indices for i, diode_indices in enumerate(diode_indices_blocked) if i not in ignore_blocks])
+
+        #create a map that maps diode indices to a strictly increasing index for convenient sampling
+        self.beam_map = defaultdict(lambda : -1)
+        for i, diode_index in enumerate(diode_indices):
+            self.beam_map[diode_index] = i
+        
+        #vectorize for easier mapping of numpy arrays
+        #beam_ids go from [-1, 103] where -1 are points that should be ignored
+        self.beam_label_mapper = np.vectorize(self.beam_map.__getitem__)
+
+        self.num_aug_beams = len(diode_indices)
+
+        #some assertions to make sure the mapping is correct
+        assert 0 in self.beam_map.values(), "beam_map should start with 0"
+        assert self.num_aug_beams == len(self.beam_map.keys()) or self.num_aug_beams == len(self.beam_map.keys()) + 1
+        assert self.num_aug_beams - 1 == sorted(list(self.beam_map.values()))[-1], "beam_map should be strictly increasing"
+        assert self.num_aug_beams not in list(self.beam_map.values()), "beam_map should not have any gaps"
 
     def map_merge_classes(self):
         if self.dataset_cfg.get('MAP_MERGE_CLASS', None) is None:
@@ -175,7 +226,7 @@ class ZODDataset(DatasetTemplate):
 
         return truncated
     
-    def get_lidar(self, idx, num_features=4):
+    def get_lidar(self, idx, num_features=4, with_beam_label=False):
 
         #need to import zod frames for this to work
         zod_frame = self.zod_frames[idx]
@@ -186,6 +237,8 @@ class ZODDataset(DatasetTemplate):
             mask = self.get_fov_points_only(pc.points, zod_frame.calibration)
             pc.points = pc.points[mask]
             pc.intensity = pc.intensity[mask]
+            if with_beam_label:
+                pc.diode_idx = pc.diode_idx[mask]
         
         if num_features == 4:
             #scale intensity to [0,1] from [0,255]
@@ -201,7 +254,14 @@ class ZODDataset(DatasetTemplate):
         points[:,:3] = points[:,:3] @ self.T_zod_lidar_to_waymo_lidar
         points[:,2] -= self.lidar_z_shift
 
+        if with_beam_label:
+            #append diode id to points
+            #diode index actually starts at 1, but we want to start at 0
+            beam_labels = self.beam_label_mapper(pc.diode_idx-1)
 
+            #concat points and beam labels
+            points = np.concatenate((points, beam_labels.reshape(-1,1)), axis=1)
+        
         return points
     
     def get_label(self, sample_idx):
@@ -279,13 +339,21 @@ class ZODDataset(DatasetTemplate):
         info = copy.deepcopy(self.zod_infos[index])
         sample_idx = info['point_cloud']['lidar_idx']
 
-        #get points
-        points = self.get_lidar(sample_idx, self.num_point_features)
+        input_dict = {}
 
-        input_dict = {
+        #get points
+        if self.dataset_cfg.get('INCLUDE_DIODE_IDS', False):
+            points = self.get_lidar(sample_idx, self.num_point_features, with_beam_label=True)
+            input_dict.update({
+                "num_aug_beams": self.num_aug_beams
+            })
+        else:
+            points = self.get_lidar(sample_idx, self.num_point_features)
+
+        input_dict.update({
             'frame_id': self.sample_id_list[index],
             'points': points
-        }
+        })
 
         #get annos
         if 'annos' in info:
@@ -603,11 +671,15 @@ class ZODDataset(DatasetTemplate):
 
         return list(infos)
 
-    def create_groundtruth_database(self, info_path=None, version="full", used_classes=None, split='train', num_point_features=4):
+    def create_groundtruth_database(self, info_path=None, version="full", used_classes=None, split='train', num_point_features=4, with_beam_label=False):
         import torch
         from tqdm import tqdm
-        database_save_path = Path(self.root_path) / ('gt_database_%s' % version if split == 'train' else ('gt_database_%s_%s' % (split, version)))
-        db_info_save_path = Path(self.root_path) / ('zod_dbinfos_%s_%s.pkl' % (split, version))
+        if with_beam_label:
+            database_save_path = Path(self.root_path) / ('gt_database_%s_beamlabels' % version if split == 'train' else ('gt_database_%s_%s' % (split, version)))
+            db_info_save_path = Path(self.root_path) / ('zod_dbinfos_%s_%s_beamlabels.pkl' % (split, version))
+        else:
+            database_save_path = Path(self.root_path) / ('gt_database_%s' % version if split == 'train' else ('gt_database_%s_%s' % (split, version)))
+            db_info_save_path = Path(self.root_path) / ('zod_dbinfos_%s_%s.pkl' % (split, version))
 
         database_save_path.mkdir(parents=True, exist_ok=True)
         all_db_infos = {}
@@ -622,7 +694,10 @@ class ZODDataset(DatasetTemplate):
             print('gt_database sample: %d/%d' % (k + 1, len(infos)))
             info = infos[k]
             sample_idx = info['point_cloud']['lidar_idx']
-            points = self.get_lidar(sample_idx, num_point_features)
+            if with_beam_label:
+                points = self.get_lidar(sample_idx, num_point_features, with_beam_label=True)
+            else:
+                points = self.get_lidar(sample_idx, num_point_features)
             annos = info['annos']
             names = annos['name']
             gt_boxes = annos['gt_boxes_lidar']
@@ -739,6 +814,10 @@ def create_zod_infos(dataset_cfg, class_names, data_path, save_path, workers=4):
 #  ~/thesis/3DTrans
 # python -m pcdet.datasets.zod.zod_dataset debug tools/cfgs/dataset_configs/zod/OD/zod_dataset.yaml
 # python -m pcdet.datasets.zod.zod_dataset create_zod_infos tools/cfgs/dataset_configs/zod/OD/zod_dataset.yaml
+
+#  ~/thesis/3DTrans/tools
+#  python -m pcdet.datasets.zod.zod_dataset create_zod_gtdatabase_with_beamlabels cfgs/dataset_configs/zod/OD/zod_dataset.yaml
+
 if __name__ == '__main__':
     import sys
 
@@ -782,3 +861,39 @@ if __name__ == '__main__':
             data_path=ROOT_DIR / 'data' / 'zod',
             save_path=ROOT_DIR / 'data' / 'zod',
         )
+    if sys.argv.__len__() > 1 and sys.argv[1] == 'create_zod_gtdatabase_with_beamlabels':
+        import yaml
+        from pathlib import Path
+        from easydict import EasyDict
+
+        dataset_cfg = EasyDict(yaml.safe_load(open(sys.argv[2])))
+        ROOT_DIR = (Path(__file__).resolve().parent / '../../../').resolve()
+        
+        #class names included in the dataset info files and gt database
+        #in zod subclass names are composed of the class name and the subclass name 
+        class_names = ["Vehicle_Car", 
+                       "Vehicle_Van", 
+                       "Vehicle_Truck", 
+                       "Vehicle_Trailer", 
+                       "Vehicle_Bus", 
+                       "Vehicle_HeavyEquip", 
+                       "Vehicle_TramTrain",
+                       "VulnerableVehicle_Bicycle",
+                       "VulnerableVehicle_Motorcycle",
+                       "Pedestrian"]
+        
+        splits = ['train', 'val']
+        versions = ['full', 'mini', 'small']
+        #versions = ['small']
+
+        #split_zod_data(data_path, versions)
+        data_path=ROOT_DIR / 'data' / 'zod'
+        
+
+        dataset = ZODDataset(
+            dataset_cfg=dataset_cfg, class_names=class_names, root_path=data_path,
+            training=False, logger=common_utils.create_logger(), creating_infos=True
+        )
+        dataset.set_split("train", "full")
+        info_path = "/home/cgriesbacher/thesis/3DTrans/data/zod/zod_infos_train_full.pkl"
+        dataset.create_groundtruth_database(info_path, "full", split="train", num_point_features=4, with_beam_label=True)

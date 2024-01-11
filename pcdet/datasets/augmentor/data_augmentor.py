@@ -2,9 +2,10 @@ from functools import partial
 
 import numpy as np
 
-from ...utils import common_utils
+from ...utils import common_utils, downsample_utils
 from . import augmentor_utils, database_sampler
-
+from ...ops.roiaware_pool3d import roiaware_pool3d_utils
+import torch
 
 class DataAugmentor(object):
     def __init__(self, root_path, augmentor_configs, class_names, logger=None, oss_flag=False):
@@ -88,6 +89,117 @@ class DataAugmentor(object):
         data_dict['points'] = points
         return data_dict
 
+    def label_point_cloud_beam(self, polar_image, points, beam=32):
+        if polar_image.shape[0] <= beam:
+            print("too small point cloud!")
+            return np.arange(polar_image.shape[0])
+        beam_label, centroids = downsample_utils.beam_label(polar_image[:,1], beam)
+        idx = np.argsort(centroids)
+        rev_idx = np.zeros_like(idx)
+        for i, t in enumerate(idx):
+            rev_idx[t] = i
+        beam_label = rev_idx[beam_label]
+        return beam_label
+
+    def get_polar_image(self, points):
+        theta, phi = downsample_utils.compute_angles(points[:,:3])
+        r = np.sqrt(np.sum(points[:,:3]**2, axis=1))
+        polar_image = points.copy()
+        polar_image[:,0] = phi 
+        polar_image[:,1] = theta
+        polar_image[:,2] = r 
+        return polar_image
+    
+    #def beam_mask(self, data_dict=None, config=None):
+    #    if data_dict is None:
+    #        return partial(self.beam_mask, config=config)
+    #    assert 'beam_labels' in data_dict
+    #    beam_label = data_dict['beam_labels']
+    #    beam_mask = np.ones(64, dtype=np.int)
+    #    if config['BEAM'] == 48:
+    #        beam_mask[::4] = 0
+    #    elif config['BEAM'] == 32:
+    #        beam_mask[::2] = 0
+    #    elif config['BEAM'] == 16:
+    #        beam_mask[::4] = 0
+    #        beam_mask[::2] = 0
+    #    else:
+    #        raise NotImplementedError
+    #    points_mask = beam_mask[beam_label]
+    #    data_dict['points'] = points[points_mask]
+    #    data_dict['beam_labels'] = beam_label[points_mask]
+    #    return data_dict
+        
+    def random_points_downsample(self, data_dict=None, config=None):
+        if data_dict is None:
+            return partial(self.random_points_downsample, config=config)
+        points = data_dict['points']
+        points_mask = np.random.rand(points.shape[0]) < config['POINTS_PROB']
+        data_dict['points'] = points[points_mask]
+        return data_dict
+
+    def random_beam_upsample(self, data_dict=None, config=None):
+        if data_dict is None:
+            return partial(self.random_beam_upsample, config=config)
+        points = data_dict['points']
+        polar_image = self.get_polar_image(points)
+        beam_label = self.label_point_cloud_beam(polar_image, points, config['BEAM'])
+        new_pcs = [points]
+        phi = polar_image[:,0]
+        for i in range(config['BEAM'] - 1):
+            if np.random.rand() < config['BEAM_PROB'][i]:
+                cur_beam_mask = (beam_label == i)
+                next_beam_mask = (beam_label == i + 1)
+                delta_phi = np.abs(phi[cur_beam_mask, np.newaxis] - phi[np.newaxis, next_beam_mask])
+                corr_idx = np.argmin(delta_phi,1)
+                min_delta = np.min(delta_phi,1)
+                mask = min_delta < config['PHI_THRESHOLD']
+                cur_beam = polar_image[cur_beam_mask][mask]
+                next_beam = polar_image[next_beam_mask][corr_idx[mask]]
+                new_beam = (cur_beam + next_beam)/2
+                new_pc = new_beam.copy()
+                new_pc[:,0] = np.cos(new_beam[:,1]) * np.cos(new_beam[:,0]) * new_beam[:,2]
+                new_pc[:,1] = np.cos(new_beam[:,1]) * np.sin(new_beam[:,0]) * new_beam[:,2]
+                new_pc[:,2] = np.sin(new_beam[:,1]) * new_beam[:,2]
+                new_pcs.append(new_pc)
+        data_dict['points'] = np.concatenate(new_pcs,0)
+        return data_dict
+
+    def random_beam_downsample(self, data_dict=None, config=None):
+        if data_dict is None:
+            return partial(self.random_beam_downsample, config=config)
+        
+        assert "num_aug_beams" in data_dict, "num_aug_beams not in data_dict. Make sure to enable INCLUDE_DIODE_IDS in cfg"
+
+        points_with_beam_labels = data_dict['points']
+        #beam labels are last column of points
+        beam_label = points_with_beam_labels[:,-1].astype(np.int)
+        points = points_with_beam_labels[:,:-1] 
+
+        #points = data_dict['points']
+        #polar_image = self.get_polar_image(points)
+        #beam_label = self.label_point_cloud_beam(polar_image, points,data_dict['num_aug_beams'])
+        
+        beam_mask = np.random.rand(data_dict['num_aug_beams']) < config['BEAM_PROB']
+        beam_mask = np.append(beam_mask, True) #always keep points with beam_label == -1
+        points_mask = beam_mask[beam_label]
+        data_dict['points'] = points[points_mask]
+        if config.get('FILTER_GT_BOXES', None):
+            num_points_in_gt = roiaware_pool3d_utils.points_in_boxes_cpu(
+                        torch.from_numpy(data_dict['points'][:, :3]),
+                        torch.from_numpy(data_dict['gt_boxes'][:, :7])).numpy().sum(axis=1)
+
+            mask = (num_points_in_gt >= config.get('MIN_POINTS_OF_GT', 1))
+            data_dict['gt_boxes'] = data_dict['gt_boxes'][mask]
+            data_dict['gt_names'] = data_dict['gt_names'][mask]
+            if 'gt_classes' in data_dict:
+                data_dict['gt_classes'] = data_dict['gt_classes'][mask]
+                data_dict['gt_scores'] = data_dict['gt_scores'][mask]
+            if 'gt_boxes_mask' in data_dict:
+                data_dict['gt_boxes_mask'] = data_dict['gt_boxes_mask'][mask]
+
+        return data_dict
+    
     def normalize_object_size_multiclass(self, data_dict=None, config=None):
         if data_dict is None:
             return partial(self.normalize_object_size_multiclass, config=config)
