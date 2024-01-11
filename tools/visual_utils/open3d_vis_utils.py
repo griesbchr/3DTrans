@@ -191,6 +191,9 @@ def draw_scenes(points, gt_boxes=None, ref_boxes=None, ref_labels=None, ref_scor
     if isinstance(ref_boxes, torch.Tensor):
         ref_boxes = ref_boxes.cpu().numpy()
 
+    #if points dim is 5, remove batch dim
+    if len(points.shape) == 5:
+        points = points[:,1:]
     vis = o3d.visualization.Visualizer()
     vis.create_window()
 
