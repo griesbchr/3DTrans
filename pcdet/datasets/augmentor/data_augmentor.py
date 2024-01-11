@@ -180,7 +180,14 @@ class DataAugmentor(object):
         #polar_image = self.get_polar_image(points)
         #beam_label = self.label_point_cloud_beam(polar_image, points,data_dict['num_aug_beams'])
         
-        beam_mask = np.random.rand(data_dict['num_aug_beams']) < config['BEAM_PROB']
+        if isinstance(config['BEAM_PROB'], list):
+            #assert that list len is 2
+            assert len(config['BEAM_PROB']) == 2, "BEAM_PROB must be a list containing the upper and lower bounds of the probability of keeping a beam"
+            #randomly sample a probability between the upper and lower bounds
+            beam_prob = np.random.uniform(config['BEAM_PROB'][0], config['BEAM_PROB'][1])
+        else:
+            beam_prob = config['BEAM_PROB']
+        beam_mask = np.random.rand(data_dict['num_aug_beams']) < beam_prob
         beam_mask = np.append(beam_mask, True) #always keep points with beam_label == -1
         points_mask = beam_mask[beam_label]
         data_dict['points'] = points[points_mask]
