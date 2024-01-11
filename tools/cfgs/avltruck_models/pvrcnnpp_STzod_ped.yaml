@@ -6,7 +6,7 @@ DATA_CONFIG:
   _BASE_CONFIG_: cfgs/dataset_configs/avltruck/OD/avltruck_dataset.yaml
 
   DATA_AUGMENTOR:
-    DISABLE_AUG_LIST: ["gt_sampling", "random_object_scaling", "normalize_object_size_multiclass"]
+    DISABLE_AUG_LIST: ["gt_sampling", "normalize_object_size_multiclass"]
 
     AUG_CONFIG_LIST:
       - NAME: gt_sampling
@@ -56,10 +56,14 @@ DATA_CONFIG:
         WORLD_ROT_ANGLE: [-0.78539816, 0.78539816]
 
       - NAME: random_world_scaling
-        WORLD_SCALE_RANGE: [0.95, 1.05]
+        WORLD_SCALE_RANGE: [0.97, 1.03]
 
       - NAME: random_object_scaling
-        SCALE_UNIFORM_NOISE: [0.9, 1.10]
+        SCALE_UNIFORM_NOISE: [0.95, 1.15]
+
+      - NAME: random_object_rotation
+        ROT_PROB: 0.8
+        ROT_UNIFORM_NOISE: [ -0.38539816, 0.38539816 ]
 
       - NAME: normalize_object_size_multiclass
         SIZE_RES: [[0.225, 0.183, 0.068], [0.14, 0.144, 0.093], [0.231, 0.055, 0.165], [0.502, 0.456, 0.203]]   #Vehicle, Pedestrian, Bicycle, Truck
@@ -181,12 +185,12 @@ SELF_TRAIN:
     NEG_THRESH: [0.4]
 
     UPDATE_PSEUDO_LABEL: [0]        # Pseudo label generation epoch
-    UPDATE_PSEUDO_LABEL_INTERVAL: 5
+    UPDATE_PSEUDO_LABEL_INTERVAL: 7
     INIT_PS: None
     
     PROG_AUG:
-        ENABLED: False
-        UPDATE_AUG: [4, 8]
+        ENABLED: True
+        UPDATE_AUG: [7, 12]
         SCALE: 1.2
 
     MEMORY_ENSEMBLE:

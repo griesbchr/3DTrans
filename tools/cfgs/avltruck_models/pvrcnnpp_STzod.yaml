@@ -137,7 +137,7 @@ SELF_TRAIN:
     GACE:
       ENABLED: True
       STORE_DETECTIONS: True    # Works only single GPU training
-      #CKPT: /home/cgriesbacher/thesis/3DTrans/gace/gace_output/2023-12-18_15-16-02/gace_model.pth
+      #CKPT: /home/griesbacher/thesis/3DTrans/gace/gace_output/2023-12-27_19-26-03_AVLTruckDataset_ZODDataset_5/gace_model.pth
       STORE_GACE: False
       RETRAIN_GACE: False
       BATCH_SIZE: 2048
@@ -179,7 +179,7 @@ SELF_TRAIN:
           SFL_GAMMA: 1 
 
     SCORE_THRESH: [1.0, 0.75, 1.0, 1.0]             #Threshold per class
-    NEG_THRESH: [0.0, 0.4, 0.0, 0.0]
+    NEG_THRESH: [1.0, 0.4, 1.0, 1.0]
     
     UPDATE_PSEUDO_LABEL: [0]        # Pseudo label generation epoch
     UPDATE_PSEUDO_LABEL_INTERVAL: 5
