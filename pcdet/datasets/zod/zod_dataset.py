@@ -671,11 +671,11 @@ class ZODDataset(DatasetTemplate):
 
         return list(infos)
 
-    def create_groundtruth_database(self, info_path=None, version="full", used_classes=None, split='train', num_point_features=4, with_beam_label=False):
+    def create_groundtruth_database(self, info_path=None, version="full", used_classes=None, split='train', num_point_features=4, with_beam_labels=False):
         import torch
         from tqdm import tqdm
-        if with_beam_label:
-            database_save_path = Path(self.root_path) / ('gt_database_%s_beamlabels' % version if split == 'train' else ('gt_database_%s_%s' % (split, version)))
+        if with_beam_labels:
+            database_save_path = Path(self.root_path) / ('gt_database_%s_beamlabels' % version if split == 'train' else ('gt_database_%s_%s_beamlabels' % (split, version)))
             db_info_save_path = Path(self.root_path) / ('zod_dbinfos_%s_%s_beamlabels.pkl' % (split, version))
         else:
             database_save_path = Path(self.root_path) / ('gt_database_%s' % version if split == 'train' else ('gt_database_%s_%s' % (split, version)))
@@ -694,10 +694,7 @@ class ZODDataset(DatasetTemplate):
             print('gt_database sample: %d/%d' % (k + 1, len(infos)))
             info = infos[k]
             sample_idx = info['point_cloud']['lidar_idx']
-            if with_beam_label:
-                points = self.get_lidar(sample_idx, num_point_features, with_beam_label=True)
-            else:
-                points = self.get_lidar(sample_idx, num_point_features)
+            points = self.get_lidar(sample_idx, num_point_features, with_beam_label=with_beam_labels)
             annos = info['annos']
             names = annos['name']
             gt_boxes = annos['gt_boxes_lidar']

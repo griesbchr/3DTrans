@@ -89,26 +89,26 @@ class DataAugmentor(object):
         data_dict['points'] = points
         return data_dict
 
-    def label_point_cloud_beam(self, polar_image, points, beam=32):
-        if polar_image.shape[0] <= beam:
-            print("too small point cloud!")
-            return np.arange(polar_image.shape[0])
-        beam_label, centroids = downsample_utils.beam_label(polar_image[:,1], beam)
-        idx = np.argsort(centroids)
-        rev_idx = np.zeros_like(idx)
-        for i, t in enumerate(idx):
-            rev_idx[t] = i
-        beam_label = rev_idx[beam_label]
-        return beam_label
+    #def label_point_cloud_beam(self, polar_image, points, beam=32):
+    #    if polar_image.shape[0] <= beam:
+    #        print("too small point cloud!")
+    #        return np.arange(polar_image.shape[0])
+    #    beam_label, centroids = downsample_utils.beam_label(polar_image[:,1], beam)
+    #    idx = np.argsort(centroids)
+    #    rev_idx = np.zeros_like(idx)
+    #    for i, t in enumerate(idx):
+    #        rev_idx[t] = i
+    #    beam_label = rev_idx[beam_label]
+    #    return beam_label
 
-    def get_polar_image(self, points):
-        theta, phi = downsample_utils.compute_angles(points[:,:3])
-        r = np.sqrt(np.sum(points[:,:3]**2, axis=1))
-        polar_image = points.copy()
-        polar_image[:,0] = phi 
-        polar_image[:,1] = theta
-        polar_image[:,2] = r 
-        return polar_image
+    #def get_polar_image(self, points):
+    #    theta, phi = downsample_utils.compute_angles(points[:,:3])
+    #    r = np.sqrt(np.sum(points[:,:3]**2, axis=1))
+    #    polar_image = points.copy()
+    #    polar_image[:,0] = phi 
+    #    polar_image[:,1] = theta
+    #    polar_image[:,2] = r 
+    #    return polar_image
     
     #def beam_mask(self, data_dict=None, config=None):
     #    if data_dict is None:

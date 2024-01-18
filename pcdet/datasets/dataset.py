@@ -7,7 +7,7 @@ import torch.utils.data as torch_data
 from .augmentor.data_augmentor import DataAugmentor
 from .processor.data_processor import DataProcessor
 from .processor.point_feature_encoder import PointFeatureEncoder
-from ..utils import common_utils, box_utils, self_training_utils
+from ..utils import common_utils, box_utils, self_training_utils, downsample_utils
 from ..ops.roiaware_pool3d import roiaware_pool3d_utils
 
 
@@ -174,7 +174,25 @@ class DatasetTemplate(torch_data.Dataset):
         gt_angle = np.arctan2(gt_boxes_lidar[:, 1], gt_boxes_lidar[:, 0])
         fov_gt_mask = ((np.abs(gt_angle) < half_fov_degree) & (gt_boxes_lidar[:, 0] > 0))
         return fov_gt_mask
+
+    @staticmethod
+    def label_point_cloud_beam(polar_image, beam):
+        if polar_image.shape[0] <= beam:
+            print("too small point cloud!")
+            return np.arange(polar_image.shape[0])
+        beam_label = downsample_utils.beam_label(polar_image[:,1], beam)
+        return beam_label.reshape(-1,1)
     
+    @staticmethod
+    def get_polar_image(points):
+        theta, phi = downsample_utils.compute_angles(points[:,:3])
+        r = np.sqrt(np.sum(points[:,:3]**2, axis=1))
+        polar_image = points.copy()
+        polar_image[:,0] = phi 
+        polar_image[:,1] = theta
+        polar_image[:,2] = r
+        return polar_image
+
     def extract_fov_gt_nontruncated(self, gt_boxes, fov_degree, heading_angle):
         """
         
