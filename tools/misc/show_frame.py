@@ -102,9 +102,9 @@ def main():
     fov=True
     training = True             #enable augmentations
     no_detection = False
-    dataset = "avltruck"
+    dataset = "zod"
     checkpoint_path = None
-    select_random_frame = True
+    select_random_frame = False
     
     #avlrooftop
     #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output_okeanos/output/avltruck_models/pvrcnnpp_STrooftop/D1_5epochs_STrooftop_ft_D6_50epochs_ros_06_015_thresh_high_lr/ckpt/checkpoint_epoch_4.pth"
@@ -324,7 +324,7 @@ def main():
         points = points4[:,:3]
         color = points4[:,-1]
 
-        num_beams = 128
+        #num_beams = 128
         
         #dataset.beam_label_num_beams = num_beams
         #dataset.beam_label_vfov = [-np.pi/16, np.pi/16]
@@ -332,17 +332,17 @@ def main():
         #points_with_beams = dataset.add_beam_labels(points4)
         #label_beams = points_with_beams[:,-1].astype(np.int64)
 
-        label_beams = segment_lidar_to_beams(points, num_beams)
+        #label_beams = segment_lidar_to_beams(points, num_beams)
         #
 
         #map each beam to a pseudo random color
         #init beam colors with [0, 0.5, 1, 0, 0.5, 1, ...]
-        color_arr = [0, 0.5, 1]
-        beam_colors = np.zeros((num_beams,1))
-        for i in range(num_beams):
-            beam_colors[i,:]  = np.array([color_arr[i%3]])
-        #map beam labels to colors
-        color = beam_colors[label_beams]
+        #color_arr = [0, 0.5, 1]
+        #beam_colors = np.zeros((num_beams,1))
+        #for i in range(num_beams):
+        #    beam_colors[i,:]  = np.array([color_arr[i%3]])
+        ##map beam labels to colors
+        #color = beam_colors[label_beams]
 
     else:
         dataset, train_loader, train_sampler = build_dataloader(dataset_cfg=dataset_cfg,

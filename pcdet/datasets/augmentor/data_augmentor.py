@@ -193,26 +193,63 @@ class DataAugmentor(object):
             beam_prob = np.random.uniform(config['BEAM_PROB'][0], config['BEAM_PROB'][1])
         else:
             beam_prob = config['BEAM_PROB']
+
+        #determine which beams to keep
         beam_mask = np.random.rand(data_dict['num_aug_beams']) < beam_prob
-        beam_mask = np.append(beam_mask, True) #always keep points with beam_label == -1
+        
+        #always keep points with beam_label == -1
+        beam_mask = np.append(beam_mask, True) 
+        
         points_mask = beam_mask[beam_label]
         data_dict['points'] = points[points_mask]
         if config.get('FILTER_GT_BOXES', None):
-            num_points_in_gt = roiaware_pool3d_utils.points_in_boxes_cpu(
-                        torch.from_numpy(data_dict['points'][:, :3]),
-                        torch.from_numpy(data_dict['gt_boxes'][:, :7])).numpy().sum(axis=1)
+            data_dict = self.filter_gt_boxes(data_dict, config)
 
-            mask = (num_points_in_gt >= config.get('MIN_POINTS_OF_GT', 1))
-            data_dict['gt_boxes'] = data_dict['gt_boxes'][mask]
-            data_dict['gt_names'] = data_dict['gt_names'][mask]
-            if 'gt_classes' in data_dict:
-                data_dict['gt_classes'] = data_dict['gt_classes'][mask]
-                data_dict['gt_scores'] = data_dict['gt_scores'][mask]
-            if 'gt_boxes_mask' in data_dict:
-                data_dict['gt_boxes_mask'] = data_dict['gt_boxes_mask'][mask]
 
         return data_dict
-    
+
+    def uniform_beam_downsample(self, data_dict=None, config=None):
+        if data_dict is None:
+            return partial(self.uniform_beam_downsample, config=config)
+        
+        assert "num_aug_beams" in data_dict, "num_aug_beams not in data_dict. Make sure to enable INCLUDE_DIODE_IDS in cfg"
+
+        points_with_beam_labels = data_dict['points']
+        beam_label = points_with_beam_labels[:,-1].astype(np.int)
+        points = points_with_beam_labels[:,:-1] 
+        
+        if isinstance(config['BEAM_DOWNSAMPLEFACTOR'], list):
+            beam_downsamplefactor = np.random.choice(config['BEAM_DOWNSAMPLEFACTOR'])
+        else:
+            beam_downsamplefactor = config['BEAM_DOWNSAMPLEFACTOR']
+
+        #determine which beams to keep
+        beam_mask = np.arange(data_dict['num_aug_beams']) % beam_downsamplefactor == 0
+        
+        #always keep points with beam_label == -1
+        beam_mask = np.append(beam_mask, True) 
+        
+        points_mask = beam_mask[beam_label]
+        data_dict['points'] = points[points_mask]
+        if config.get('FILTER_GT_BOXES', None):
+            data_dict = self.filter_gt_boxes(data_dict, config)
+
+        return data_dict
+
+    def filter_gt_boxes(self, data_dict=None, config=None):
+        num_points_in_gt = roiaware_pool3d_utils.points_in_boxes_cpu(
+                    torch.from_numpy(data_dict['points'][:, :3]),
+                    torch.from_numpy(data_dict['gt_boxes'][:, :7])).numpy().sum(axis=1)
+        mask = (num_points_in_gt >= config.get('MIN_POINTS_OF_GT', 1))
+        data_dict['gt_boxes'] = data_dict['gt_boxes'][mask]
+        data_dict['gt_names'] = data_dict['gt_names'][mask]
+        if 'gt_classes' in data_dict:
+            data_dict['gt_classes'] = data_dict['gt_classes'][mask]
+            data_dict['gt_scores'] = data_dict['gt_scores'][mask]
+        if 'gt_boxes_mask' in data_dict:
+            data_dict['gt_boxes_mask'] = data_dict['gt_boxes_mask'][mask]
+        return data_dict
+        
     def normalize_object_size_multiclass(self, data_dict=None, config=None):
         if data_dict is None:
             return partial(self.normalize_object_size_multiclass, config=config)
