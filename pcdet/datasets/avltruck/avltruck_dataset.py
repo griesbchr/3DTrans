@@ -86,7 +86,7 @@ class AVLTruckDataset(AVLDataset):
             names = np.zeros((0))
         return {"gt_boxes_lidar": gt_boxes_lidar, "name": names}
 
-    def get_lidar(self, idx):
+    def get_lidar(self, idx, with_beam_label=False):
         lidar_file = self.root_path / idx
 
         np_lidar_file = lidar_file.with_suffix('.npy')
@@ -98,6 +98,9 @@ class AVLTruckDataset(AVLDataset):
 
         points[:, -1] = np.clip(points[:, -1], a_min=0, a_max=1.)
         points[:,2] -= self.lidar_z_shift
+
+        if with_beam_label:
+            points = self.add_beam_labels(points)
 
         return points
     
@@ -331,3 +334,22 @@ if __name__ == '__main__':
                             creating_infos=True)
         import cProfile
         cProfile.run("for i in range(1000): dataset.__getitem__(4850)", sort="cumtime")
+    elif sys.argv.__len__() > 1 and sys.argv[1] == 'create_avl_gtdatabase_with_beamlabels':
+        import yaml
+        from easydict import EasyDict
+        dataset_cfg = EasyDict(yaml.safe_load(open(sys.argv[2])))
+        class_names=[
+                'Vehicle_Drivable_Car', 'Vehicle_Drivable_Van', 'Human',
+                'Vehicle_Ridable_Motorcycle', 'Vehicle_Ridable_Bicycle',
+                'LargeVehicle_Bus', 'LargeVehicle_TruckCab',
+                'LargeVehicle_Truck', 'Trailer']
+        
+        data_path=ROOT_DIR / 'data' / 'avltruck'
+
+        dataset = AVLTruckDataset(dataset_cfg=dataset_cfg,
+                            class_names=class_names,
+                            root_path=data_path,
+                            training=False,
+                            creating_infos=True)
+        
+        dataset.create_groundtruth_database(data_path / f'avl_infos_train.pkl', class_names, split='train', with_beam_labels=True)

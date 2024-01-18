@@ -89,26 +89,26 @@ class DataAugmentor(object):
         data_dict['points'] = points
         return data_dict
 
-    def label_point_cloud_beam(self, polar_image, points, beam=32):
-        if polar_image.shape[0] <= beam:
-            print("too small point cloud!")
-            return np.arange(polar_image.shape[0])
-        beam_label, centroids = downsample_utils.beam_label(polar_image[:,1], beam)
-        idx = np.argsort(centroids)
-        rev_idx = np.zeros_like(idx)
-        for i, t in enumerate(idx):
-            rev_idx[t] = i
-        beam_label = rev_idx[beam_label]
-        return beam_label
+    #def label_point_cloud_beam(self, polar_image, points, beam=32):
+    #    if polar_image.shape[0] <= beam:
+    #        print("too small point cloud!")
+    #        return np.arange(polar_image.shape[0])
+    #    beam_label, centroids = downsample_utils.beam_label(polar_image[:,1], beam)
+    #    idx = np.argsort(centroids)
+    #    rev_idx = np.zeros_like(idx)
+    #    for i, t in enumerate(idx):
+    #        rev_idx[t] = i
+    #    beam_label = rev_idx[beam_label]
+    #    return beam_label
 
-    def get_polar_image(self, points):
-        theta, phi = downsample_utils.compute_angles(points[:,:3])
-        r = np.sqrt(np.sum(points[:,:3]**2, axis=1))
-        polar_image = points.copy()
-        polar_image[:,0] = phi 
-        polar_image[:,1] = theta
-        polar_image[:,2] = r 
-        return polar_image
+    #def get_polar_image(self, points):
+    #    theta, phi = downsample_utils.compute_angles(points[:,:3])
+    #    r = np.sqrt(np.sum(points[:,:3]**2, axis=1))
+    #    polar_image = points.copy()
+    #    polar_image[:,0] = phi 
+    #    polar_image[:,1] = theta
+    #    polar_image[:,2] = r 
+    #    return polar_image
     
     #def beam_mask(self, data_dict=None, config=None):
     #    if data_dict is None:
@@ -133,8 +133,14 @@ class DataAugmentor(object):
     def random_points_downsample(self, data_dict=None, config=None):
         if data_dict is None:
             return partial(self.random_points_downsample, config=config)
+        if isinstance(config['POINTS_PROB'], list):
+            #assert that list len is 2
+            assert len(config['POINTS_PROB']) == 2, "POINTS_PROB must be a list containing the upper and lower bounds of the probability of keeping a point"
+            #randomly sample a probability between the upper and lower bounds
+            points_prob = np.random.uniform(config['POINTS_PROB'][0], config['POINTS_PROB'][1])
+
         points = data_dict['points']
-        points_mask = np.random.rand(points.shape[0]) < config['POINTS_PROB']
+        points_mask = np.random.rand(points.shape[0]) < points_prob
         data_dict['points'] = points[points_mask]
         return data_dict
 

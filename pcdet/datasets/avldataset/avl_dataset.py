@@ -46,6 +46,9 @@ class AVLDataset(DatasetTemplate):
 
         self.lidar_z_shift = self.dataset_cfg.get('LIDAR_Z_SHIFT', 0.0)
         
+        self.beam_label_num_beams = self.dataset_cfg.get('NUM_BEAMS', None)
+        self.beam_label_vfov = self.dataset_cfg.get('BEAM_LABEL_VFOV', None)
+
         self.map_class_to_kitti = self.dataset_cfg.get('MAP_CLASS_TO_KITTI',None)
 
         subsamplefactor = self.dataset_cfg.get('SUBSAMPLEFACTOR', None)
@@ -168,6 +171,27 @@ class AVLDataset(DatasetTemplate):
     
     def get_label(self, idx):
         raise NotImplementedError
+
+    def add_beam_labels(self, points):
+        points_beamlabel = points.copy()
+        #add z offset 
+        points_beamlabel[:,2] += self.lidar_z_shift
+
+        polar_image = self.get_polar_image(points_beamlabel)
+
+        #remove points that are not in the vertical (theta) beam label fov
+        fov_mask = (polar_image[:,1] > self.beam_label_vfov[0]) & (polar_image[:,1] < self.beam_label_vfov[1])
+        polar_image = polar_image[fov_mask]
+
+        beam_label_vfov = self.label_point_cloud_beam(polar_image, self.beam_label_num_beams)
+
+        #concat beam label to points, set masked points to -1
+        beam_labels = np.ones((points.shape[0], 1), dtype=np.int64)*-1
+        beam_labels[fov_mask] = beam_label_vfov
+
+        points = np.concatenate((points, beam_labels), axis=1)
+
+        return points
 
     def get_lidar(self, idx):
         raise NotImplementedError
@@ -412,15 +436,16 @@ class AVLDataset(DatasetTemplate):
     def create_groundtruth_database(self,
                                     info_path=None,
                                     used_classes=None,
-                                    split='train'):
+                                    split='train',
+                                    with_beam_labels=False):
         import torch
         from tqdm import tqdm
-
-        database_save_path = Path(
-            self.root_path) / ('gt_database' if split == 'train' else
-                               ('gt_database_%s' % split))
-        db_info_save_path = Path(
-            self.root_path) / ('avl_dbinfos_%s.pkl' % split)
+        if with_beam_labels:
+            database_save_path = Path(self.root_path) / ('gt_database_beamlabels' if split == 'train' else ('gt_database_%s_beamlabels' % split))
+            db_info_save_path = Path(self.root_path) / ('avl_dbinfos_%s_beamlabels.pkl' % split)
+        else:
+            database_save_path = Path(self.root_path) / ('gt_database' if split == 'train' else ('gt_database_%s' % split))
+            db_info_save_path = Path(self.root_path) / ('avl_dbinfos_%s.pkl' % split)
 
         database_save_path.mkdir(parents=True, exist_ok=True)
         all_db_infos = {}
@@ -432,7 +457,7 @@ class AVLDataset(DatasetTemplate):
             print('gt_database sample: %d/%d' % (k + 1, len(infos)))
             info = infos[k]
             sample_idx = info['point_cloud']['lidar_idx']
-            points = self.get_lidar(sample_idx)
+            points = self.get_lidar(sample_idx, with_beam_label=with_beam_labels)
             annos = info.get('annos', None)
             if annos is None:
                 continue
@@ -506,7 +531,14 @@ class AVLDataset(DatasetTemplate):
             })
 
         if "points" in get_item_list:
-            points = self.get_lidar(sample_idx)
+            #get points
+            if self.dataset_cfg.get('INCLUDE_DIODE_IDS', False):
+                points = self.get_lidar(sample_idx, with_beam_label=True)
+                input_dict.update({
+                    "num_aug_beams": self.beam_label_num_beams
+                })
+            else:
+                points = self.get_lidar(sample_idx)
 
             input_dict['points'] = points
 

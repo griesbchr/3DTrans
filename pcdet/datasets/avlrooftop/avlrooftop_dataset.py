@@ -81,29 +81,38 @@ class AVLRooftopDataset(AVLDataset):
         lidar_labels = load_file(label_path, file_type='json')
         return lidar_labels["labels"]
 
-    def get_lidar(self, idx):
+    def get_lidar(self, idx, with_beam_label=False):
         # def remove_ego_points(pts, center_radius=2.0):
         #     mask = np.linalg.norm(pts[:, :2], axis=1) > center_radius
         #     return pts[mask]
 
         lidar_path = Path(self.root_path) / idx
-        if not lidar_path.exists():
-            raise FileNotFoundError(str(lidar_path)+' not found')
-        if lidar_path.suffix == '.bin':
-            points = np.fromfile(str(lidar_path), dtype=np.float32).reshape(-1, 4)
-        elif lidar_path.suffix == '.npy':
+
+        if with_beam_label:
+            lidar_path += "_beamlabels.npy"
+            #check if file exists
+            if not lidar_path.exists():
+                raise FileNotFoundError(str(lidar_path)+' not found')
             points = np.load(lidar_path)
-        elif lidar_path.suffix == '.pkl':
-            with lidar_path.open(mode='rb') as fp:
-                points = pickle.load(fp)
-        else:
-            raise NotImplementedError
+
+        else:   
+            if not lidar_path.exists():
+                raise FileNotFoundError(str(lidar_path)+' not found')
+            if lidar_path.suffix == '.bin':
+                points = np.fromfile(str(lidar_path), dtype=np.float32).reshape(-1, 4)
+            elif lidar_path.suffix == '.npy':
+                points = np.load(lidar_path)
+            elif lidar_path.suffix == '.pkl':
+                with lidar_path.open(mode='rb') as fp:
+                    points = pickle.load(fp)
+            else:
+                raise NotImplementedError
 
         if self.train_fov_only:
             points = self.extract_fov_data(points, self.fov_angle_deg, self.lidar_heading_angle_deg)
 
         #points[:, -1] = np.clip(points[:, -1], a_min=0, a_max=1.)
-        points[:, -1] *= 255
+        points[:, 3] *= 255
         points[:,2] -= self.lidar_z_shift
 
         return points
@@ -389,3 +398,24 @@ if __name__ == '__main__':
                             creating_infos=True)
         import cProfile
         cProfile.run("for i in range(1000): dataset.__getitem__(1234)", sort="cumtime")
+    elif sys.argv.__len__() > 1 and sys.argv[1] == 'create_avl_gtdatabase_with_beamlabels':
+        import yaml
+        from easydict import EasyDict
+        dataset_cfg = EasyDict(yaml.safe_load(open(sys.argv[2])))
+        class_names = ['Vehicle_Ridable_Bicycle', 'Vehicle_Ridable_Motorcycle', 
+            'LargeVehicle_Truck', 'LargeVehicle_TruckCab', 
+            'Trailer', 'LargeVehicle_Bus', 'LargeVehicle_Bus_Bendy', 
+            'Vehicle_Drivable_Van', 'Vehicle_Drivable_Car', 
+            'Human', 'PPObject', 
+            'PPObject_Stroller', 'PPObject_BikeTrailer', 
+            'Vehicle_PMD']
+        
+        data_path=ROOT_DIR / 'data' / 'avlrooftop'
+
+        dataset = AVLRooftopDataset(dataset_cfg=dataset_cfg,
+                            class_names=class_names,
+                            root_path=data_path,
+                            training=False,
+                            creating_infos=True)
+        dataset.create_groundtruth_database(data_path / f'avl_infos_train.pkl', class_names, split='train', with_beam_labels=True)
+            
