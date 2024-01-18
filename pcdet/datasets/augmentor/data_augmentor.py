@@ -133,8 +133,14 @@ class DataAugmentor(object):
     def random_points_downsample(self, data_dict=None, config=None):
         if data_dict is None:
             return partial(self.random_points_downsample, config=config)
+        if isinstance(config['POINTS_PROB'], list):
+            #assert that list len is 2
+            assert len(config['POINTS_PROB']) == 2, "POINTS_PROB must be a list containing the upper and lower bounds of the probability of keeping a point"
+            #randomly sample a probability between the upper and lower bounds
+            points_prob = np.random.uniform(config['POINTS_PROB'][0], config['POINTS_PROB'][1])
+
         points = data_dict['points']
-        points_mask = np.random.rand(points.shape[0]) < config['POINTS_PROB']
+        points_mask = np.random.rand(points.shape[0]) < points_prob
         data_dict['points'] = points[points_mask]
         return data_dict
 
