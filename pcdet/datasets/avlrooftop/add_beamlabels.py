@@ -153,7 +153,7 @@ def main():
         for i, frame_json_filepath in enumerate(frame_json_filepaths):
             frame_id = os.path.splitext(os.path.basename(frame_json_filepath))[0].split("_")[-1]
 
-            lidar_point_data = process_json_file(frame_json_filepaths[0])
+            lidar_point_data = process_json_file(frame_json_filepath)
 
             #compute angles
             #theta, phi = compute_angles(lidar_data["lidar_front"])

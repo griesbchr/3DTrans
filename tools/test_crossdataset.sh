@@ -4,17 +4,17 @@
 
 TRAIN_DATASET=zod
 MODEL=pvrcnnpp_ros_rbds
-EXTRA_TAG=D6_50epochs_rbds0.25
-EPOCHS=(50)
+EXTRA_TAGS=(D16_50epochs_rbds0.75_1_rpds0.885_1)
+EPOCH=50
 
-EVAL_DATASET=zod
+EVAL_DATASET=avltruck
 
 BATCHSIZE=4
 NUM_WORKERS=2
 
 
 #loop over epochs
-for EPOCH in "${EPOCHS[@]}";do
+for EXTRA_TAG in "${EXTRA_TAGS[@]}";do
     #-----------------------------------------------------
     EVAL_DATASET_CFG_PATH=cfgs/dataset_configs/$EVAL_DATASET/OD/${EVAL_DATASET}_dataset.yaml
 

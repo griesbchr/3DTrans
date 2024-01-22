@@ -8,19 +8,11 @@ import torch
 import pickle
 
 
-def show_scene(pts_coors, pred_dicts=None, pts_feature=None, batch=0):
-    '''
-    make sure to open display first if X11 forwarding is used!
-
-    pts_coors: numpy array of type float64, shape (#points, 3) 
-               or (#points, 4) if first dim is batch dim 
-               or (#points, 5) if first dim is batch dim and last dim is intensity
-    pts_feature: numpy array of shape (#points, XXXX)
-
+def show_scene(batch_dict, pred_dicts=None, pts_feature=None, batch=0):
     
-    the following conversions might be useful
-    pts = points[0][:,:3].cpu().numpy().astype(np.float64)
-    '''
+    pts_coors = batch_dict["points"]
+
+    gt_boxes = batch_dict["gt_boxes"]
     
     # Check if it's a PyTorch Tensor
     if isinstance(pts_coors, torch.Tensor):
@@ -62,7 +54,7 @@ def show_scene(pts_coors, pred_dicts=None, pts_feature=None, batch=0):
     vis.create_window()
 
     opt = vis.get_render_option()
-    opt.background_color = np.asarray([0, 0, 0])
+    opt.background_color = np.asarray([0.82, 0.82, 0.82])
     opt.point_size = 1.0
 
     #create point cloud
@@ -96,6 +88,20 @@ def show_scene(pts_coors, pred_dicts=None, pts_feature=None, batch=0):
                 boxes = boxes.numpy()
         green_color = np.asarray([0, 1, 0])
         show_boxes_o3d(boxes, vis, color=green_color)
+
+    #add ground truth boxes
+    if gt_boxes is not None:
+        gt_boxes = gt_boxes[batch]
+        # Check if it's a PyTorch Tensor
+        if isinstance(gt_boxes, torch.Tensor):
+            if gt_boxes.device.type == 'cuda':
+                # to cpu
+                gt_boxes = gt_boxes.cpu().numpy()
+            else:
+                # to numpy
+                gt_boxes = gt_boxes.numpy()
+        red_color = np.asarray([1, 0, 0])
+        show_boxes_o3d(gt_boxes, vis, color=red_color)
     vis.run()
     vis.destroy_window()
 

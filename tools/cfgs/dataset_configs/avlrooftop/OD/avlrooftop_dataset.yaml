@@ -75,17 +75,18 @@ DISABLE_NLZ_FLAG_ON_POINTS: True
 USE_SHARED_MEMORY: False # it will load the data to shared memory to speed up (DO NOT USE IT IF YOU DO NOT FULLY UNDERSTAND WHAT WILL HAPPEN)
 SHARED_MEMORY_FILE_LIMIT: 35000 # set it based on the size of your shared memory
 
-INCLUDE_DIODE_IDS: False
-BEAM_LABEL_VFOV: []   #TODO
-NUM_BEAMS: 32
+#INCLUDE_DIODE_IDS: True
+#NUM_BEAMS: 32
 
 DATA_AUGMENTOR:
-  DISABLE_AUG_LIST: ["gt_sampling"]
-  #DISABLE_AUG_LIST: ['gt_sampling', 'random_world_flip', 'random_world_rotation', 'random_world_scaling']
+  #DISABLE_AUG_LIST: ["uniform_beam_downsample", "random_world_flip", "random_world_rotation", "random_world_scaling"]
+  #DISABLE_AUG_LIST: ["uniform_beam_downsample", "gt_sampling", "random_world_flip", "random_world_rotation", "random_world_scaling"]
+  DISABLE_AUG_LIST: ['placeholder']
   AUG_CONFIG_LIST:
     - NAME: gt_sampling
       USE_ROAD_PLANE: False
       DB_INFO_PATH:
+        #- avl_dbinfos_train_beamlabels.pkl
         - avl_dbinfos_train.pkl
       PREPARE:
         {
@@ -126,10 +127,20 @@ DATA_AUGMENTOR:
         #"LargeVehicle_TruckCab:0",
         #"Trailer:0",
 
+      #NUM_POINT_FEATURES: 5
       NUM_POINT_FEATURES: 4
       DATABASE_WITH_FAKELIDAR: False
       REMOVE_EXTRA_WIDTH: [0.0, 0.0, 0.0]
       LIMIT_WHOLE_SCENE: True
+
+    #- NAME: random_beam_upsample
+    #  PHI_THRESHOLD: 0.006666667    #1/300*2 rad,
+    #  R_THRESHOLD: 2.0                #meters
+#
+    #- NAME: uniform_beam_downsample
+    #  BEAM_DOWNSAMPLEFACTOR: [1]
+    #  FILTER_GT_BOXES: True
+    #  MIN_POINTS_OF_GT: 5
 
     - NAME: random_world_flip
       ALONG_AXIS_LIST: ["x", "y"]

@@ -102,7 +102,7 @@ def main():
     fov=True
     training = True             #enable augmentations
     no_detection = False
-    dataset = "zod"
+    dataset = "avlrooftop"
     checkpoint_path = None
     select_random_frame = False
     
@@ -113,12 +113,12 @@ def main():
 
     #zod 
     #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output/zod_models/dsvt_pillar/D16_100epochs/ckpt/checkpoint_epoch_100.pth"
-    #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output_okeanos/output/zod_models/pvrcnnpp/D16_50epochs/ckpt/checkpoint_epoch_50.pth"
+    checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output_okeanos/output/zod_models/pvrcnnpp/D16_50epochs/ckpt/checkpoint_epoch_50.pth"
     #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output/zod_models/pvrcnnpp_ros_rbds/D6_50epochs_rbds0.25/ckpt/checkpoint_epoch_50.pth"
-    
+    #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output_okeanos/output/zod_models/pvrcnnpp_ros_ubds/D16_50epochs_ubds4/ckpt/checkpoint_epoch_50.pth"
     #avltruck
     #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output/avltruck_models/centerpoint/D6_100epochs_4classes/ckpt/checkpoint_epoch_100.pth"
-    checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output_okeanos/output/avltruck_models/pvrcnnpp_ros/D6_50epochs/ckpt/checkpoint_epoch_50.pth"
+    #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output_okeanos/output/avltruck_models/pvrcnnpp_ros/D6_50epochs/ckpt/checkpoint_epoch_50.pth"
     #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output_okeanos/output/avltruck_models/pvrcnnpp_STzod/D6_5epochs_STzod_ft_D16_50epochs_ros/ckpt/checkpoint_epoch_3.pth"
 
     # ST avltruck -> zod
@@ -148,12 +148,12 @@ def main():
             if training:
                 args.frame_idx = 'sequences/CityStreet_dgt_2021-08-31-14-43-12_0_s0/dataset/logical_frame_000020.json'
             else:
-                args.frame_idx = 'sequences/CityStreet_dgt_2021-07-23-12-56-14_0_s0/dataset/logical_frame_000008.json'
+                args.frame_idx = 'sequences/PrimaryHighway_dgt_2021-07-30-11-04-31_0_s0/dataset/logical_frame_000008.json'
         
         image_path_frame = args.frame_idx.split("/")[1] + "_" + args.frame_idx.split("/")[-1].split(".")[0] 
 
     elif (args.dataset == "zod"):
-        cfg_path =  "/home/cgriesbacher/thesis/3DTrans/tools/cfgs/dataset_configs/zod/OD/zod_dataset.yaml"
+        cfg_path =  "/home/cgriesbacher/thesis/3DTrans/tools/cfgs/dataset_configs/zod/DA/zod_dataset.yaml"
         dataset_cfg = EasyDict(yaml.safe_load(open(cfg_path)))
         
         dataset_class_names = ["Vehicle_Car", 
@@ -170,7 +170,7 @@ def main():
             if training:
                 args.frame_idx = '009375'
             else:
-                args.frame_idx = "055261"
+                args.frame_idx = "067893"
         
         image_path_frame = args.frame_idx
 
@@ -193,9 +193,9 @@ def main():
     
         if args.frame_idx is None:
             if training:
-                args.frame_idx = 'sequences/CITY_Normal_street_20200505104752/unpacked/lidar/0019.pkl'
+                args.frame_idx = 'sequences/HIGHWAY_Normal_road_20200427122209_1/unpacked/lidar/0003.pkl'
             else:
-                args.frame_idx = 'sequences/CITY_Normal_roundabout_20200320100220_1/unpacked/lidar/0019.pkl'
+                args.frame_idx = 'sequences/HIGHWAY_Rain_road_20200528094334_2/unpacked/lidar/0041.pkl'
         
         image_path_frame = args.frame_idx.split("/")[1] + "_" + args.frame_idx.split("/")[-1].split(".")[0]
     elif (args.dataset == "kitti"):
@@ -280,6 +280,7 @@ def main():
         sample_id_list = dataset.sample_id_list
         if select_random_frame:
             args.frame_idx = random.choice(sample_id_list)
+            print("selected random frame: ", args.frame_idx)
 
         list_index = sample_id_list.index(args.frame_idx)
         #get data from info files -> is in detector class name space
@@ -301,7 +302,8 @@ def main():
         points4 = data_dict['points'].detach().cpu().numpy()[:,1:]  #get rid of batch dim
 
         eval_metric = "waymo"
-        if not training:
+        #if not training:
+        if True:
             result_str, _, eval_gt_annos, eval_det_annos= dataset.evaluation(det_annos=annos, class_names=dataset.class_names, eval_metric=eval_metric, return_annos=True)
         
             print(result_str)

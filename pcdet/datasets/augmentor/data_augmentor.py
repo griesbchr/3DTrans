@@ -101,14 +101,14 @@ class DataAugmentor(object):
     #    beam_label = rev_idx[beam_label]
     #    return beam_label
 
-    #def get_polar_image(self, points):
-    #    theta, phi = downsample_utils.compute_angles(points[:,:3])
-    #    r = np.sqrt(np.sum(points[:,:3]**2, axis=1))
-    #    polar_image = points.copy()
-    #    polar_image[:,0] = phi 
-    #    polar_image[:,1] = theta
-    #    polar_image[:,2] = r 
-    #    return polar_image
+    def get_polar_image(self, points):
+        theta, phi = downsample_utils.compute_angles(points[:,:3])
+        r = np.sqrt(np.sum(points[:,:3]**2, axis=1))
+        polar_image = points.copy()
+        polar_image[:,0] = phi 
+        polar_image[:,1] = theta
+        polar_image[:,2] = r 
+        return polar_image
     
     #def beam_mask(self, data_dict=None, config=None):
     #    if data_dict is None:
@@ -143,31 +143,43 @@ class DataAugmentor(object):
         points_mask = np.random.rand(points.shape[0]) < points_prob
         data_dict['points'] = points[points_mask]
         return data_dict
-
+    
     def random_beam_upsample(self, data_dict=None, config=None):
         if data_dict is None:
             return partial(self.random_beam_upsample, config=config)
-        points = data_dict['points']
+        
+        points_with_beam_labels = data_dict['points']
+        beam_label = points_with_beam_labels[:,-1].astype(int)
+        points = points_with_beam_labels[:,:-1]
+
         polar_image = self.get_polar_image(points)
-        beam_label = self.label_point_cloud_beam(polar_image, points, config['BEAM'])
-        new_pcs = [points]
         phi = polar_image[:,0]
-        for i in range(config['BEAM'] - 1):
-            if np.random.rand() < config['BEAM_PROB'][i]:
-                cur_beam_mask = (beam_label == i)
-                next_beam_mask = (beam_label == i + 1)
-                delta_phi = np.abs(phi[cur_beam_mask, np.newaxis] - phi[np.newaxis, next_beam_mask])
-                corr_idx = np.argmin(delta_phi,1)
-                min_delta = np.min(delta_phi,1)
-                mask = min_delta < config['PHI_THRESHOLD']
-                cur_beam = polar_image[cur_beam_mask][mask]
-                next_beam = polar_image[next_beam_mask][corr_idx[mask]]
-                new_beam = (cur_beam + next_beam)/2
-                new_pc = new_beam.copy()
-                new_pc[:,0] = np.cos(new_beam[:,1]) * np.cos(new_beam[:,0]) * new_beam[:,2]
-                new_pc[:,1] = np.cos(new_beam[:,1]) * np.sin(new_beam[:,0]) * new_beam[:,2]
-                new_pc[:,2] = np.sin(new_beam[:,1]) * new_beam[:,2]
-                new_pcs.append(new_pc)
+        
+        new_pcs = [points]
+        
+        for i in range(data_dict['num_aug_beams'] - 1):
+            cur_beam_mask = (beam_label == i)
+            next_beam_mask = (beam_label == i + 1)
+            delta_phi = np.abs(phi[cur_beam_mask, np.newaxis] - phi[np.newaxis, next_beam_mask])    #every point against every point in next beam
+            corr_idx = np.argmin(delta_phi,1)
+            min_delta = np.min(delta_phi,1)
+            mask = min_delta < config['PHI_THRESHOLD']
+            cur_beam = polar_image[cur_beam_mask][mask]
+            next_beam = polar_image[next_beam_mask][corr_idx[mask]]
+            #mask out if r distance is too large (R_THRESHOLD)
+            r_diff = np.abs(cur_beam[:,2] - next_beam[:,2])
+            mask = r_diff < config['R_THRESHOLD']
+            cur_beam = cur_beam[mask]
+            next_beam = next_beam[mask]
+            
+            #interpolate at 1/3
+            new_beam = (cur_beam + next_beam)*1/2
+            new_pc = new_beam.copy()
+            new_pc[:,0] = np.cos(new_beam[:,1]) * np.cos(new_beam[:,0]) * new_beam[:,2]
+            new_pc[:,1] = np.cos(new_beam[:,1]) * np.sin(new_beam[:,0]) * new_beam[:,2]
+            new_pc[:,2] = np.sin(new_beam[:,1]) * new_beam[:,2]
+
+            new_pcs.append(new_pc)
         data_dict['points'] = np.concatenate(new_pcs,0)
         return data_dict
 

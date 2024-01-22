@@ -82,14 +82,14 @@ class AVLRooftopDataset(AVLDataset):
         return lidar_labels["labels"]
 
     def get_lidar(self, idx, with_beam_label=False):
-        # def remove_ego_points(pts, center_radius=2.0):
-        #     mask = np.linalg.norm(pts[:, :2], axis=1) > center_radius
-        #     return pts[mask]
+        def remove_ego_points(pts, center_radius=2.0):
+            mask = np.linalg.norm(pts[:, :2], axis=1) > center_radius
+            return pts[mask]
 
         lidar_path = Path(self.root_path) / idx
 
         if with_beam_label:
-            lidar_path += "_beamlabels.npy"
+            lidar_path = Path(str(lidar_path.with_suffix("")) + "_beamlabels.npy")
             #check if file exists
             if not lidar_path.exists():
                 raise FileNotFoundError(str(lidar_path)+' not found')
@@ -115,6 +115,8 @@ class AVLRooftopDataset(AVLDataset):
         points[:, 3] *= 255
         points[:,2] -= self.lidar_z_shift
 
+        points = remove_ego_points(points)
+        
         return points
     
     def get_sequence_list(self):

@@ -125,7 +125,7 @@ def eval_one_epoch(cfg, model, dataloader, epoch_id, logger, dist_test=False, sa
     logger.info(result_str)
     ret_dict.update(result_dict)
 
-    plot_pr_curve(result_dict, result_dir, cfg)
+    #plot_pr_curve(result_dict, result_dir, cfg)
 
     logger.info('****************Evaluation done.*****************')
     return ret_dict

@@ -42,12 +42,9 @@ class AVLDataset(DatasetTemplate):
         self.lidar_heading_angle_deg = self.dataset_cfg.get('LIDAR_HEADING', 0)
         self.disregard_truncated = self.dataset_cfg.get('DISREGARD_TRUNCATED', True)
 
-        self.eval_fov_only = self.dataset_cfg.get('EVAL_FOV_ONLY', False)
-
         self.lidar_z_shift = self.dataset_cfg.get('LIDAR_Z_SHIFT', 0.0)
         
         self.beam_label_num_beams = self.dataset_cfg.get('NUM_BEAMS', None)
-        self.beam_label_vfov = self.dataset_cfg.get('BEAM_LABEL_VFOV', None)
 
         self.map_class_to_kitti = self.dataset_cfg.get('MAP_CLASS_TO_KITTI',None)
 
@@ -57,6 +54,15 @@ class AVLDataset(DatasetTemplate):
 
             #filter infors for subsampled samples
             self.avl_infos = [info for info in self.avl_infos if info['point_cloud']['lidar_idx'] in self.sample_id_list]
+
+        #get eval params
+        self.eval_fov_only = self.dataset_cfg.get('EVAL_FOV_ONLY', False)
+        self.remove_le_points = self.dataset_cfg.get('EVAL_REMOVE_LESS_OR_EQ_POINTS', 0)
+        self.ignore_classes = self.dataset_cfg.get('EVAL_IGNORE_CLASSES', [])
+        self.drop_infos = self.dataset_cfg.get('EVAL_REMOVE_CLASSES', ["DontCare", "Dont_Care", "Other"])
+        self.min_remove_overlap_bev_iou = 0.5
+        self.eval_truck_as_car = self.dataset_cfg.get('EVAL_TRUCK_AS_CAR', True) 
+
 
     def map_merge_classes(self):
         if self.dataset_cfg.get('MAP_MERGE_CLASS', None) is None:
@@ -103,6 +109,10 @@ class AVLDataset(DatasetTemplate):
 
         if not self.creating_infos:
             self.map_merge_classes()
+
+        for info in self.avl_infos:
+            outside_mask = box_utils.mask_boxes_outside_range_numpy(info['annos']['gt_boxes_lidar'], self.point_cloud_range, min_num_corners=1)
+            info['annos'] = common_utils.drop_info_with_mask(info['annos'], ~outside_mask)
 
         if self.logger is not None:
             self.logger.info('Total samples for AVL dataset: %d' %
@@ -172,26 +182,26 @@ class AVLDataset(DatasetTemplate):
     def get_label(self, idx):
         raise NotImplementedError
 
-    def add_beam_labels(self, points):
-        points_beamlabel = points.copy()
-        #add z offset 
-        points_beamlabel[:,2] += self.lidar_z_shift
-
-        polar_image = self.get_polar_image(points_beamlabel)
-
-        #remove points that are not in the vertical (theta) beam label fov
-        fov_mask = (polar_image[:,1] > self.beam_label_vfov[0]) & (polar_image[:,1] < self.beam_label_vfov[1])
-        polar_image = polar_image[fov_mask]
-
-        beam_label_vfov = self.label_point_cloud_beam(polar_image, self.beam_label_num_beams)
-
-        #concat beam label to points, set masked points to -1
-        beam_labels = np.ones((points.shape[0], 1), dtype=np.int64)*-1
-        beam_labels[fov_mask] = beam_label_vfov
-
-        points = np.concatenate((points, beam_labels), axis=1)
-
-        return points
+    #def add_beam_labels(self, points):
+    #    points_beamlabel = points.copy()
+    #    #add z offset 
+    #    points_beamlabel[:,2] += self.lidar_z_shift
+#
+    #    polar_image = self.get_polar_image(points_beamlabel)
+#
+    #    #remove points that are not in the vertical (theta) beam label fov
+    #    fov_mask = (polar_image[:,1] > self.beam_label_vfov[0]) & (polar_image[:,1] < self.beam_label_vfov[1])
+    #    polar_image = polar_image[fov_mask]
+#
+    #    beam_label_vfov = self.label_point_cloud_beam(polar_image, self.beam_label_num_beams)
+#
+    #    #concat beam label to points, set masked points to -1
+    #    beam_labels = np.ones((points.shape[0], 1), dtype=np.int64)*-1
+    #    beam_labels[fov_mask] = beam_label_vfov
+#
+    #    points = np.concatenate((points, beam_labels), axis=1)
+#
+    #    return points
 
     def get_lidar(self, idx):
         raise NotImplementedError
@@ -327,14 +337,13 @@ class AVLDataset(DatasetTemplate):
             
         eval_det_annos = copy.deepcopy(det_annos)
         eval_gt_annos = []
-        #drop_info = self.dataset_cfg.get('EVAL_REMOVE_CLASSES', None)
-        drop_infos = ["DontCare", "Dont_Care", "Other"]
+
         for info in self.avl_infos:
             if partial:
                 if info['point_cloud']['lidar_idx'] not in [det_anno['frame_id'] for det_anno in eval_det_annos]:
                     continue
             eval_gt_annos.append(copy.deepcopy(info['annos']))
-            for drop_info in drop_infos:
+            for drop_info in self.drop_infos:
                 eval_gt_annos[-1] = common_utils.drop_info_with_name(
                     eval_gt_annos[-1], name=drop_info)
 
@@ -351,38 +360,41 @@ class AVLDataset(DatasetTemplate):
                     continue
                 det_count += sum(anno['name'] == class_name)
             print("Pre Drop: Class:", class_name, "avg. gt_count/frame:", round(gt_count/len(eval_gt_annos),2), "avg. det_count/frame:", round(det_count/len(eval_det_annos),2))
-        #remove_le_points = self.dataset_cfg.get('EVAL_REMOVE_LESS_OR_EQ_POINTS', None)
-        remove_le_points = 0
-        #ignore_classes = self.dataset_cfg.get('EVAL_IGNORE_CLASSES', None)
-        #ignore_classes = ["Cyclist", "Pedestrian", "Truck"]
-        ignore_classes = []
-        #remove_overlapping = self.dataset_cfg.get('EVAL_REMOVE_OVERLAPPING_BEV_IOU', None)
-        min_remove_overlap_bev_iou = 0.5
+        
+        #change all truck labels to car labels
+        if self.eval_truck_as_car:
+            for anno in eval_gt_annos:
+                if len(anno['name'][anno['name'] == 'Truck']) > 0:
+                    anno['name'][anno['name'] == 'Truck'] = 'Vehicle'
+            for anno in eval_det_annos:
+                if len(anno['name'][anno['name'] == 'Truck']) > 0:
+                    anno['name'][anno['name'] == 'Truck'] = 'Vehicle'   
+
+        
         sum_gt = 0
         sum_det = 0
-        # remove gt objects and overlapping det objects  
+        # remove gt objects and overlapping det objects (overlapping with removed gt objects)  
         for i, gt_anno in enumerate(eval_gt_annos):
 
             remove_mask = np.zeros(len(gt_anno["name"]), dtype=bool)
             remove_mask_det = np.zeros(len(eval_det_annos[i]["name"]), dtype=bool)
 
             # remove with less then n points
-            remove_mask[gt_anno['num_points_in_gt'] <= remove_le_points] = True
+            remove_mask[gt_anno['num_points_in_gt'] <= self.remove_le_points] = True
 
             # add ignore classes to mask
-            for ignore_class in ignore_classes:
+            for ignore_class in self.ignore_classes:
                 remove_mask[ gt_anno['name'] == ignore_class] = True
                 remove_mask_det[ eval_det_annos[i]['name'] == ignore_class] = True
 
-
             #add gt boxes that are not in fov to remove mask
             if self.eval_fov_only:
-                remove_mask[~self.extract_fov_gt_nontruncated(gt_anno["gt_boxes_lidar"], 120, 0)] = True
-                remove_mask_det[~self.extract_fov_gt_nontruncated(eval_det_annos[i]["boxes_lidar"], 120, 0)] = True	
+                remove_mask[~self.extract_fov_gt_nontruncated(gt_anno["gt_boxes_lidar"], self.fov_angle_deg, 0)] = True
+                remove_mask_det[~self.extract_fov_gt_nontruncated(eval_det_annos[i]["boxes_lidar"], self.fov_angle_deg, 0)] = True	
 
             iou_matrix = iou3d_nms_utils.boxes_bev_iou_cpu(
                 gt_anno["gt_boxes_lidar"][remove_mask], eval_det_annos[i]["boxes_lidar"])
-            remove_mask_det[np.any(iou_matrix > min_remove_overlap_bev_iou, axis=0)] = True
+            remove_mask_det[np.any(iou_matrix > self.min_remove_overlap_bev_iou, axis=0)] = True
             
             #print("dropping", np.sum(remove_mask), "gt objects and", np.sum(remove_mask_det), "det objects")
             sum_gt += np.sum(remove_mask)
