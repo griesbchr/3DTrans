@@ -143,7 +143,7 @@ def plot_pr_curve(result_dict, result_dir, cfg):
 
     #do a subplot for each class in sns for the precision recall curve
     #to two seperate plots side by side for level 1 and level 2
-    #the dimentionality of the plot grid thus is 2 x len(class_names)
+    #the dimentionality of the plot grid thus is 2 x len(class_names)q
     fig, axs = plt.subplots(len(class_names),2, figsize=(20, 10))
     fig.suptitle('Precision Recall for ' + cfg.TAG + "-" + cfg.EXP_GROUP_PATH + "-" + cfg.extra_tag + "@" + cfg.DATA_CONFIG.DATASET, fontsize=16)
     for i, class_name in enumerate(class_names):
