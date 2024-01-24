@@ -49,9 +49,8 @@ DATA_CONFIG:
               LIMIT_WHOLE_SCENE: True
 
             - NAME: random_beam_upsample
-              BEAM_UPSAMPLE_PROB: 0.75
               PHI_THRESHOLD: 0.006666667    #1/300*2 rad,
-              R_THRESHOLD: 2.0                #meters
+              R_THRESHOLD: 200.0                #meters
             
             - NAME: random_world_flip
               ALONG_AXIS_LIST: ["x", "y"]

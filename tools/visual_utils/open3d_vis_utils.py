@@ -268,6 +268,6 @@ def draw_scenes(points, gt_boxes=None, ref_boxes=None, ref_labels=None, ref_scor
             os.makedirs(image_path_dir)
 
         vis.capture_screen_image(image_path, do_render=True)
-        print("image saved to: ", image_path)
+        print("image saved to: 3DTrans/tools/"+image_path)
     vis.run()
     vis.destroy_window()

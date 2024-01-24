@@ -2,19 +2,20 @@
 #################CROSS DATASET TESTING#################
 # Test a single detector on a single arbitrary dataset
 
-TRAIN_DATASET=zod
-MODEL=pvrcnnpp_ros_rbds
-EXTRA_TAGS=(D16_50epochs_rbds0.75_1_rpds0.885_1)
+TRAIN_DATASET=avlrooftop
+MODEL=pvrcnnpp_ros
+EXTRA_TAG=D1_50epochs
 EPOCH=50
 
-EVAL_DATASET=avltruck
+EVAL_DATASETS=(zod avltruck)
 
 BATCHSIZE=4
 NUM_WORKERS=2
 
 
-#loop over epochs
-for EXTRA_TAG in "${EXTRA_TAGS[@]}";do
+#loop over eval datasets
+for EVAL_DATASET in "${EVAL_DATASETS[@]}"
+do
     #-----------------------------------------------------
     EVAL_DATASET_CFG_PATH=cfgs/dataset_configs/$EVAL_DATASET/OD/${EVAL_DATASET}_dataset.yaml
 

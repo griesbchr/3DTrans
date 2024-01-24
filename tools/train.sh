@@ -21,10 +21,9 @@ python train.py --cfg_file cfgs/$CONFIG_FILE --extra_tag $EXTRA_TAG  --epochs $E
 #bash scripts/dist_train.sh $NUM_GPUS --cfg_file cfgs/$CONFIG_FILE --extra_tag $EXTRA_TAG  --epochs $EPOCHS --subsample $SUBSAMPLE --ckpt_save_interval $CKPT_SAVE_INTERVAL --batch_size $BATCHSIZE --workers $WORKERS
 
 
-
-DATASET=zod
-MODEL=pvrcnnpp_ros_rbus
-EXTRA_TAG=D1_50epochs_R2
+DATASET=avlrooftop
+MODEL=pvrcnnpp_ros_rbus1
+EXTRA_TAG=D1_50epochs_R200
 
 EPOCHS=50
 CKPT_SAVE_INTERVAL=50

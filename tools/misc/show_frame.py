@@ -93,6 +93,52 @@ def segment_lidar_to_beams(orig_points, num_beams):
     return beam_label
 
 
+def plot_pr_curve(result_dict, result_dir):
+    import matplotlib.pyplot as plt
+    import os
+    import seaborn as sns
+
+    #find class names
+    class_names = list(set([key.split('_')[0] for key in result_dict if 'AP' in key]))
+
+    #sort class names alphabetically inverse
+    class_names.sort(reverse=True)
+
+    #do a subplot for each class in sns for the precision recall curve
+    #to two seperate plots side by side for level 1 and level 2
+    #the dimentionality of the plot grid thus is 2 x len(class_names)q
+    fig, axs = plt.subplots(len(class_names),2, figsize=(20, 10))
+    #fig.suptitle('Precision Recall for ' + cfg.TAG + "-" + cfg.EXP_GROUP_PATH + "-" + cfg.extra_tag + "@" + cfg.DATA_CONFIG.DATASET, fontsize=16)
+    for i, class_name in enumerate(class_names):
+        for j, level in enumerate(['1', '2']):
+            #get all keys that contain the class name and level
+            keys = [key for key in result_dict if class_name in key and level in key and "PR" in key]
+            
+            #get first value that contain the class name and level
+            values = [result_dict[key] for key in keys][0]
+
+            #get recall and precision values
+            recalls = values[:,1]
+            precisions = values[:,0]
+
+            #plot recall vs. precision
+            axs[i, j].plot(recalls, precisions)
+            axs[i, j].set_title(class_name + ' Level ' + level)
+            axs[i, j].set_xlabel('Recall')
+            axs[i, j].set_ylabel('Precision')
+            axs[i, j].set_ylim([0, 1.01])
+            axs[i, j].set_xlim([0, 1.01])
+            axs[i, j].grid(True)
+
+            #todo plot confusion matrix for new waymo eval
+
+    plt.tight_layout()
+    plt.subplots_adjust(top=0.9)
+    fig_path = os.path.join(result_dir, 'pr_curve.png')
+    plt.savefig(fig_path)
+    print('Saved pr_curve.png to %s' % fig_path)
+    plt.close(fig)   
+
 def main():
     os.chdir("/home/cgriesbacher/thesis/3DTrans/tools")
     args = parse_args()
@@ -100,9 +146,9 @@ def main():
     save_image = True
 
     fov=True
-    training = True             #enable augmentations
+    training = False             #enable augmentations
     no_detection = False
-    dataset = "avlrooftop"
+    dataset = "avltruck"
     checkpoint_path = None
     select_random_frame = False
     
@@ -110,12 +156,14 @@ def main():
     #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output_okeanos/output/avltruck_models/pvrcnnpp_STrooftop/D1_5epochs_STrooftop_ft_D6_50epochs_ros_06_015_thresh_high_lr/ckpt/checkpoint_epoch_4.pth"
     #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output_okeanos/output/avltruck_models/pvrcnnpp_ros/D6_50epochs/ckpt/checkpoint_epoch_50.pth"
     #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output_okeanos/output/avlrooftop_models/pvrcnnpp/D1_50epochs/ckpt/checkpoint_epoch_50.pth"
+    checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output/avlrooftop_models/pvrcnnpp_ros_rbus/D1_50epochs_R2/ckpt/checkpoint_epoch_50.pth"
 
     #zod 
     #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output/zod_models/dsvt_pillar/D16_100epochs/ckpt/checkpoint_epoch_100.pth"
-    checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output_okeanos/output/zod_models/pvrcnnpp/D16_50epochs/ckpt/checkpoint_epoch_50.pth"
+    #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output_okeanos/output/zod_models/pvrcnnpp/D16_50epochs/ckpt/checkpoint_epoch_50.pth"
     #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output/zod_models/pvrcnnpp_ros_rbds/D6_50epochs_rbds0.25/ckpt/checkpoint_epoch_50.pth"
     #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output_okeanos/output/zod_models/pvrcnnpp_ros_ubds/D16_50epochs_ubds4/ckpt/checkpoint_epoch_50.pth"
+    
     #avltruck
     #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output/avltruck_models/centerpoint/D6_100epochs_4classes/ckpt/checkpoint_epoch_100.pth"
     #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output_okeanos/output/avltruck_models/pvrcnnpp_ros/D6_50epochs/ckpt/checkpoint_epoch_50.pth"
@@ -148,7 +196,7 @@ def main():
             if training:
                 args.frame_idx = 'sequences/CityStreet_dgt_2021-08-31-14-43-12_0_s0/dataset/logical_frame_000020.json'
             else:
-                args.frame_idx = 'sequences/PrimaryHighway_dgt_2021-07-30-11-04-31_0_s0/dataset/logical_frame_000008.json'
+                args.frame_idx = 'sequences/CityThoroughfare_dgt_2021-11-29-10-09-07_0_s0/dataset/logical_frame_000015.json'
         
         image_path_frame = args.frame_idx.split("/")[1] + "_" + args.frame_idx.split("/")[-1].split(".")[0] 
 
@@ -195,7 +243,7 @@ def main():
             if training:
                 args.frame_idx = 'sequences/HIGHWAY_Normal_road_20200427122209_1/unpacked/lidar/0003.pkl'
             else:
-                args.frame_idx = 'sequences/HIGHWAY_Rain_road_20200528094334_2/unpacked/lidar/0041.pkl'
+                args.frame_idx = 'sequences/CITY_Normal_roundabout_20200309145930/unpacked/lidar/0026.pkl'
         
         image_path_frame = args.frame_idx.split("/")[1] + "_" + args.frame_idx.split("/")[-1].split(".")[0]
     elif (args.dataset == "kitti"):
@@ -302,10 +350,9 @@ def main():
         points4 = data_dict['points'].detach().cpu().numpy()[:,1:]  #get rid of batch dim
 
         eval_metric = "waymo"
-        #if not training:
-        if True:
-            result_str, _, eval_gt_annos, eval_det_annos= dataset.evaluation(det_annos=annos, class_names=dataset.class_names, eval_metric=eval_metric, return_annos=True)
-        
+        if not training:
+            result_str, results_dict, eval_gt_annos, eval_det_annos= dataset.evaluation(det_annos=annos, class_names=dataset.class_names, eval_metric=eval_metric, return_annos=True)
+            plot_pr_curve(results_dict, "./")
             print(result_str)
 
             print("remaining gt boxes for nontruncated method:", dataset.extract_fov_gt_nontruncated(data_dict["gt_boxes"][0,:,:7].cpu().numpy(), 120, 0).sum())

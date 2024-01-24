@@ -57,7 +57,7 @@ DATA_CONFIG:
         MIN_POINTS_OF_GT: 5
       
       - NAME: uniform_beam_downsample
-        BEAM_DOWNSAMPLEFACTOR: 4
+        BEAM_DOWNSAMPLEFACTOR: 2
         FILTER_GT_BOXES: True
         MIN_POINTS_OF_GT: 5
       

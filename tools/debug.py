@@ -82,7 +82,7 @@ def show_scene(batch_dict, pred_dicts=None, pts_feature=None, batch=0):
         if isinstance(boxes, torch.Tensor):
             if boxes.device.type == 'cuda':
                 # to cpu
-                boxes = boxes.cpu().numpy()
+                boxes = boxes.detach().cpu().numpy()
             else:
                 # to numpy
                 boxes = boxes.numpy()

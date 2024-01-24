@@ -157,9 +157,17 @@ class DataAugmentor(object):
         
         new_pcs = [points]
         
+        #get upsample prob, 1 is default if not in cfg
+        beam_upsample_prob = config.get('BEAM_UPSAMPLE_PROB', 1)
+        
         for i in range(data_dict['num_aug_beams'] - 1):
+            if np.random.rand() > beam_upsample_prob:
+                continue
             cur_beam_mask = (beam_label == i)
             next_beam_mask = (beam_label == i + 1)
+            #contunue if either beam is empty
+            if np.sum(cur_beam_mask) == 0 or np.sum(next_beam_mask) == 0:
+                continue
             delta_phi = np.abs(phi[cur_beam_mask, np.newaxis] - phi[np.newaxis, next_beam_mask])    #every point against every point in next beam
             corr_idx = np.argmin(delta_phi,1)
             min_delta = np.min(delta_phi,1)
@@ -172,7 +180,6 @@ class DataAugmentor(object):
             cur_beam = cur_beam[mask]
             next_beam = next_beam[mask]
             
-            #interpolate at 1/3
             new_beam = (cur_beam + next_beam)*1/2
             new_pc = new_beam.copy()
             new_pc[:,0] = np.cos(new_beam[:,1]) * np.cos(new_beam[:,0]) * new_beam[:,2]
