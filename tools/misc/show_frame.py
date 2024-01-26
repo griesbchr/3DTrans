@@ -92,7 +92,6 @@ def segment_lidar_to_beams(orig_points, num_beams):
 
     return beam_label
 
-
 def plot_pr_curve(result_dict, result_dir):
     import matplotlib.pyplot as plt
     import os
@@ -138,7 +137,7 @@ def plot_pr_curve(result_dict, result_dir):
     plt.savefig(fig_path)
     print('Saved pr_curve.png to %s' % fig_path)
     plt.close(fig)   
-
+    
 def main():
     os.chdir("/home/cgriesbacher/thesis/3DTrans/tools")
     args = parse_args()
@@ -150,13 +149,12 @@ def main():
     no_detection = False
     dataset = "avltruck"
     checkpoint_path = None
-    select_random_frame = False
+    select_random_frame = True
     
     #avlrooftop
     #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output_okeanos/output/avltruck_models/pvrcnnpp_STrooftop/D1_5epochs_STrooftop_ft_D6_50epochs_ros_06_015_thresh_high_lr/ckpt/checkpoint_epoch_4.pth"
-    #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output_okeanos/output/avltruck_models/pvrcnnpp_ros/D6_50epochs/ckpt/checkpoint_epoch_50.pth"
-    #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output_okeanos/output/avlrooftop_models/pvrcnnpp/D1_50epochs/ckpt/checkpoint_epoch_50.pth"
-    checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output/avlrooftop_models/pvrcnnpp_ros_rbus/D1_50epochs_R2/ckpt/checkpoint_epoch_50.pth"
+    #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output/avlrooftop_models/pvrcnnpp_ros/D1_50epochs/ckpt/checkpoint_epoch_50.pth"
+    #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output/avlrooftop_models/pvrcnnpp_ros_ubus2/D1_50epochs_R2/ckpt/checkpoint_epoch_50.pth"
 
     #zod 
     #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output/zod_models/dsvt_pillar/D16_100epochs/ckpt/checkpoint_epoch_100.pth"
@@ -172,6 +170,9 @@ def main():
     # ST avltruck -> zod
     #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output_okeanos/output/avltruck_models/pvrcnnpp_STzod/D16_20epochs_STzod_ft_D6_50epochs_fov_gace_labelupdate_nogaceretrain_1/ckpt/checkpoint_epoch_1.pth"
     
+    checkpoint_path = ["/home/cgriesbacher/thesis/3DTrans/output/avlrooftop_models/pvrcnnpp_ros_ubus2/D1_50epochs_R2/ckpt/checkpoint_epoch_50.pth", 
+                       "/home/cgriesbacher/thesis/3DTrans/output/avltruck_models/pvrcnnpp_ros/D6_50epochs/ckpt/checkpoint_epoch_50.pth"]
+
     if (args.dataset == None):
         args.dataset = dataset
 
@@ -179,7 +180,7 @@ def main():
         args.ckpt = checkpoint_path
     
     if (args.dataset == "avltruck"):
-        cfg_path =  "/home/cgriesbacher/thesis/3DTrans/tools/cfgs/dataset_configs/avltruck/OD/avltruck_dataset.yaml"
+        cfg_path =  "/home/cgriesbacher/thesis/3DTrans/tools/cfgs/dataset_configs/avltruck/DA/avltruck_dataset.yaml"
         dataset_cfg = EasyDict(yaml.safe_load(open(cfg_path)))
 
         dataset_class_names = ['Vehicle_Drivable_Car',
@@ -201,7 +202,7 @@ def main():
         image_path_frame = args.frame_idx.split("/")[1] + "_" + args.frame_idx.split("/")[-1].split(".")[0] 
 
     elif (args.dataset == "zod"):
-        cfg_path =  "/home/cgriesbacher/thesis/3DTrans/tools/cfgs/dataset_configs/zod/DA/zod_dataset.yaml"
+        cfg_path =  "/home/cgriesbacher/thesis/3DTrans/tools/cfgs/dataset_configs/zod/OD/zod_dataset.yaml"
         dataset_cfg = EasyDict(yaml.safe_load(open(cfg_path)))
         
         dataset_class_names = ["Vehicle_Car", 
@@ -218,12 +219,12 @@ def main():
             if training:
                 args.frame_idx = '009375'
             else:
-                args.frame_idx = "067893"
+                args.frame_idx = "012360"
         
         image_path_frame = args.frame_idx
 
     elif (args.dataset == "avlrooftop"):
-        cfg_path =  "/home/cgriesbacher/thesis/3DTrans/tools/cfgs/dataset_configs/avlrooftop/OD/avlrooftop_dataset.yaml"
+        cfg_path =  "/home/cgriesbacher/thesis/3DTrans/tools/cfgs/dataset_configs/avlrooftop/DA/avlrooftop_dataset.yaml"
         dataset_cfg = EasyDict(yaml.safe_load(open(cfg_path)))
     
         dataset_class_names = ["Vehicle_Drivable_Car",
@@ -241,7 +242,7 @@ def main():
     
         if args.frame_idx is None:
             if training:
-                args.frame_idx = 'sequences/HIGHWAY_Normal_road_20200427122209_1/unpacked/lidar/0003.pkl'
+                args.frame_idx = 'sequences/CITY_Rain_junction_20200511124748_1/unpacked/lidar/0019.pkl'
             else:
                 args.frame_idx = 'sequences/CITY_Normal_roundabout_20200309145930/unpacked/lidar/0026.pkl'
         
@@ -277,10 +278,20 @@ def main():
     image_path = "viz/" + args.dataset
 
     if args.ckpt != None:
-        train_dataset = args.ckpt.split("/")[-5]
-        train_detector = args.ckpt.split("/")[-4]
-        train_name = args.ckpt.split("/")[-3]
-        train_epoch = args.ckpt.split("/")[-1].split(".")[0].split("_")[-1]
+        if isinstance(args.ckpt, list):
+            ckpt = args.ckpt[0]
+        train_dataset = ckpt.split("/")[-5]
+        train_detector = ckpt.split("/")[-4]
+        train_name = ckpt.split("/")[-3]
+        train_epoch = ckpt.split("/")[-1].split(".")[0].split("_")[-1]
+        #get model config 
+        ckpt_path = Path(ckpt)
+        cfg_path = [file for file in ckpt_path.parent.parent.glob('*.yaml')]
+        assert len(cfg_path) == 1, "More or less than one config file found in "+ckpt_path.parent.parent.__str__()
+        cfg_path = cfg_path[0]
+
+        #parse config
+        cfg_from_yaml_file(cfg_path, cfg)
 
         image_path += "/" + train_dataset + "_" + train_detector + "_" + train_name + "_" + train_epoch
 
@@ -290,22 +301,11 @@ def main():
 
     #load model if specified
     if args.ckpt is not None:
+        #check if list
+        if not isinstance(args.ckpt, list):
+            args.ckpt = [args.ckpt]
 
-        #get model config 
-        ckpt_path = Path(args.ckpt)
-        cfg_path = [file for file in ckpt_path.parent.parent.glob('*.yaml')]
-        assert len(cfg_path) == 1, "More or less than one config file found in "+ckpt_path.parent.parent.__str__()
-        cfg_path = cfg_path[0]
-
-        #parse config
-        cfg_from_yaml_file(cfg_path, cfg)
-
-        # some detectors use different range or voxel preprocessing
-        if hasattr(cfg.DATA_CONFIG, "POINT_CLOUD_RANGE"):
-            dataset_cfg.POINT_CLOUD_RANGE = cfg.DATA_CONFIG.POINT_CLOUD_RANGE
-        if hasattr(cfg.DATA_CONFIG, "DATA_PROCESSOR"):
-            dataset_cfg.DATA_PROCESSOR = cfg.DATA_CONFIG.DATA_PROCESSOR
-
+        #select frame and get data dict
         #build dataset
         dataset, train_loader, train_sampler = build_dataloader(dataset_cfg=dataset_cfg,
                                     class_names=cfg.CLASS_NAMES,
@@ -314,16 +314,6 @@ def main():
                                     workers=0,
                                     logger=logger,
                                     training=training) 
-        
-        #build model
-        model = build_network(model_cfg=cfg.MODEL, num_class=len(cfg.CLASS_NAMES), dataset=dataset)
-        model.load_params_from_file(filename=args.ckpt, logger=logger, to_cpu=False)
-        model.cuda()
-        model.eval()
-
-        #calc model params
-        #count_parameters(model)
-
         #find sample index for frame
         sample_id_list = dataset.sample_id_list
         if select_random_frame:
@@ -331,6 +321,7 @@ def main():
             print("selected random frame: ", args.frame_idx)
 
         list_index = sample_id_list.index(args.frame_idx)
+
         #get data from info files -> is in detector class name space
         data_dict = dataset.__getitem__(list_index)
         if no_detection:
@@ -339,39 +330,71 @@ def main():
             return
         data_dict = dataset.collate_batch([data_dict])
 
-        #get eval frame        
-        with torch.no_grad():
-            load_data_to_gpu(data_dict)
-            pred_dicts, _ = model.forward(data_dict)
 
-        annos = dataset.generate_prediction_dicts(
-                data_dict, pred_dicts, dataset.class_names, None)
-        
-        points4 = data_dict['points'].detach().cpu().numpy()[:,1:]  #get rid of batch dim
+        det_boxes = []
+        det_labels = []
+        det_scores = []
+        for i, ckpt in enumerate(args.ckpt):
+            #get model config 
+            ckpt_path = Path(ckpt)
+            cfg_path = [file for file in ckpt_path.parent.parent.glob('*.yaml')]
+            assert len(cfg_path) == 1, "More or less than one config file found in "+ckpt_path.parent.parent.__str__()
+            cfg_path = cfg_path[0]
 
-        eval_metric = "waymo"
-        if not training:
-            result_str, results_dict, eval_gt_annos, eval_det_annos= dataset.evaluation(det_annos=annos, class_names=dataset.class_names, eval_metric=eval_metric, return_annos=True)
-            plot_pr_curve(results_dict, "./")
-            print(result_str)
+            #parse config
+            cfg_from_yaml_file(cfg_path, cfg)
 
-            print("remaining gt boxes for nontruncated method:", dataset.extract_fov_gt_nontruncated(data_dict["gt_boxes"][0,:,:7].cpu().numpy(), 120, 0).sum())
-            print("remaining gt boxes for center method:", dataset.extract_fov_gt(data_dict["gt_boxes"][0,:,:7].cpu().numpy(), 120, 0).sum())
-        
-            gt_boxes = eval_gt_annos[0]["gt_boxes_lidar"]
-            det_boxes = eval_det_annos[0]["boxes_lidar"]
+            # some detectors use different range or voxel preprocessing
+            if hasattr(cfg.DATA_CONFIG, "POINT_CLOUD_RANGE"):
+                dataset_cfg.POINT_CLOUD_RANGE = cfg.DATA_CONFIG.POINT_CLOUD_RANGE
+            if hasattr(cfg.DATA_CONFIG, "DATA_PROCESSOR"):
+                dataset_cfg.DATA_PROCESSOR = cfg.DATA_CONFIG.DATA_PROCESSOR
 
-            points4 = dataset.extract_fov_data(points4, 120, 0)
+            #build model
+            model = build_network(model_cfg=cfg.MODEL, num_class=len(cfg.CLASS_NAMES), dataset=dataset)
+            model.load_params_from_file(filename=ckpt, logger=logger, to_cpu=False)
+            model.cuda()
+            model.eval()
 
-            scores = eval_det_annos[0]["score"]
-            gt_boxes_lidar = gt_boxes
-        else:
-            gt_boxes_lidar = data_dict["gt_boxes"][0].cpu().numpy()
-            det_boxes = annos[0]["boxes_lidar"]
-            scores = annos[0]["score"]
+            #get eval frame        
+            with torch.no_grad():
+                load_data_to_gpu(data_dict)
+                pred_dicts, _ = model.forward(data_dict)
 
-        points = points4[:,:3]
-        color = points4[:,-1]
+            annos = dataset.generate_prediction_dicts(
+                    data_dict, pred_dicts, dataset.class_names, None)
+            
+            points4 = data_dict['points'].detach().cpu().numpy()[:,1:]  #get rid of batch dim
+
+            eval_metric = "waymo"
+            if not training:
+                result_str, results_dict, eval_gt_annos, eval_det_annos= dataset.evaluation(det_annos=annos, class_names=dataset.class_names, eval_metric=eval_metric, return_annos=True)
+                plot_pr_curve(results_dict, "./")
+                print(result_str)
+
+                print("remaining gt boxes for nontruncated method:", dataset.extract_fov_gt_nontruncated(data_dict["gt_boxes"][0,:,:7].cpu().numpy(), 120, 0).sum())
+                print("remaining gt boxes for center method:", dataset.extract_fov_gt(data_dict["gt_boxes"][0,:,:7].cpu().numpy(), 120, 0).sum())
+            
+                gt_boxes = eval_gt_annos[0]["gt_boxes_lidar"]
+                det_boxes.append(eval_det_annos[0]["boxes_lidar"])
+                det_labels.append(np.ones(eval_det_annos[0]["boxes_lidar"].shape[0])*i)
+                points4 = dataset.extract_fov_data(points4, 120, 0)
+
+                det_scores.append(eval_det_annos[0]["score"])
+                gt_boxes_lidar = gt_boxes
+            else:
+                gt_boxes_lidar = data_dict["gt_boxes"][0].cpu().numpy()
+                det_boxes.append(annos[0]["boxes_lidar"])
+                det_labels.append(np.ones(det_boxes.shape[0])*i)
+                det_scores.append(annos[0]["score"])
+
+            points = points4[:,:3]
+            color = points4[:,-1]
+
+        det_boxes = np.concatenate(det_boxes, axis=0)
+        det_labels = np.concatenate(det_labels, axis=0)
+        det_labels = det_labels.astype(np.int64)
+        det_scores = np.concatenate(det_scores, axis=0)
 
         #num_beams = 128
         
@@ -419,7 +442,9 @@ def main():
         color=points4[:,-1]
         points=points4[:,:3]
         det_boxes=None
-        scores = None      
+        det_labels=None
+        scores = None
+
     if save_image:
         #insert image view here, can be copied by pressing Ctrl+C in open3d window and paste in editor file
         
@@ -433,10 +458,10 @@ def main():
 			"zoom" : 0.079999999999999613
 		}
         from tools.visual_utils import open3d_vis_utils as vis
-        vis.draw_scenes(points, gt_boxes_lidar,det_boxes ,point_colors=color, view_control=view_control, image_path=image_path, ref_scores=scores)
+        vis.draw_scenes(points, gt_boxes_lidar, det_boxes, det_labels=det_labels, point_colors=color, view_control=view_control, image_path=image_path, det_scores=det_scores)
     else:
         from tools.visual_utils import open3d_vis_utils as vis
-        vis.draw_scenes(points, gt_boxes_lidar,det_boxes ,point_colors=color, ref_scores=scores)
+        vis.draw_scenes(points, gt_boxes_lidar,det_boxes ,point_colors=color, det_scores=scores)
 
     return
 

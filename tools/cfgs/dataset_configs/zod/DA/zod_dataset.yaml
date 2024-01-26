@@ -35,6 +35,21 @@ POINT_CLOUD_RANGE: [-75.2, -75.2, -2, 123.2, 75.2, 4] # ZOD
 
 FOV_POINTS_ONLY: True
 
+POST_SN_ENABLED: False
+POST_SN_SOURCE: "AVLTruck"
+POST_SN_MAP: {
+  "AVLRooftop":   
+    {"Vehicle": [-0.256, -0.191, -0.086],
+    "Cyclist": [-0.374, -0.093, -0.046],
+    "Pedestrian": [-0.283, -0.219, -0.065],
+    "Truck": [1.6, -0.568, -0.339]},
+  "AVLTruck":
+    {"Vehicle": [-0.031, -0.007, -0.018],
+    "Cyclist": [-0.144, -0.038, 0.119],
+    "Pedestrian": [-0.143, -0.075, 0.029],
+    "Truck": [2.102, -0.112, -0.135]},
+}
+
 #dont calculate loss for boxes that are truncated
 DISREGARD_TRUNCATED: True
 

@@ -62,6 +62,9 @@ class AVLDataset(DatasetTemplate):
         self.drop_infos = self.dataset_cfg.get('EVAL_REMOVE_CLASSES', ["DontCare", "Dont_Care", "Other"])
         self.min_remove_overlap_bev_iou = 0.5
         self.eval_truck_as_car = self.dataset_cfg.get('EVAL_TRUCK_AS_CAR', True) 
+        self.post_sn = self.dataset_cfg.get('POST_SN_ENABLED', False)
+        self.post_sn_source = self.dataset_cfg.get('POST_SN_SOURCE', None)
+        self.post_sn_map = self.dataset_cfg.get('POST_SN_MAP', None)
 
 
     def map_merge_classes(self):
@@ -423,14 +426,26 @@ class AVLDataset(DatasetTemplate):
         if self.eval_fov_only:
             print("\ndoing fov only evaluation\n")
                 
-                
-
-
         # z_shift = self.dataset_cfg.get('TRAINING_Z_SHIFT', None)
         # if z_shift is not None:
         #     for anno in eval_det_annos:
         #         anno['boxes_lidar'][:, 2] += z_shift
-    
+            
+        #apply post-statistical normalization
+        if self.post_sn:
+            self.logger.info("post-statistical normalization enabled")
+            if self.post_sn_source is None:
+                raise ValueError("post-statistical normalization is enabled but no source is defined")
+            if self.post_sn_map is None:
+                raise ValueError("post-statistical normalization is enabled but no map is defined")
+            
+            sn_map = self.post_sn_map[self.post_sn_source]
+            #apply sn to all det boxes
+            for anno in eval_det_annos:
+                lwh_offset = np.zeros_like(anno['boxes_lidar'][:, 3:6])
+                for clss in sn_map:
+                    lwh_offset[anno['name'] == clss] = sn_map[clss]
+                anno['boxes_lidar'][:, 3:6] += lwh_offset
 
         if kwargs['eval_metric'] == 'kitti':
             ap_result_str, ap_dict = kitti_eval(eval_det_annos, eval_gt_annos, self.map_class_to_kitti, class_names)

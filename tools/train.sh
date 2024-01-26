@@ -2,7 +2,7 @@
 # Train a single detector on an arbitrary dataset
 
 DATASET=avlrooftop
-MODEL=pvrcnnpp_ros_rbus
+MODEL=pvrcnnpp_ros_ubus2
 EXTRA_TAG=D1_50epochs_R2
 
 EPOCHS=50
@@ -22,7 +22,7 @@ python train.py --cfg_file cfgs/$CONFIG_FILE --extra_tag $EXTRA_TAG  --epochs $E
 
 
 DATASET=avlrooftop
-MODEL=pvrcnnpp_ros_rbus1
+MODEL=pvrcnnpp_ros_ubus200
 EXTRA_TAG=D1_50epochs_R200
 
 EPOCHS=50

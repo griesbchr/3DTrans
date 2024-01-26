@@ -2,12 +2,12 @@
 #################CROSS DATASET TESTING#################
 # Test a single detector on a single arbitrary dataset
 
-TRAIN_DATASET=avlrooftop
-MODEL=pvrcnnpp_ros
-EXTRA_TAG=D1_50epochs
-EPOCH=50
+TRAIN_DATASET=avltruck
+MODEL=pvrcnnpp_sn2zod
+EXTRA_TAG=D6_10epochs_ft_D6_50epochs_ros
+EPOCH=10
 
-EVAL_DATASETS=(zod avltruck)
+EVAL_DATASETS=(zod)
 
 BATCHSIZE=4
 NUM_WORKERS=2
@@ -17,7 +17,7 @@ NUM_WORKERS=2
 for EVAL_DATASET in "${EVAL_DATASETS[@]}"
 do
     #-----------------------------------------------------
-    EVAL_DATASET_CFG_PATH=cfgs/dataset_configs/$EVAL_DATASET/OD/${EVAL_DATASET}_dataset.yaml
+    EVAL_DATASET_CFG_PATH=cfgs/dataset_configs/$EVAL_DATASET/DA/${EVAL_DATASET}_dataset.yaml
 
     ROOT_PATH=/home/cgriesbacher/thesis/3DTrans
     RUN_PATH=${TRAIN_DATASET}_models/$MODEL/$EXTRA_TAG

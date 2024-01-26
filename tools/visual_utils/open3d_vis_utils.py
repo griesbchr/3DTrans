@@ -12,10 +12,10 @@ from PIL import Image, ImageFont, ImageDraw
 from pyquaternion import Quaternion
 
 box_colormap = [
-    [1, 1, 1],
     [0, 1, 0],
     [0, 1, 1],
     [1, 1, 0],
+    [1, 1, 1],
 ]
 
 
@@ -183,13 +183,13 @@ def plane_coefficients_to_euler(coefficients):
 
 
 
-def draw_scenes(points, gt_boxes=None, ref_boxes=None, ref_labels=None, ref_scores=None, point_colors=None, draw_origin=True, fit_ground_plane=False, image_path=None, view_control=None):
+def draw_scenes(points, gt_boxes=None, det_boxes=None, det_labels=None, det_scores=None, point_colors=None, draw_origin=True, fit_ground_plane=False, image_path=None, view_control=None):
     if isinstance(points, torch.Tensor):
         points = points.cpu().numpy()
     if isinstance(gt_boxes, torch.Tensor):
         gt_boxes = gt_boxes.cpu().numpy()
-    if isinstance(ref_boxes, torch.Tensor):
-        ref_boxes = ref_boxes.cpu().numpy()
+    if isinstance(det_boxes, torch.Tensor):
+        det_boxes = det_boxes.cpu().numpy()
 
     #if points dim is 5, remove batch dim
     if len(points.shape) == 5:
@@ -222,8 +222,8 @@ def draw_scenes(points, gt_boxes=None, ref_boxes=None, ref_labels=None, ref_scor
     if gt_boxes is not None:
         vis = draw_box(vis, gt_boxes, (0.99, 0.0, 0.0))
 
-    if ref_boxes is not None:
-        vis = draw_box(vis, ref_boxes, (0.0, 0.99, 0.0), ref_labels, ref_scores)
+    if det_boxes is not None:
+        vis = draw_box(vis, det_boxes, (0.0, 0.99, 0.0), det_labels, det_scores)
 
     if fit_ground_plane:
         xlim= [-50, 50]
