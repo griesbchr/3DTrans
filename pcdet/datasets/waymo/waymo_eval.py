@@ -177,7 +177,13 @@ class OpenPCDetWaymoDetectionMetricsEstimator(tf.test.TestCase):
         return {item[0]: sess.run([item[1][0]]) for item in metrics.items()}
 
     def mask_by_distance(self, distance_thresh, boxes_3d, *args):
-        mask = np.linalg.norm(boxes_3d[:, 0:2], axis=1) < distance_thresh + 0.5
+        if isinstance(distance_thresh, list):
+            lower_thresh, upper_thresh = distance_thresh
+            mask = (np.linalg.norm(boxes_3d[:, 0:2], axis=1) > lower_thresh) & \
+                     (np.linalg.norm(boxes_3d[:, 0:2], axis=1) < upper_thresh)
+        else:
+            mask = np.linalg.norm(boxes_3d[:, 0:2], axis=1) < distance_thresh + 0.5
+
         boxes_3d = boxes_3d[mask]
         ret_ans = [boxes_3d]
         for arg in args:

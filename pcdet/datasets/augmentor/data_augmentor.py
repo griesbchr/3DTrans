@@ -51,7 +51,7 @@ class DataAugmentor(object):
         gt_boxes, points = augmentor_utils.rotate_objects(
             data_dict['gt_boxes'],
             data_dict['points'],
-            data_dict['gt_boxes_mask'],
+            #data_dict['gt_boxes_mask'],
             rotation_perturb=config['ROT_UNIFORM_NOISE'],
             prob=config['ROT_PROB'],
             num_try=50
@@ -148,6 +148,9 @@ class DataAugmentor(object):
         if data_dict is None:
             return partial(self.random_beam_upsample, config=config)
         
+        #get num_interp_beams, 1 is default if not in cfg
+        num_interp_beams = config.get('NUM_INTERP_BEAMS', 1)
+
         points_with_beam_labels = data_dict['points']
         beam_label = points_with_beam_labels[:,-1].astype(int)
         points = points_with_beam_labels[:,:-1]
@@ -180,13 +183,16 @@ class DataAugmentor(object):
             cur_beam = cur_beam[mask]
             next_beam = next_beam[mask]
             
-            new_beam = (cur_beam + next_beam)*1/2
-            new_pc = new_beam.copy()
-            new_pc[:,0] = np.cos(new_beam[:,1]) * np.cos(new_beam[:,0]) * new_beam[:,2]
-            new_pc[:,1] = np.cos(new_beam[:,1]) * np.sin(new_beam[:,0]) * new_beam[:,2]
-            new_pc[:,2] = np.sin(new_beam[:,1]) * new_beam[:,2]
+            for j in range(1,num_interp_beams+1):
+                new_beam = (j/(num_interp_beams+1))*cur_beam + ((num_interp_beams-j+1)/(num_interp_beams+1))*next_beam
+            
+                new_pc = new_beam.copy()
+                new_pc[:,0] = np.cos(new_beam[:,1]) * np.cos(new_beam[:,0]) * new_beam[:,2]
+                new_pc[:,1] = np.cos(new_beam[:,1]) * np.sin(new_beam[:,0]) * new_beam[:,2]
+                new_pc[:,2] = np.sin(new_beam[:,1]) * new_beam[:,2]
 
-            new_pcs.append(new_pc)
+                new_pcs.append(new_pc)
+                
         data_dict['points'] = np.concatenate(new_pcs,0)
         return data_dict
 

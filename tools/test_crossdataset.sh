@@ -2,12 +2,12 @@
 #################CROSS DATASET TESTING#################
 # Test a single detector on a single arbitrary dataset
 
-TRAIN_DATASET=avltruck
-MODEL=pvrcnnpp_sn2zod
-EXTRA_TAG=D6_10epochs_ft_D6_50epochs_ros
-EPOCH=10
+TRAIN_DATASET=avlrooftop
+MODEL=pvrcnnpp_ros_rbus075
+EXTRA_TAG=D1_50epochs
+EPOCH=50
 
-EVAL_DATASETS=(zod)
+EVAL_DATASETS=(avltruck)
 
 BATCHSIZE=4
 NUM_WORKERS=2
@@ -27,7 +27,10 @@ do
     #multi gpu training
     NUM_GPUS=1
     cd "/home/cgriesbacher/thesis/3DTrans/tools"
-    bash scripts/dist_test.sh $NUM_GPUS --cfg_file $CFG_PATH --ckpt $CHECKPOINT_PATH --batch_size $BATCHSIZE --workers $NUM_WORKERS --extra_tag $EXTRA_TAG --crosseval_dataset_cfg $EVAL_DATASET_CFG_PATH --eval_tag $EVAL_DATASET
+    #bash scripts/dist_test.sh $NUM_GPUS --cfg_file $CFG_PATH --ckpt $CHECKPOINT_PATH --batch_size $BATCHSIZE --workers $NUM_WORKERS --extra_tag $EXTRA_TAG --crosseval_dataset_cfg $EVAL_DATASET_CFG_PATH --eval_tag $EVAL_DATASET
+    
+    #with --set
+    bash scripts/dist_test.sh $NUM_GPUS --cfg_file $CFG_PATH --ckpt $CHECKPOINT_PATH --batch_size $BATCHSIZE --workers $NUM_WORKERS --extra_tag $EXTRA_TAG --crosseval_dataset_cfg $EVAL_DATASET_CFG_PATH --eval_tag $EVAL_DATASET 
 
     #single gpu training for debugging
     #python test.py --cfg_file $CFG_PATH --ckpt $CHECKPOINT_PATH --batch_size $BATCHSIZE --workers $NUM_WORKERS --extra_tag $EXTRA_TAG --crosseval_dataset_cfg $EVAL_DATASET_CFG_PATH --eval_tag $EVAL_DATASET

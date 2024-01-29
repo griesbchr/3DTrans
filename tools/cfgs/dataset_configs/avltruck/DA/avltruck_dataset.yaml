@@ -69,8 +69,9 @@ DISREGARD_TRUNCATED: True
 
 #removed dets and gts that are truncated not in fov before evaluation
 EVAL_FOV_ONLY: True
+EVAL_MAX_DISTANCE: [0, 1000]
 
-POST_SN_ENABLED: False
+POST_SN_ENABLED: True
 POST_SN_SOURCE: "AVLRooftop"
 POST_SN_MAP: { 
   "AVLRooftop":   

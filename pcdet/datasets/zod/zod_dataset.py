@@ -509,10 +509,11 @@ class ZODDataset(DatasetTemplate):
             for anno in eval_gt_annos:
                 anno['difficulty'] = np.zeros([anno['name'].shape[0]], dtype=np.int32)
             #waymo supports     WAYMO_CLASSES = ['unknown', 'Vehicle', 'Pedestrian', 'Truck', 'Cyclist']
+            eval_max_dist = self.dataset_cfg.get('EVAL_MAX_DISTANCE', 1000)
             ap_dict = eval.waymo_evaluation(eval_det_annos,
                                             eval_gt_annos,
                                             class_name= self.class_names,
-                                            distance_thresh=1000,
+                                            distance_thresh=eval_max_dist,
                                             fake_gt_infos=self.dataset_cfg.get(
                                                 'INFO_WITH_FAKELIDAR', False))
             #filter out dict entries where the key contains SIGN

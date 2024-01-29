@@ -34,9 +34,10 @@ POINT_CLOUD_RANGE: [-75.2, -75.2, -2, 123.2, 75.2, 4] # ZOD
 #POINT_CLOUD_RANGE: [0, -40, -3, 70.4, 40, 1]                     # KITTI
 
 FOV_POINTS_ONLY: True
+EVAL_MAX_DISTANCE: [0, 1000]
 
-POST_SN_ENABLED: False
-POST_SN_SOURCE: "AVLTruck"
+POST_SN_ENABLED: True
+POST_SN_SOURCE: "AVLRooftop"
 POST_SN_MAP: {
   "AVLRooftop":   
     {"Vehicle": [-0.256, -0.191, -0.086],

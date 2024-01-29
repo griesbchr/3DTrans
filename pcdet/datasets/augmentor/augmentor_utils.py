@@ -851,7 +851,7 @@ def normalize_object_size(boxes, points, boxes_mask, size_res):
     return points, boxes
 
 
-def rotate_objects(gt_boxes, points, gt_boxes_mask, rotation_perturb, prob, num_try=50):
+def rotate_objects(gt_boxes, points, rotation_perturb, prob, num_try=50):
     """
 
     Args:
@@ -876,7 +876,7 @@ def rotate_objects(gt_boxes, points, gt_boxes_mask, rotation_perturb, prob, num_
 
     for idx in range(num_boxes):
         # don't need to rotate this object
-        if (not rot_mask[idx]) or (not gt_boxes_mask[idx]):
+        if (not rot_mask[idx]):
             continue
 
         # generate rotated boxes num_try times

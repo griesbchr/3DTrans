@@ -34,6 +34,7 @@ POINT_CLOUD_RANGE: [-75.2, -75.2, -2, 123.2, 75.2, 4] # ZOD
 #POINT_CLOUD_RANGE: [0, -40, -3, 70.4, 40, 1]                     # KITTI
 
 FOV_POINTS_ONLY: True
+EVAL_MAX_DISTANCE: [0, 1000]
 
 #dont calculate loss for boxes that are truncated
 DISREGARD_TRUNCATED: True
