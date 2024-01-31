@@ -89,18 +89,22 @@ class AVLTruckDataset(AVLDataset):
     def get_lidar(self, idx, with_beam_label=False):
         lidar_file = self.root_path / idx
 
-        np_lidar_file = lidar_file.with_suffix('.npy')
-        assert np_lidar_file.exists(), f"{np_lidar_file} does not exist"
-        points = np.load(np_lidar_file, allow_pickle=False)
+        if with_beam_label:
+            lidar_path = Path(str(lidar_file.with_suffix("")) + "_beamlabels.npy")
+            #check if file exists
+            if not lidar_path.exists():
+                raise FileNotFoundError(str(lidar_path)+' not found')
+            points = np.load(lidar_path)
+        else:
+            np_lidar_file = lidar_file.with_suffix('.npy')
+            assert np_lidar_file.exists(), f"{np_lidar_file} does not exist"
+            points = np.load(np_lidar_file, allow_pickle=False)
 
         if self.train_fov_only:
             points = self.extract_fov_data(points, self.fov_angle_deg, self.lidar_heading_angle_deg)
 
-        points[:, -1] = np.clip(points[:, -1], a_min=0, a_max=1.)
+        points[:, 3] = np.clip(points[:, 3], a_min=0, a_max=1.)
         points[:,2] -= self.lidar_z_shift
-
-        if with_beam_label:
-            points = self.add_beam_labels(points)
 
         return points
     
@@ -288,6 +292,8 @@ def convert_json_to_numpy(data_path, num_workers=4):
         executor.map(process_single_sequence, sequences)
 
 # python -m pcdet.datasets.avltruck.avltruck_dataset create_avl_infos tools/cfgs/dataset_configs/avltruck/OD/avltruck_dataset.yaml
+# python -m pcdet.datasets.avltruck.avltruck_dataset create_avl_gtdatabase_with_beamlabels cfgs/dataset_configs/avltruck/OD/avltruck_dataset.yaml
+
 if __name__ == '__main__':
     import sys
     from pathlib import Path

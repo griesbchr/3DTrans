@@ -420,8 +420,9 @@ class AVLDataset(DatasetTemplate):
                     continue
                 det_count += sum(anno['name'] == class_name)
             print("Post Drop: Class:", class_name, "avg. gt_count/frame:", round(gt_count/len(eval_gt_annos),2), "avg. det_count/frame:", round(det_count/len(eval_det_annos),2))
-
-        print("\ndropped", round(sum_gt/len(eval_gt_annos),2), "gt objects/frame and", round(sum_det/len(eval_det_annos),2), "det objects/frame")
+        
+        if (sum_gt > 0 and sum_det > 0):
+            print("\ndropped", round(sum_gt/len(eval_gt_annos),2), "gt objects/frame and", round(sum_det/len(eval_det_annos),2), "det objects/frame")
         
         if self.eval_fov_only:
             print("\ndoing fov only evaluation\n")
@@ -645,20 +646,20 @@ class AVLDataset(DatasetTemplate):
             #check if "attributes" attribute exists
             #if not, keep bike label and continue
             if 'attributes' not in bike_label.keys():
-                print("No 'attributes' attribute found in sequence", bike_label["dataset_name"])
+                #print("No 'attributes' attribute found in sequence", bike_label["dataset_name"])
                 human_label_exists = False
             
             #check if "with-rider" attribute exists
             #if not, keep bike label and continue
             elif 'with-rider' not in bike_label['attributes'].keys():
-                print("No 'with-rider' attribute found in sequence", bike_label["dataset_name"])
+                #print("No 'with-rider' attribute found in sequence", bike_label["dataset_name"])
                 human_label_exists = False
 
 
             #check if "Connected_to" attribute exists
             #if not, keep bike label and continue
             elif 'Connected_to' not in bike_label['attributes'].keys():
-                print("No 'Connected_to' attribute found in sequence", bike_label["dataset_name"])
+                #print("No 'Connected_to' attribute found in sequence", bike_label["dataset_name"])
                 human_label_exists = False
 
             #check if "with-rider" attribute is true, of not delete bike label and continue
@@ -686,18 +687,22 @@ class AVLDataset(DatasetTemplate):
                 try:  
                     human_label, dist = self.get_closest_bbox(bike_label, human_labels)
                 except:
+                    print("No human label found for bike label in sequence", bike_label["dataset_name"])
                     continue
                 human_index = labels.index(human_label)
                 #check if human belongs to bike 
                 #center of bboxes must be within 0.7 meters of each other
                 if dist > 0.7:
+                    print("No human label found for bike label in sequence", bike_label["dataset_name"], "with distance", dist)
                     delete_indices.append(bike_label_idx)
                     continue
             
             #merge bike and human bbox dimenstions
             bbox = self.merge_boxes(bike_label["three_d_bbox"], human_label["three_d_bbox"])
             labels[bike_label_idx]["three_d_bbox"] = bbox
-
+            
+            #print("Merged bike and human label in sequence", bike_label["dataset_name"])
+            
             #remove human label
             delete_indices.append(human_index)
 

@@ -604,7 +604,8 @@ class ZODDataset(DatasetTemplate):
             eval_gt_annos[i] = common_utils.drop_info_with_mask(gt_anno, remove_mask)
             eval_det_annos[i] = common_utils.drop_info_with_mask(eval_det_annos[i], remove_mask_det)              
 
-        print("dropped", sum_gt/len(eval_gt_annos), "gt objects/frame and", sum_det/len(eval_det_annos), "det objects/frame")
+        if (sum_gt > 0 and sum_det > 0):
+            print("dropped", sum_gt/len(eval_gt_annos), "gt objects/frame and", sum_det/len(eval_det_annos), "det objects/frame")
 
         # z_shift = self.dataset_cfg.get('TRAINING_Z_SHIFT', None)
         # if z_shift is not None:

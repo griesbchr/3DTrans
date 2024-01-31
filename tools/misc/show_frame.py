@@ -27,71 +27,6 @@ def parse_args():
 
     return args
 
-def label_point_cloud_beam(polar_image, beam, method='dbscan'):
-    if polar_image.shape[0] <= beam:
-        print("too small point cloud!")
-        return np.arange(polar_image.shape[0])
-    beam_label = downsample_utils.beam_label(polar_image[:,1], beam, method=method)
-    return beam_label
-
-def get_polar_image(points):
-    theta, phi = downsample_utils.compute_angles(points[:,:3])
-    r = np.sqrt(np.sum(points[:,:3]**2, axis=1))
-    polar_image = points.copy()
-    polar_image[:,0] = phi 
-    polar_image[:,1] = theta
-    polar_image[:,2] = r
-    return polar_image
-    
-def segment_lidar_to_beams(orig_points, num_beams):
-    points = orig_points.copy()
-    #add z offset 
-    points[:,2] += -3.4097
-
-    polar_image = get_polar_image(points)
-
-    ##reduce range for more reliable clustering
-    polar_image = polar_image[polar_image[:,1] < np.pi/16]
-    polar_image = polar_image[polar_image[:,1] > -np.pi/16]
-    polar_image_plot = polar_image.copy()
-
-    ##shift angle to 0 to 180 degree
-    polar_image_plot[:,0] += np.pi/2
-    #mod to 180 degree
-    polar_image_plot[:,0] = polar_image_plot[:,0] % np.pi
-
-
-    plt.figure()
-    plt.scatter(polar_image_plot[:,0], polar_image_plot[:,1], c=polar_image_plot[:,2], s=0.1)
-    plt.xlabel("phi")
-    plt.ylabel("theta")
-    plt.title("range image")
-    #save fig
-    plt.savefig("viz/range_image.png")
-
-    beam_label = downsample_utils.beam_label(polar_image[:,1], num_beams, method='kmeans++')
-
-    beam_label_plot =  downsample_utils.beam_label(polar_image_plot[:,1], num_beams,  method='kmeans++')
-    #beam_label_plot_ransac = downsample_utils.beam_label_ransac(polar_image_plot, num_beams, inlier_threshold=0.01)
-
-    color_arr = [0, 0.5, 1]
-    beam_colors = np.zeros((num_beams,1))
-    for i in range(num_beams):
-        beam_colors[i,:]  = np.array([color_arr[i%3]])
-    #map beam labels to colors
-    beam_label_plot = beam_colors[beam_label_plot]
-
-    plt.figure()
-    plt.scatter(polar_image_plot[:,0], polar_image_plot[:,1]*180/np.pi, c=beam_label_plot, s=0.1)
-    plt.xlabel("phi")
-    plt.ylabel("theta")
-    plt.title("range image")
-    plt.ylim(-10, 10)
-    #save fig
-    plt.savefig("viz/range_image_beams.png")
-
-    return beam_label
-
 def plot_pr_curve(result_dict, result_dir):
     import matplotlib.pyplot as plt
     import os
@@ -145,11 +80,11 @@ def main():
     save_image = True
 
     fov=True
-    training = False             #enable augmentations
+    training = True             #enable augmentations
     no_detection = False
-    dataset = "zod"
+    dataset = "avltruck"
     checkpoint_path = None
-    select_random_frame = True
+    select_random_frame = False
     
     #avlrooftop
     #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output_okeanos/output/avltruck_models/pvrcnnpp_STrooftop/D1_5epochs_STrooftop_ft_D6_50epochs_ros_06_015_thresh_high_lr/ckpt/checkpoint_epoch_4.pth"
@@ -158,20 +93,19 @@ def main():
 
     #zod 
     #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output/zod_models/dsvt_pillar/D16_100epochs/ckpt/checkpoint_epoch_100.pth"
-    #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output_okeanos/output/zod_models/pvrcnnpp/D16_50epochs/ckpt/checkpoint_epoch_50.pth"
+    #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output/zod_models/pvrcnnpp/D16_50epochs/ckpt/checkpoint_epoch_50.pth"
     #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output/zod_models/pvrcnnpp_ros_rbds/D6_50epochs_rbds0.25/ckpt/checkpoint_epoch_50.pth"
     #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output_okeanos/output/zod_models/pvrcnnpp_ros_ubds/D16_50epochs_ubds4/ckpt/checkpoint_epoch_50.pth"
     
     #avltruck
     #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output/avltruck_models/centerpoint/D6_100epochs_4classes/ckpt/checkpoint_epoch_100.pth"
-    #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output_okeanos/output/avltruck_models/pvrcnnpp_ros/D6_50epochs/ckpt/checkpoint_epoch_50.pth"
+    checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output/avltruck_models/pvrcnnpp_ros/D6_50epochs/ckpt/checkpoint_epoch_50.pth"
     #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output_okeanos/output/avltruck_models/pvrcnnpp_STzod/D6_5epochs_STzod_ft_D16_50epochs_ros/ckpt/checkpoint_epoch_3.pth"
 
     # ST avltruck -> zod
     #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output_okeanos/output/avltruck_models/pvrcnnpp_STzod/D16_20epochs_STzod_ft_D6_50epochs_fov_gace_labelupdate_nogaceretrain_1/ckpt/checkpoint_epoch_1.pth"
     
-    checkpoint_path = [ "/home/cgriesbacher/thesis/3DTrans/output/avltruck_models/pvrcnnpp/D6_50epochs/ckpt/checkpoint_epoch_50.pth",
-                       "/home/cgriesbacher/thesis/3DTrans/output/avlrooftop_models/pvrcnnpp_ros_ubus2/D1_50epochs_R2/ckpt/checkpoint_epoch_50.pth"]
+    checkpoint_path = [checkpoint_path]
 
     if (args.dataset == None):
         args.dataset = dataset
@@ -195,7 +129,7 @@ def main():
 
         if args.frame_idx is None:
             if training:
-                args.frame_idx = 'sequences/CityStreet_dgt_2021-08-31-14-43-12_0_s0/dataset/logical_frame_000020.json'
+                args.frame_idx = 'sequences/CityStreet_dgt_2021-07-08-15-18-50_0_s0/dataset/logical_frame_000008.json'
             else:
                 args.frame_idx = 'sequences/CityThoroughfare_dgt_2021-11-29-10-09-07_0_s0/dataset/logical_frame_000015.json'
         
@@ -385,7 +319,7 @@ def main():
             else:
                 gt_boxes_lidar = data_dict["gt_boxes"][0].cpu().numpy()
                 det_boxes.append(annos[0]["boxes_lidar"])
-                det_labels.append(np.ones(det_boxes.shape[0])*i)
+                det_labels.append(np.ones(det_boxes[i].shape[0])*i)
                 det_scores.append(annos[0]["score"])
 
             points = points4[:,:3]
@@ -395,26 +329,6 @@ def main():
         det_labels = np.concatenate(det_labels, axis=0)
         det_labels = det_labels.astype(np.int64)
         det_scores = np.concatenate(det_scores, axis=0)
-
-        #num_beams = 128
-        
-        #dataset.beam_label_num_beams = num_beams
-        #dataset.beam_label_vfov = [-np.pi/16, np.pi/16]
-#
-        #points_with_beams = dataset.add_beam_labels(points4)
-        #label_beams = points_with_beams[:,-1].astype(np.int64)
-
-        #label_beams = segment_lidar_to_beams(points, num_beams)
-        #
-
-        #map each beam to a pseudo random color
-        #init beam colors with [0, 0.5, 1, 0, 0.5, 1, ...]
-        #color_arr = [0, 0.5, 1]
-        #beam_colors = np.zeros((num_beams,1))
-        #for i in range(num_beams):
-        #    beam_colors[i,:]  = np.array([color_arr[i%3]])
-        ##map beam labels to colors
-        #color = beam_colors[label_beams]
 
     else:
         dataset, train_loader, train_sampler = build_dataloader(dataset_cfg=dataset_cfg,
@@ -443,7 +357,7 @@ def main():
         points=points4[:,:3]
         det_boxes=None
         det_labels=None
-        scores = None
+        det_scores = None
 
     if save_image:
         #insert image view here, can be copied by pressing Ctrl+C in open3d window and paste in editor file
@@ -461,7 +375,7 @@ def main():
         vis.draw_scenes(points, gt_boxes_lidar, det_boxes, det_labels=det_labels, point_colors=color, view_control=view_control, image_path=image_path, det_scores=det_scores)
     else:
         from tools.visual_utils import open3d_vis_utils as vis
-        vis.draw_scenes(points, gt_boxes_lidar,det_boxes ,point_colors=color, det_scores=scores)
+        vis.draw_scenes(points, gt_boxes_lidar,det_boxes ,point_colors=color, det_scores=det_scores)
 
     return
 
