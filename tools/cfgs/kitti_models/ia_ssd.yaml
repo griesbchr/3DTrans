@@ -1,4 +1,4 @@
-CLASS_NAMES: ['Car', 'Pedestrian', 'Cyclist']
+CLASS_NAMES: ["Vehicle", "Pedestrian", "Cyclist",]
 
 DATA_CONFIG:
     _BASE_CONFIG_: cfgs/dataset_configs/kitti/OD/kitti_dataset.yaml
@@ -73,7 +73,7 @@ MODEL:
                 'mean_size': [
                     [3.9, 1.6, 1.56],
                     [0.8, 0.6, 1.73],
-                    [1.76, 0.6, 1.73]
+                    [1.76, 0.6, 1.73],
                 ]
             }
 

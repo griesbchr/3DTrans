@@ -3,8 +3,8 @@ DATASET: "KittiDataset"
 DATA_PATH: "../data/kitti"
 # OSS_PATH: 's3://${PATH_TO_DATASET}/kitti'
 
-# POINT_CLOUD_RANGE: [0, -40, -3, 70.4, 40, 1]
-POINT_CLOUD_RANGE: [-75.2, -75.2, -2, 123.2, 75.2, 4]
+POINT_CLOUD_RANGE: [0, -20, -3, 40.4, 40, 1]
+#POINT_CLOUD_RANGE: [-75.2, -75.2, -2, 123.2, 75.2, 4]
 
 SHIFT_COOR: [0.0, 0.0, 1.8]
 
@@ -34,6 +34,8 @@ MAP_CLASS_TO_WAYMO:
 
 GET_ITEM_LIST: ["points"]
 FOV_POINTS_ONLY: True
+
+SUBSAMPLEFACTOR: 1
 
 DATA_AUGMENTOR:
   DISABLE_AUG_LIST: ["placeholder"]

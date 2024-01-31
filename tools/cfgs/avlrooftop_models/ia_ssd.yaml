@@ -1,9 +1,10 @@
 CLASS_NAMES: ["Vehicle", "Cyclist", "Pedestrian", "Truck"]
 
 DATA_CONFIG:
-    _BASE_CONFIG_: cfgs/dataset_configs/avltruck/OD/avltruck_dataset.yaml
+    _BASE_CONFIG_: cfgs/dataset_configs/avlrooftop/OD/avlrooftop_dataset.yaml
     POINT_CLOUD_RANGE: [-75.2, -75.2, -2, 75.2, 75.2, 4]
 
+    DISREGARD_TRUNCATED: False
 
     DATA_PROCESSOR:
         -   NAME: mask_points_and_boxes_outside_range
@@ -94,7 +95,7 @@ MODEL:
             LOSS_REG: WeightedSmoothL1Loss
             LOSS_INS: WeightedCrossEntropy
             SAMPLE_METHOD_LIST: *sample_method_list
-            LOSS_VOTE_TYPE: 'ver2'  #'none', 'ver1', 'ver2', 
+            LOSS_VOTE_TYPE: 'none'  #'none', 'ver1', 'ver2', 
 
             CORNER_LOSS_REGULARIZATION: True
             CENTERNESS_REGULARIZATION: True

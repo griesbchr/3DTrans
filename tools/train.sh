@@ -4,8 +4,8 @@
 
 ######
 DATASET=zod
-MODEL=pvrcnnpp_rosror_rbds
-EXTRA_TAG=D16_50epochs
+MODEL=ia_ssd
+EXTRA_TAG=D1_50epochs
 
 EPOCHS=50
 CKPT_SAVE_INTERVAL=50
