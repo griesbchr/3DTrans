@@ -27,7 +27,7 @@ def parse_args():
 
     return args
 
-def plot_pr_curve(result_dict, result_dir):
+def plot_pr_curve(result_dict, result_dir, filename="pr_curve.png"):
     import matplotlib.pyplot as plt
     import os
     import seaborn as sns
@@ -68,7 +68,7 @@ def plot_pr_curve(result_dict, result_dir):
 
     plt.tight_layout()
     plt.subplots_adjust(top=0.9)
-    fig_path = os.path.join(result_dir, 'pr_curve.png')
+    fig_path = os.path.join(result_dir, filename)
     plt.savefig(fig_path)
     print('Saved pr_curve.png to %s' % fig_path)
     plt.close(fig)   
@@ -80,28 +80,32 @@ def main():
     save_image = True
 
     fov=True
-    training = True             #enable augmentations
+    training = False             #enable augmentations
     no_detection = False
-    dataset = "avltruck"
+    dataset = "zod"
     checkpoint_path = None
-    select_random_frame = False
     
+    select_random_frame = True
+    frame_keyword = None
+
     #avlrooftop
     #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output_okeanos/output/avltruck_models/pvrcnnpp_STrooftop/D1_5epochs_STrooftop_ft_D6_50epochs_ros_06_015_thresh_high_lr/ckpt/checkpoint_epoch_4.pth"
     #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output/avlrooftop_models/pvrcnnpp_ros/D1_50epochs/ckpt/checkpoint_epoch_50.pth"
     #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output/avlrooftop_models/pvrcnnpp_ros_ubus2/D1_50epochs_R2/ckpt/checkpoint_epoch_50.pth"
+    checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output/avlrooftop_models/ia_ssd/D1_50epochs/ckpt/checkpoint_epoch_50.pth"
 
     #zod 
     #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output/zod_models/dsvt_pillar/D16_100epochs/ckpt/checkpoint_epoch_100.pth"
-    #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output/zod_models/pvrcnnpp/D16_50epochs/ckpt/checkpoint_epoch_50.pth"
+    #checkpoint_path1 = "/home/cgriesbacher/thesis/3DTrans/output/zod_models/pvrcnnpp_ros/D16_50epochs/ckpt/checkpoint_epoch_50.pth"
     #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output/zod_models/pvrcnnpp_ros_rbds/D6_50epochs_rbds0.25/ckpt/checkpoint_epoch_50.pth"
     #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output_okeanos/output/zod_models/pvrcnnpp_ros_ubds/D16_50epochs_ubds4/ckpt/checkpoint_epoch_50.pth"
     
     #avltruck
     #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output/avltruck_models/centerpoint/D6_100epochs_4classes/ckpt/checkpoint_epoch_100.pth"
-    checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output/avltruck_models/pvrcnnpp_ros/D6_50epochs/ckpt/checkpoint_epoch_50.pth"
+    #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output/avltruck_models/pvrcnnpp_ros/D6_50epochs/ckpt/checkpoint_epoch_50.pth"
+    #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output/avltruck_models/pvrcnnpp_ros/D6_50epochs/ckpt/checkpoint_epoch_50.pth"
     #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output_okeanos/output/avltruck_models/pvrcnnpp_STzod/D6_5epochs_STzod_ft_D16_50epochs_ros/ckpt/checkpoint_epoch_3.pth"
-
+    
     # ST avltruck -> zod
     #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output_okeanos/output/avltruck_models/pvrcnnpp_STzod/D16_20epochs_STzod_ft_D6_50epochs_fov_gace_labelupdate_nogaceretrain_1/ckpt/checkpoint_epoch_1.pth"
     
@@ -113,10 +117,13 @@ def main():
     if (args.ckpt == None):
         args.ckpt = checkpoint_path
     
+    #convert checkpoint path to list
+    if not isinstance(args.ckpt, list):
+        args.ckpt = [args.ckpt]
+
     if (args.dataset == "avltruck"):
         cfg_path =  "/home/cgriesbacher/thesis/3DTrans/tools/cfgs/dataset_configs/avltruck/DA/avltruck_dataset.yaml"
         dataset_cfg = EasyDict(yaml.safe_load(open(cfg_path)))
-
         dataset_class_names = ['Vehicle_Drivable_Car',
                        'Vehicle_Drivable_Van', 
                        'Vehicle_Ridable_Motorcycle', 
@@ -239,6 +246,12 @@ def main():
         if not isinstance(args.ckpt, list):
             args.ckpt = [args.ckpt]
 
+        # some detectors use different range or voxel preprocessing
+        if hasattr(cfg.DATA_CONFIG, "POINT_CLOUD_RANGE"):
+            dataset_cfg.POINT_CLOUD_RANGE = cfg.DATA_CONFIG.POINT_CLOUD_RANGE
+        if hasattr(cfg.DATA_CONFIG, "DATA_PROCESSOR"):
+            dataset_cfg.DATA_PROCESSOR = cfg.DATA_CONFIG.DATA_PROCESSOR
+
         #select frame and get data dict
         #build dataset
         dataset, train_loader, train_sampler = build_dataloader(dataset_cfg=dataset_cfg,
@@ -249,10 +262,15 @@ def main():
                                     logger=logger,
                                     training=training) 
         #find sample index for frame
-        sample_id_list = dataset.sample_id_list
+        sample_id_list = dataset.sample_id_list.copy()
         if select_random_frame:
+            #filter frame ids that contain a keyword
+            if frame_keyword is not None:
+                sample_id_list = [sample_id for sample_id in sample_id_list if frame_keyword in sample_id]
+            
             args.frame_idx = random.choice(sample_id_list)
-            print("selected random frame: ", args.frame_idx)
+
+            print("\nselected random frame: ", args.frame_idx, "\n")
 
         list_index = sample_id_list.index(args.frame_idx)
 
@@ -278,12 +296,6 @@ def main():
             #parse config
             cfg_from_yaml_file(cfg_path, cfg)
 
-            # some detectors use different range or voxel preprocessing
-            if hasattr(cfg.DATA_CONFIG, "POINT_CLOUD_RANGE"):
-                dataset_cfg.POINT_CLOUD_RANGE = cfg.DATA_CONFIG.POINT_CLOUD_RANGE
-            if hasattr(cfg.DATA_CONFIG, "DATA_PROCESSOR"):
-                dataset_cfg.DATA_PROCESSOR = cfg.DATA_CONFIG.DATA_PROCESSOR
-
             #build model
             model = build_network(model_cfg=cfg.MODEL, num_class=len(cfg.CLASS_NAMES), dataset=dataset)
             model.load_params_from_file(filename=ckpt, logger=logger, to_cpu=False)
@@ -303,7 +315,7 @@ def main():
             eval_metric = "waymo"
             if not training:
                 result_str, results_dict, eval_gt_annos, eval_det_annos= dataset.evaluation(det_annos=annos, class_names=dataset.class_names, eval_metric=eval_metric, return_annos=True)
-                plot_pr_curve(results_dict, "./")
+                plot_pr_curve(results_dict, "./", filename="pr_curve"+str(i)+".png")
                 print(result_str)
 
                 print("remaining gt boxes for nontruncated method:", dataset.extract_fov_gt_nontruncated(data_dict["gt_boxes"][0,:,:7].cpu().numpy(), 120, 0).sum())

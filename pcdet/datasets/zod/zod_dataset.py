@@ -462,6 +462,14 @@ class ZODDataset(DatasetTemplate):
                 single_pred_dict['metadata'] = batch_dict['metadata'][index]
             annos.append(single_pred_dict)
 
+        #DEBUG
+        #add points to detections
+        #for batch in range(batch_dict["batch_size"]):
+        #    points = batch_dict['points'].detach().cpu().numpy()
+        #    points_batch = points[points[:,0] == batch][:,1:]
+        #    det_points = self.get_points_in_bboxes(points_batch, annos[batch]["boxes_lidar"])
+        #    annos[batch]["det_points"] = det_points
+
         return annos
     
     def evaluation(self, det_annos, class_names, **kwargs):
@@ -562,15 +570,7 @@ class ZODDataset(DatasetTemplate):
                     continue
                 det_count += sum(anno['name'] == class_name)
             print("Class:", class_name, "gt_count:", gt_count, "det_count:", det_count)
-
-        #change all truck labels to car labels
-        if self.eval_truck_as_car:
-            for anno in eval_gt_annos:
-                if len(anno['name'][anno['name'] == 'Truck']) > 0:
-                    anno['name'][anno['name'] == 'Truck'] = 'Vehicle'
-            for anno in eval_det_annos:
-                if len(anno['name'][anno['name'] == 'Truck']) > 0:
-                    anno['name'][anno['name'] == 'Truck'] = 'Vehicle'        
+     
         sum_gt = 0
         sum_det = 0
         # remove gt objects and overlapping det objects  
@@ -604,6 +604,15 @@ class ZODDataset(DatasetTemplate):
             eval_gt_annos[i] = common_utils.drop_info_with_mask(gt_anno, remove_mask)
             eval_det_annos[i] = common_utils.drop_info_with_mask(eval_det_annos[i], remove_mask_det)              
 
+        #change all truck labels to car labels
+        if self.eval_truck_as_car:
+            for anno in eval_gt_annos:
+                if len(anno['name'][anno['name'] == 'Truck']) > 0:
+                    anno['name'][anno['name'] == 'Truck'] = 'Vehicle'
+            for anno in eval_det_annos:
+                if len(anno['name'][anno['name'] == 'Truck']) > 0:
+                    anno['name'][anno['name'] == 'Truck'] = 'Vehicle'   
+                    
         if (sum_gt > 0 and sum_det > 0):
             print("dropped", sum_gt/len(eval_gt_annos), "gt objects/frame and", sum_det/len(eval_det_annos), "det objects/frame")
 

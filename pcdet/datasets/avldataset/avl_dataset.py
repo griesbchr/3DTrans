@@ -271,6 +271,14 @@ class AVLDataset(DatasetTemplate):
                 single_pred_dict['metadata'] = batch_dict['metadata'][index]
             annos.append(single_pred_dict)
 
+        #DEBUG
+        #add points to detections
+        #for batch in range(batch_dict["batch_size"]):
+        #    points = batch_dict['points'].detach().cpu().numpy()
+        #    points_batch = points[points[:,0] == batch][:,1:]
+        #    det_points = self.get_points_in_bboxes(points_batch, annos[batch]["boxes_lidar"])
+        #    annos[batch]["det_points"] = det_points
+
         return annos
 
     def evaluation(self, det_annos, class_names, **kwargs):
@@ -310,6 +318,7 @@ class AVLDataset(DatasetTemplate):
                 anno['difficulty'] = np.zeros([anno['name'].shape[0]], dtype=np.int32)
             #waymo supports     WAYMO_CLASSES = ['unknown', 'Vehicle', 'Pedestrian', 'Truck', 'Cyclist']
             eval_max_dist = self.dataset_cfg.get('EVAL_MAX_DISTANCE', 1000)
+            print("eval_max_dist", eval_max_dist)
             ap_dict = eval.waymo_evaluation(eval_det_annos,
                                             eval_gt_annos,
                                             class_name= self.class_names,
@@ -364,16 +373,6 @@ class AVLDataset(DatasetTemplate):
                 det_count += sum(anno['name'] == class_name)
             print("Pre Drop: Class:", class_name, "avg. gt_count/frame:", round(gt_count/len(eval_gt_annos),2), "avg. det_count/frame:", round(det_count/len(eval_det_annos),2))
         
-        #change all truck labels to car labels
-        if self.eval_truck_as_car:
-            for anno in eval_gt_annos:
-                if len(anno['name'][anno['name'] == 'Truck']) > 0:
-                    anno['name'][anno['name'] == 'Truck'] = 'Vehicle'
-            for anno in eval_det_annos:
-                if len(anno['name'][anno['name'] == 'Truck']) > 0:
-                    anno['name'][anno['name'] == 'Truck'] = 'Vehicle'   
-
-        
         sum_gt = 0
         sum_det = 0
         # remove gt objects and overlapping det objects (overlapping with removed gt objects)  
@@ -405,7 +404,16 @@ class AVLDataset(DatasetTemplate):
 
             eval_gt_annos[i] = common_utils.drop_info_with_mask(gt_anno, remove_mask)
             eval_det_annos[i] = common_utils.drop_info_with_mask(eval_det_annos[i], remove_mask_det)
-
+        
+        #change all truck labels to car labels
+        if self.eval_truck_as_car:
+            for anno in eval_gt_annos:
+                if len(anno['name'][anno['name'] == 'Truck']) > 0:
+                    anno['name'][anno['name'] == 'Truck'] = 'Vehicle'
+            for anno in eval_det_annos:
+                if len(anno['name'][anno['name'] == 'Truck']) > 0:
+                    anno['name'][anno['name'] == 'Truck'] = 'Vehicle'   
+                    
         #print number of objects in gt and det for each class in class_names
         print("\n")
         for class_name in class_names:

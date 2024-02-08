@@ -1,12 +1,13 @@
-CLASS_NAMES: ['Vehicle_Drivable_Car', Vehicle_Drivable_Van, 'Human',  'Vehicle_Ridable_Bicycle', Vehicle_Ridable_Motorcycle]
+CLASS_NAMES: ['Vehicle', 'Pedestrian', 'Cyclist', 'Truck']
 
 DATA_CONFIG:
     _BASE_CONFIG_: cfgs/dataset_configs/avltruck/OD/avltruck_dataset.yaml
 
+    POINT_CLOUD_RANGE: [-74.88, -74.88, -2, 123.52, 74.88, 4.0]
+    
     DATA_PROCESSOR:
-
         -   NAME: transform_points_to_voxels
-            VOXEL_SIZE: [ 0.32, 0.32, 6.0 ]         #this should be comparible with unified range
+            VOXEL_SIZE: [ 0.32, 0.32, 6.0 ]      
             MAX_POINTS_PER_VOXEL: 20
             MAX_NUMBER_OF_VOXELS: {
                 'train': 150000,
@@ -45,58 +46,49 @@ MODEL:
         DIR_LIMIT_OFFSET: 0.0
         NUM_DIR_BINS: 2
 
-        ANCHOR_GENERATOR_CONFIG: [
-            {
-                'class_name': 'Vehicle_Drivable_Car',
-                'anchor_sizes': [[4.0, 1.9, 1.5]],
-                'anchor_rotations': [0, 1.57],
-                'anchor_bottom_heights': [-2.7],
+        ANCHOR_GENERATOR_CONFIG:
+            [
+                {
+                "class_name": "Vehicle",
+                "anchor_sizes": [[4.425499, 2.082867, 1.677022]],
+                'anchor_rotations': [ 0, 1.57 ],
+                'anchor_bottom_heights': [ 0 ],
                 'align_center': False,
-                'feature_map_stride': 8,
+                'feature_map_stride': 1,
                 'matched_threshold': 0.55,
                 'unmatched_threshold': 0.4
-            },
-            {
-                'class_name': 'Vehicle_Drivable_Van',
-                'anchor_sizes': [[4.7, 2.1, 2]],
-                'anchor_rotations': [0, 1.57],
-                'anchor_bottom_heights': [-2.3],
+                },
+                {
+                "class_name": "Cyclist",
+                "anchor_sizes": [[2.187255, 0.808831, 1.755270]],
+                'anchor_rotations': [ 0, 1.57 ],
+                'anchor_bottom_heights': [ 0 ],
                 'align_center': False,
-                'feature_map_stride': 8,
-                'matched_threshold': 0.55,
-                'unmatched_threshold': 0.4
-            },
-            {
-                'class_name': 'Human',
-                'anchor_sizes': [[0.76, 0.72, 1.65]],
-                'anchor_rotations': [0, 1.57],
-                'anchor_bottom_heights': [-2.5],
-                'align_center': False,
-                'feature_map_stride': 8,
+                'feature_map_stride': 1,
                 'matched_threshold': 0.5,
                 'unmatched_threshold': 0.35
-            },
-            {
-                'class_name': 'Vehicle_Ridable_Bicycle',
-                'anchor_sizes': [[1.80, 0.61, 1.10]],
-                'anchor_rotations': [0, 1.57],
-                'anchor_bottom_heights': [-2.81],
+                },
+                {
+                "class_name": "Pedestrian",
+                "anchor_sizes": [[0.851837, 0.818911, 1.728446]],
+                'anchor_rotations': [ 0, 1.57 ],
+                'anchor_bottom_heights': [ 0 ],
                 'align_center': False,
-                'feature_map_stride': 8,
+                'feature_map_stride': 1,
                 'matched_threshold': 0.5,
                 'unmatched_threshold': 0.35
-            },
-            {
-                'class_name': 'Vehicle_Ridable_Motorcycle',
-                'anchor_sizes': [[2.03, 0.61, 1.19]],
-                'anchor_rotations': [0, 1.57],
-                'anchor_bottom_heights': [-2.80],
-                'align_center': False,
-                'feature_map_stride': 8,
-                'matched_threshold': 0.5,
-                'unmatched_threshold': 0.35
-            }
-        ]
+                },
+                {
+                "class_name": "Truck",
+                "anchor_sizes": [[9.165524, 3.314212, 3.683593]],
+                "anchor_rotations": [0, 1.57],
+                "anchor_bottom_heights": [0],
+                "align_center": False,
+                "feature_map_stride": 1,
+                "matched_threshold": 0.5,
+                "unmatched_threshold": 0.35,
+                },
+            ]
 
         TARGET_ASSIGNER_CONFIG:
             NAME: AxisAlignedTargetAssigner
@@ -124,13 +116,13 @@ MODEL:
         NMS_CONFIG:
             MULTI_CLASSES_NMS: False
             NMS_TYPE: nms_gpu
-            NMS_THRESH: 0.7
+            NMS_THRESH: 0.01
             NMS_PRE_MAXSIZE: 4096
             NMS_POST_MAXSIZE: 500
 
 
 OPTIMIZATION:
-    BATCH_SIZE_PER_GPU: 2
+    BATCH_SIZE_PER_GPU: 4
     NUM_EPOCHS: 30
 
     OPTIMIZER: adam_onecycle

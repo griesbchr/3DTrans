@@ -218,7 +218,6 @@ class DatasetTemplate(torch_data.Dataset):
         
     def extract_bbox_outside_fov(self, gt_boxes, fov_degree, heading_angle):
         """
-        t
         """
         heading_angle = -heading_angle / 180 * np.pi
         gt_boxes_lidar = copy.deepcopy(gt_boxes)
@@ -238,6 +237,29 @@ class DatasetTemplate(torch_data.Dataset):
         outside_mask[corners_points_fov_mask.sum(axis=1) == 0] = 1
 
         return outside_mask
+
+    @staticmethod
+    def get_points_in_bboxes(points, boxes_lidar):
+        """
+        Args:
+            points: (N, 3 + C)
+            boxes_lidar: (M, 7) [x, y, z, dx, dy, dz, heading]
+        Returns:
+            points_in_boxes:  [M, (N, 3 + C)]
+        """
+        if isinstance(points, np.ndarray):
+            points = torch.from_numpy(points)
+        if isinstance(boxes_lidar, np.ndarray):
+            boxes_lidar = torch.from_numpy(boxes_lidar)
+
+        points_in_boxes = roiaware_pool3d_utils.points_in_boxes_cpu(points[:, :3],boxes_lidar).numpy()
+        #pointes_in_boxes to bookean
+        points_in_boxes = points_in_boxes.astype(bool)
+        det_points = []
+        for i in range(len(boxes_lidar)):
+            det_points.append(points[points_in_boxes[i]].numpy())
+        return det_points
+    
 
     def fill_pseudo_labels(self, input_dict):
         gt_boxes = self_training_utils.load_ps_label(input_dict['frame_id'])

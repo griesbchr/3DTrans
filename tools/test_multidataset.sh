@@ -2,18 +2,14 @@
 #################MULTI DATASET TESTING#################
 # Test a single detector on multiple arbitrary datasets
 
-TRAIN_DATASET=(avlrooftop
-                zod)
+TRAIN_DATASET=(avltruck avlrooftop zod)
 
-MODEL=pvrcnnpp_ros
+MODEL=pointpillar
 
-CFG_TAG=(D1_50epochs
-        D16_50epochs)
+CFG_TAG=(D6_50epochs D1_50epochs D16_50epochs)
 EPOCH=50
 
-EVAL_DATASETS=(avltruck
-              avlrooftop
-              zod)
+EVAL_DATASETS=(avltruck avlrooftop zod)
 
 BATCHSIZE=8
 NUM_WORKERS=4

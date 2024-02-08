@@ -27,10 +27,21 @@ from pcdet.models.model_utils.model_nms_utils import class_agnostic_nms
 #    'std_x', 'std_y', 'std_z', 'std_refl', 'std_elongation',
 #]
 
+#INSTANCE_PROP = [
+#     'class_veh', 'class_ped', 'class_cyc', 'class_tru', 'base_det_score', 
+#     'cx', 'cy', 'cz', 'dx', 'dy', 'dz', 'heading_cos', 'heading_sin', 
+#     'dist', 'alpha_cos', 'alpha_sin', 'nr_pts',
+#     'min_x', 'min_y', 'min_z', 'min_refl',
+#     'max_x', 'max_y', 'max_z', 'max_refl', 
+#     'mean_x', 'mean_y', 'mean_z', 'mean_refl', 
+#     'std_x', 'std_y', 'std_z', 'std_refl',
+# ]
+
+#only ped, no_nr_pts
 INSTANCE_PROP = [
-     'class_veh', 'class_ped', 'class_cyc', 'class_tru', 'base_det_score', 
+     'class_ped', 'base_det_score', 
      'cx', 'cy', 'cz', 'dx', 'dy', 'dz', 'heading_cos', 'heading_sin', 
-     'dist', 'alpha_cos', 'alpha_sin', 'nr_pts',
+     'dist', 'alpha_cos', 'alpha_sin', 
      'min_x', 'min_y', 'min_z', 'min_refl',
      'max_x', 'max_y', 'max_z', 'max_refl', 
      'mean_x', 'mean_y', 'mean_z', 'mean_refl', 
@@ -70,12 +81,20 @@ INSTANCE_PROP = [
 #    'std_x', 'std_y', 'std_z', 'std_refl',
 #]
 #
+
+#CONTEXT_PROP = [
+#    'dist', 'dir_to_nb_x', 'dir_to_nb_y', 'dir_to_nb_z',
+#    'diff_heading_cos', 'diff_heading_sin', 'nb_det_scores',
+#    'nb_class_veh', 'nb_class_ped', 'nb_class_cyc', 'nb_class_tru'
+#]
+
+
+#only ped
 CONTEXT_PROP = [
     'dist', 'dir_to_nb_x', 'dir_to_nb_y', 'dir_to_nb_z',
     'diff_heading_cos', 'diff_heading_sin', 'nb_det_scores',
-    'nb_class_veh', 'nb_class_ped', 'nb_class_cyc', 'nb_class_tru'
+    'nb_class_ped'
 ]
-
 #only car
 #CONTEXT_PROP = [
 #    'dist', 'dir_to_nb_x', 'dir_to_nb_y', 'dir_to_nb_z',
@@ -211,10 +230,10 @@ class GACEDataset(Dataset):
 
         cp_data[:, :, cpd.nb_det_scores] = nb_ip_data[:, :, ipd.base_det_score]
 
-        cp_data[:, :, cpd.nb_class_veh] = nb_ip_data[:, :, ipd.class_veh]
+        #cp_data[:, :, cpd.nb_class_veh] = nb_ip_data[:, :, ipd.class_veh]
         cp_data[:, :, cpd.nb_class_ped] = nb_ip_data[:, :, ipd.class_ped]
-        cp_data[:, :, cpd.nb_class_cyc] = nb_ip_data[:, :, ipd.class_cyc]
-        cp_data[:, :, cpd.nb_class_tru] = nb_ip_data[:, :, ipd.class_tru]
+        #cp_data[:, :, cpd.nb_class_cyc] = nb_ip_data[:, :, ipd.class_cyc]
+        #cp_data[:, :, cpd.nb_class_tru] = nb_ip_data[:, :, ipd.class_tru]
 
         cp_data[mask, :] = 0
 
@@ -227,28 +246,28 @@ class GACEDataset(Dataset):
                 norm_factor = self.cfg.GACE.NORM_FACTORS[ip_name]
                 
                 if isinstance(norm_factor, list):
-                    norm_factor_veh = norm_factor[0]
+                    #norm_factor_veh = norm_factor[0]
                     norm_factor_ped = norm_factor[1]
-                    norm_factor_cyc = norm_factor[2]
-                    norm_factor_tru = norm_factor[3]
+                    #norm_factor_cyc = norm_factor[2]
+                    #norm_factor_tru = norm_factor[3]
 
-                    veh_mask = ip_data[:, ipd.class_veh] == 1
+                    #veh_mask = ip_data[:, ipd.class_veh] == 1
                     ped_mask = ip_data[:, ipd.class_ped] == 1
-                    cyc_mask = ip_data[:, ipd.class_cyc] == 1
-                    tru_mask = ip_data[:, ipd.class_tru] == 1
-                    ip_data_n[veh_mask, ipd[ip_name]] /= norm_factor_veh 
+                    #cyc_mask = ip_data[:, ipd.class_cyc] == 1
+                    #tru_mask = ip_data[:, ipd.class_tru] == 1
+                    #ip_data_n[veh_mask, ipd[ip_name]] /= norm_factor_veh 
                     ip_data_n[ped_mask, ipd[ip_name]] /= norm_factor_ped
-                    ip_data_n[cyc_mask, ipd[ip_name]] /= norm_factor_cyc
-                    ip_data_n[tru_mask, ipd[ip_name]] /= norm_factor_tru
+                    #ip_data_n[cyc_mask, ipd[ip_name]] /= norm_factor_cyc
+                    #ip_data_n[tru_mask, ipd[ip_name]] /= norm_factor_tru
 
-                    veh_mask_nb = nb_ip_data[:, :, ipd.class_veh] == 1
+                    #veh_mask_nb = nb_ip_data[:, :, ipd.class_veh] == 1
                     ped_mask_nb = nb_ip_data[:, :, ipd.class_ped] == 1
-                    cyc_mask_nb = nb_ip_data[:, :, ipd.class_cyc] == 1
-                    tru_mask_nb = nb_ip_data[:, :, ipd.class_tru] == 1
-                    nb_ip_data_n[veh_mask_nb, ipd[ip_name]] /= norm_factor_veh
+                    #cyc_mask_nb = nb_ip_data[:, :, ipd.class_cyc] == 1
+                    #tru_mask_nb = nb_ip_data[:, :, ipd.class_tru] == 1
+                    #nb_ip_data_n[veh_mask_nb, ipd[ip_name]] /= norm_factor_veh
                     nb_ip_data_n[ped_mask_nb, ipd[ip_name]] /= norm_factor_ped
-                    nb_ip_data_n[cyc_mask_nb, ipd[ip_name]] /= norm_factor_cyc
-                    nb_ip_data_n[tru_mask_nb, ipd[ip_name]] /= norm_factor_tru
+                    #nb_ip_data_n[cyc_mask_nb, ipd[ip_name]] /= norm_factor_cyc
+                    #nb_ip_data_n[tru_mask_nb, ipd[ip_name]] /= norm_factor_tru
 
                 else:
                     ip_data_n[:, ipd[ip_name]] /= norm_factor
@@ -392,10 +411,10 @@ class GACEDataset(Dataset):
 
         det_boxes[:, 6] = np.mod(det_boxes[:, 6], 2*np.pi)
 
-        data[:, ipd.class_veh] = (det_labels == 1).astype(np.float32)
-        data[:, ipd.class_ped] = (det_labels == 2).astype(np.float32)
-        data[:, ipd.class_cyc] = (det_labels == 3).astype(np.float32)
-        data[:, ipd.class_tru] = (det_labels == 4).astype(np.float32)
+        #data[:, ipd.class_veh] = (det_labels == 1).astype(np.float32)
+        #data[:, ipd.class_ped] = (det_labels == 2).astype(np.float32)
+        #data[:, ipd.class_cyc] = (det_labels == 3).astype(np.float32)
+        #data[:, ipd.class_tru] = (det_labels == 4).astype(np.float32)
 
         data[:, ipd.base_det_score] = det_scores
 
@@ -428,7 +447,7 @@ class GACEDataset(Dataset):
             if pcl_in_box.shape[0] == 0:
                 continue
 
-            data[i, ipd.nr_pts] = pcl_in_box.shape[0]
+            # data[i, ipd.nr_pts] = pcl_in_box.shape[0]
             
             # move to center
             pcl_in_box[:, :3] -= box[:3]

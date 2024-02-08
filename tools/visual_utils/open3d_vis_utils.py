@@ -201,7 +201,7 @@ def draw_scenes(points, gt_boxes=None, det_boxes=None, det_labels=None, det_scor
     #light grey color
     light_grey = np.array([0.7, 0.7, 0.7])
     white = np.array([1, 1, 1])
-    vis.get_render_option().background_color = white
+    vis.get_render_option().background_color = light_grey
 
     # draw origin
     if draw_origin:
@@ -211,13 +211,14 @@ def draw_scenes(points, gt_boxes=None, det_boxes=None, det_labels=None, det_scor
     pts = o3d.geometry.PointCloud()
     pts.points = o3d.utility.Vector3dVector(points[:, :3])
 
-    vis.add_geometry(pts)
     if point_colors is not None:
         if (point_colors.shape[-1] == 1 or len(point_colors.shape) == 1):
             from matplotlib import cm
             colormap = cm.get_cmap('viridis')
             point_colors = colormap(point_colors.squeeze())[:, :3] 
         pts.colors = o3d.utility.Vector3dVector(point_colors)
+        
+    vis.add_geometry(pts)
 
     if gt_boxes is not None:
         vis = draw_box(vis, gt_boxes, (0.99, 0.0, 0.0))

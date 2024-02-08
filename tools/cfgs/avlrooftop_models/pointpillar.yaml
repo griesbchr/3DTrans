@@ -1,7 +1,7 @@
-CLASS_NAMES: ["Vehicle", "Cyclist", "Pedestrian", "Truck"]
+CLASS_NAMES: ['Vehicle', 'Pedestrian', 'Cyclist', 'Truck']
 
 DATA_CONFIG:
-    _BASE_CONFIG_: cfgs/dataset_configs/avltruck/OD/avltruck_dataset.yaml
+    _BASE_CONFIG_: cfgs/dataset_configs/avlrooftop/OD/avlrooftop_dataset.yaml
 
     POINT_CLOUD_RANGE: [-74.88, -74.88, -2, 123.52, 74.88, 4.0]
     
