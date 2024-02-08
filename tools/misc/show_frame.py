@@ -90,9 +90,9 @@ def main():
 
     #avlrooftop
     #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output_okeanos/output/avltruck_models/pvrcnnpp_STrooftop/D1_5epochs_STrooftop_ft_D6_50epochs_ros_06_015_thresh_high_lr/ckpt/checkpoint_epoch_4.pth"
-    #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output/avlrooftop_models/pvrcnnpp_ros/D1_50epochs/ckpt/checkpoint_epoch_50.pth"
+    checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output/avlrooftop_models/pvrcnnpp_ros/D1_50epochs/ckpt/checkpoint_epoch_50.pth"
     #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output/avlrooftop_models/pvrcnnpp_ros_ubus2/D1_50epochs_R2/ckpt/checkpoint_epoch_50.pth"
-    checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output/avlrooftop_models/ia_ssd/D1_50epochs/ckpt/checkpoint_epoch_50.pth"
+    checkpoint_path1 = "/home/cgriesbacher/thesis/3DTrans/output/avlrooftop_models/ia_ssd/D1_50epochs/ckpt/checkpoint_epoch_50.pth"
 
     #zod 
     #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output/zod_models/dsvt_pillar/D16_100epochs/ckpt/checkpoint_epoch_100.pth"
@@ -109,7 +109,7 @@ def main():
     # ST avltruck -> zod
     #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output_okeanos/output/avltruck_models/pvrcnnpp_STzod/D16_20epochs_STzod_ft_D6_50epochs_fov_gace_labelupdate_nogaceretrain_1/ckpt/checkpoint_epoch_1.pth"
     
-    checkpoint_path = [checkpoint_path]
+    checkpoint_path = [checkpoint_path1, checkpoint_path]
 
     if (args.dataset == None):
         args.dataset = dataset
@@ -143,7 +143,7 @@ def main():
         image_path_frame = args.frame_idx.split("/")[1] + "_" + args.frame_idx.split("/")[-1].split(".")[0] 
 
     elif (args.dataset == "zod"):
-        cfg_path =  "/home/cgriesbacher/thesis/3DTrans/tools/cfgs/dataset_configs/zod/OD/zod_dataset.yaml"
+        cfg_path =  "/home/cgriesbacher/thesis/3DTrans/tools/cfgs/dataset_configs/zod/DA/zod_dataset.yaml"
         dataset_cfg = EasyDict(yaml.safe_load(open(cfg_path)))
         
         dataset_class_names = ["Vehicle_Car", 
@@ -218,75 +218,74 @@ def main():
 
     image_path = "viz/" + args.dataset
 
-    if args.ckpt != None:
-        if isinstance(args.ckpt, list):
-            ckpt = args.ckpt[0]
-        train_dataset = ckpt.split("/")[-5]
-        train_detector = ckpt.split("/")[-4]
-        train_name = ckpt.split("/")[-3]
-        train_epoch = ckpt.split("/")[-1].split(".")[0].split("_")[-1]
-        #get model config 
-        ckpt_path = Path(ckpt)
-        cfg_path = [file for file in ckpt_path.parent.parent.glob('*.yaml')]
-        assert len(cfg_path) == 1, "More or less than one config file found in "+ckpt_path.parent.parent.__str__()
-        cfg_path = cfg_path[0]
-
-        #parse config
-        cfg_from_yaml_file(cfg_path, cfg)
-
-        image_path += "/" + train_dataset + "_" + train_detector + "_" + train_name + "_" + train_epoch
-
-    image_path += "/" + image_path_frame + ".png"
-
     logger = common_utils.create_logger()
+    
+    if args.ckpt == None:
+        image_path += "/" + image_path_frame + ".png"
 
-    #load model if specified
-    if args.ckpt is not None:
-        #check if list
+    if args.ckpt != None:
         if not isinstance(args.ckpt, list):
             args.ckpt = [args.ckpt]
 
-        # some detectors use different range or voxel preprocessing
-        if hasattr(cfg.DATA_CONFIG, "POINT_CLOUD_RANGE"):
-            dataset_cfg.POINT_CLOUD_RANGE = cfg.DATA_CONFIG.POINT_CLOUD_RANGE
-        if hasattr(cfg.DATA_CONFIG, "DATA_PROCESSOR"):
-            dataset_cfg.DATA_PROCESSOR = cfg.DATA_CONFIG.DATA_PROCESSOR
-
-        #select frame and get data dict
-        #build dataset
-        dataset, train_loader, train_sampler = build_dataloader(dataset_cfg=dataset_cfg,
-                                    class_names=cfg.CLASS_NAMES,
-                                    batch_size=1,
-                                    dist=False,
-                                    workers=0,
-                                    logger=logger,
-                                    training=training) 
-        #find sample index for frame
-        sample_id_list = dataset.sample_id_list.copy()
-        if select_random_frame:
-            #filter frame ids that contain a keyword
-            if frame_keyword is not None:
-                sample_id_list = [sample_id for sample_id in sample_id_list if frame_keyword in sample_id]
-            
-            args.frame_idx = random.choice(sample_id_list)
-
-            print("\nselected random frame: ", args.frame_idx, "\n")
-
-        list_index = sample_id_list.index(args.frame_idx)
-
-        #get data from info files -> is in detector class name space
-        data_dict = dataset.__getitem__(list_index)
-        if no_detection:
-            import tools.visual_utils.open3d_vis_utils as vis
-            vis.draw_scenes(data_dict["points"][:,:3], point_colors=data_dict["points"][:,3], gt_boxes=data_dict["gt_boxes"])
-            return
-        data_dict = dataset.collate_batch([data_dict])
 
 
         det_boxes = []
         det_labels = []
         det_scores = []
+        random_frame_set = False
         for i, ckpt in enumerate(args.ckpt):
+            train_dataset = ckpt.split("/")[-5]
+            train_detector = ckpt.split("/")[-4]
+            train_name = ckpt.split("/")[-3]
+            train_epoch = ckpt.split("/")[-1].split(".")[0].split("_")[-1]
+            #get model config 
+            ckpt_path = Path(ckpt)
+            cfg_path = [file for file in ckpt_path.parent.parent.glob('*.yaml')]
+            assert len(cfg_path) == 1, "More or less than one config file found in "+ckpt_path.parent.parent.__str__()
+            cfg_path = cfg_path[0]
+
+            #parse config
+            cfg_from_yaml_file(cfg_path, cfg)
+
+            image_path += "/" + train_dataset + "_" + train_detector + "_" + train_name + "_" + train_epoch
+
+            # some detectors use different range or voxel preprocessing
+            if hasattr(cfg.DATA_CONFIG, "POINT_CLOUD_RANGE"):
+                dataset_cfg.POINT_CLOUD_RANGE = cfg.DATA_CONFIG.POINT_CLOUD_RANGE
+            if hasattr(cfg.DATA_CONFIG, "DATA_PROCESSOR"):
+                dataset_cfg.DATA_PROCESSOR = cfg.DATA_CONFIG.DATA_PROCESSOR
+
+            #select frame and get data dict
+            #build dataset
+            dataset, train_loader, train_sampler = build_dataloader(dataset_cfg=dataset_cfg,
+                                        class_names=cfg.CLASS_NAMES,
+                                        batch_size=1,
+                                        dist=False,
+                                        workers=0,
+                                        logger=logger,
+                                        training=training) 
+            #find sample index for frame
+            sample_id_list = dataset.sample_id_list.copy()
+            if select_random_frame and not random_frame_set:
+                #filter frame ids that contain a keyword
+                if frame_keyword is not None:
+                    sample_id_list = [sample_id for sample_id in sample_id_list if frame_keyword in sample_id]
+                
+                args.frame_idx = random.choice(sample_id_list)
+                print("\nselected random frame: ", args.frame_idx, "\n")
+                random_frame_set = True
+
+            list_index = sample_id_list.index(args.frame_idx)
+
+            #get data from info files -> is in detector class name space
+            data_dict = dataset.__getitem__(list_index)
+            if no_detection:
+                import tools.visual_utils.open3d_vis_utils as vis
+                vis.draw_scenes(data_dict["points"][:,:3], point_colors=data_dict["points"][:,3], gt_boxes=data_dict["gt_boxes"])
+                return
+            data_dict = dataset.collate_batch([data_dict])
+
+
             #get model config 
             ckpt_path = Path(ckpt)
             cfg_path = [file for file in ckpt_path.parent.parent.glob('*.yaml')]

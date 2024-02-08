@@ -7,7 +7,7 @@ MODEL=ia_ssd
 EXTRA_TAG=D1_50epochs
 EPOCH=50
 
-EVAL_DATASETS=(avltruck avlrooftop zod)
+EVAL_DATASETS=(avltruck zod)
 
 BATCHSIZE=16
 NUM_WORKERS=2
