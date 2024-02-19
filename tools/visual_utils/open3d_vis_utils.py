@@ -220,6 +220,61 @@ def draw_scenes(points, gt_boxes=None, det_boxes=None, det_labels=None, det_scor
         
     vis.add_geometry(pts)
 
+
+    #add line in x directiron
+    # Define the points for the line in the X direction
+    point_start = np.array([0, 0, 0])  # Starting point of the line
+    point_end = np.array([100, 0, 0])  # Ending point of the line, 1 unit along the X axis
+
+    # Create a LineSet object
+    line_set = o3d.geometry.LineSet()
+
+    # Set the points of the line
+    line_set.points = o3d.utility.Vector3dVector([point_start, point_end])
+
+    # Define the connection between the points (indices of the points list)
+    lines = [[0, 1]]  # Connects the first point to the second point
+    line_set.lines = o3d.utility.Vector2iVector(lines)
+    line_set.paint_uniform_color([0, 0, 0])
+
+    # Visualize the line
+    vis.add_geometry(line_set)
+
+    # Circle parameters
+    radius = 50  # 50 meters
+    num_points = 5000  # Number of points to generate
+
+    # Generate points for the circle
+    theta = np.linspace(0, 2 * np.pi, num_points)
+    x = radius * np.cos(theta)
+    y = radius * np.sin(theta)
+    z = np.zeros(num_points)  # Assuming the circle is in the XY plane
+
+    # Create a point cloud
+    circle_points1 = np.vstack((x, y, z)).T  # Combine x, y, z coordinates
+    circle_pcd1 = o3d.geometry.PointCloud()
+    circle_pcd1.points = o3d.utility.Vector3dVector(circle_points1)
+    circle_pcd1.paint_uniform_color([0, 0, 0])
+    vis.add_geometry(circle_pcd1)
+
+    # Circle parameters
+    radius = 100  # 50 meters
+    num_points = 20000  # Number of points to generate
+
+    # Generate points for the circle
+    theta = np.linspace(0, 2 * np.pi, num_points)
+    x = radius * np.cos(theta)
+    y = radius * np.sin(theta)
+    z = np.zeros(num_points)  # Assuming the circle is in the XY plane
+
+    # Create a point cloud
+    circle_points2 = np.vstack((x, y, z)).T  # Combine x, y, z coordinates
+    circle_pcd2 = o3d.geometry.PointCloud()
+    circle_pcd2.points = o3d.utility.Vector3dVector(circle_points2)
+    circle_pcd2.paint_uniform_color([0, 0, 0])
+
+    vis.add_geometry(circle_pcd2)
+
     if gt_boxes is not None:
         vis = draw_box(vis, gt_boxes, (0.99, 0.0, 0.0))
 

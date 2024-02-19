@@ -31,12 +31,12 @@ MAP_CLASS_TO_KITTI:
 #ZOD supports up to range 245m
 #POINT_CLOUD_RANGE: [-75.2, -75.2, -5, 123.2, 75.2, 1]            # AVLTruck
 POINT_CLOUD_RANGE: [-75.2, -75.2, -2, 123.2, 75.2, 4] # ZOD
-#POINT_CLOUD_RANGE: [0, -40, -3, 70.4, 40, 1]                     # KITTI
 
 FOV_POINTS_ONLY: True
+#EVAL_MAX_DISTANCE: [[0, 1000], [0,20], [20, 40], [40, 60], [60, 80], [80, 100], [100, 150]]
 EVAL_MAX_DISTANCE: [0, 1000]
 
-POST_SN_ENABLED: True
+POST_SN_ENABLED: False
 POST_SN_SOURCE: "AVLRooftop"
 POST_SN_MAP: {
   "AVLRooftop":   

@@ -18,6 +18,7 @@ from pcdet.utils import common_utils
 from train_utils.optimization import build_optimizer, build_scheduler
 #from train_utils.train_utils import train_model
 from train_utils.train_st_utils import train_model_st
+from pcdet.models.model_utils.dsnorm import DSNorm
 
 
 def parse_config():
@@ -145,6 +146,8 @@ def main():
     model = build_network(model_cfg=cfg.MODEL, num_class=len(cfg.CLASS_NAMES), dataset=source_set)
     if args.sync_bn:
         model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
+    #elif cfg.get('SELF_TRAIN', None) and cfg.SELF_TRAIN.get('DSNORM', None):
+    #model = DSNorm.convert_dsnorm(model)
     model.cuda()
     n_parameters = sum(p.numel() for p in model.parameters() if p.requires_grad)
     optimizer = build_optimizer(model, cfg.OPTIMIZATION)

@@ -310,14 +310,13 @@ class AVLDataset(DatasetTemplate):
                 current_classes=class_names)
             return ap_result_str, ap_dict
 
-        def waymo_eval(eval_det_annos, eval_gt_annos):
+        def waymo_eval(eval_det_annos, eval_gt_annos, eval_max_dist):
             from ..waymo.waymo_eval import OpenPCDetWaymoDetectionMetricsEstimator
             eval = OpenPCDetWaymoDetectionMetricsEstimator()
             
             for anno in eval_gt_annos:
                 anno['difficulty'] = np.zeros([anno['name'].shape[0]], dtype=np.int32)
             #waymo supports     WAYMO_CLASSES = ['unknown', 'Vehicle', 'Pedestrian', 'Truck', 'Cyclist']
-            eval_max_dist = self.dataset_cfg.get('EVAL_MAX_DISTANCE', 1000)
             print("eval_max_dist", eval_max_dist)
             ap_dict = eval.waymo_evaluation(eval_det_annos,
                                             eval_gt_annos,
@@ -459,7 +458,14 @@ class AVLDataset(DatasetTemplate):
         if kwargs['eval_metric'] == 'kitti':
             ap_result_str, ap_dict = kitti_eval(eval_det_annos, eval_gt_annos, self.map_class_to_kitti, class_names)
         elif kwargs['eval_metric'] == 'waymo':
-            ap_result_str, ap_dict = waymo_eval(eval_det_annos, eval_gt_annos)
+            eval_max_dist = self.dataset_cfg.get('EVAL_MAX_DISTANCE', 1000)
+            if isinstance(eval_max_dist, list) & isinstance(eval_max_dist[0], list):    #is double list -> do range evaluation
+                ap_result_str = ""
+                for dist in eval_max_dist:
+                    ap_result_str_, ap_dict = waymo_eval(eval_det_annos, eval_gt_annos, dist)
+                    ap_result_str += "Distance: " + str(dist) + "\n" + ap_result_str_
+            else:
+                ap_result_str, ap_dict = waymo_eval(eval_det_annos, eval_gt_annos, eval_max_dist)
         else:
             raise NotImplementedError
         

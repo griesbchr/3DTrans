@@ -2,16 +2,18 @@
 #################MULTI DATASET TESTING#################
 # Test a single detector on multiple arbitrary datasets
 
-TRAIN_DATASET=(avltruck avlrooftop zod)
+OUTPUT_FOLDER=output
 
-MODEL=pointpillar
+TRAIN_DATASET=(avlrooftop)
 
-CFG_TAG=(D6_50epochs D1_50epochs D16_50epochs)
-EPOCH=50
+MODEL=dsvt_pillar
+
+CFG_TAG=(D1_100epochs)
+EPOCH=100
 
 EVAL_DATASETS=(avltruck avlrooftop zod)
 
-BATCHSIZE=8
+BATCHSIZE=4
 NUM_WORKERS=4
 
 
@@ -27,8 +29,8 @@ for i in "${!TRAIN_DATASET[@]}"; do
 
         ROOT_PATH=/home/cgriesbacher/thesis/3DTrans
         RUN_PATH=${TRAIN_DATASET}_models/$MODEL/$CFG_TAG
-        CHECKPOINT_PATH=$ROOT_PATH/output/$RUN_PATH/ckpt/checkpoint_epoch_$EPOCH.pth
-        CFG_PATH=$ROOT_PATH/output/$RUN_PATH/$MODEL.yaml
+        CHECKPOINT_PATH=$ROOT_PATH/$OUTPUT_FOLDER/$RUN_PATH/ckpt/checkpoint_epoch_$EPOCH.pth
+        CFG_PATH=$ROOT_PATH/$OUTPUT_FOLDER/$RUN_PATH/$MODEL.yaml
 
         #multi gpu training
         NUM_GPUS=1
@@ -39,5 +41,3 @@ for i in "${!TRAIN_DATASET[@]}"; do
         #python test.py --cfg_file $CFG_PATH --ckpt $CHECKPOINT_PATH --batch_size $BATCHSIZE --workers $NUM_WORKERS --extra_tag $CFG_TAG --crosseval_dataset_cfg $EVAL_DATASET_CFG_PATH --eval_tag $EVAL_DATASET
     done
 done
-
-

@@ -151,11 +151,11 @@ SELF_TRAIN:
         LOSS_WEIGHT: 1.0
 
 
-    SCORE_THRESH: [0.45, 0.75, 0.75, 0.85]             #Threshold per class
+    SCORE_THRESH: [0.4, 0.75, 0.75, 0.85]             #Threshold per class
     NEG_THRESH: [0.25, 0.45, 0.5, 0.4]
 
     UPDATE_PSEUDO_LABEL: [0,1]
-    UPDATE_PSEUDO_LABEL_INTERVAL: 10
+    UPDATE_PSEUDO_LABEL_INTERVAL: 15
     INIT_PS: None
     
     PROG_AUG:
@@ -183,7 +183,7 @@ SELF_TRAIN:
 
 OPTIMIZATION:
     OPTIMIZER: adam_onecycle
-    LR: 0.0001
+    LR: 0.0005
     WEIGHT_DECAY: 0.002
     MOMENTUM: 0.9
 

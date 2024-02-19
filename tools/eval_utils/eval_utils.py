@@ -7,6 +7,7 @@ import tqdm
 
 from pcdet.models import load_data_to_gpu
 from pcdet.utils import common_utils
+from pcdet.models.model_utils.dsnorm import set_ds_target
 
 
 def statistics_info(cfg, ret_dict, metric, disp_dict):
@@ -47,11 +48,13 @@ def eval_one_epoch(cfg, model, dataloader, epoch_id, logger, dist_test=False, sa
                 broadcast_buffers=False
         )
     model.eval()
-
+    #if cfg.get('SELF_TRAIN', None) and cfg.SELF_TRAIN.get('DSNORM', None):
+    #model.apply(set_ds_target)
     ret_dict = {}
 
     #check if there is results.pkl in result_dir
     if (result_dir / 'result.pkl').exists():
+        logger.info('Loading results from %s' % (result_dir / 'result.pkl'))
         det_annos = pickle.load(open(result_dir / 'result.pkl', 'rb'))
     else:
         if cfg.LOCAL_RANK == 0:
