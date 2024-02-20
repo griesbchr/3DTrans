@@ -67,3 +67,4 @@ gace_output/*
 gace/gace_output/*
 gace/data/*
 output_okeanos
+tools/train_with_pretrained_okeanos.sh
