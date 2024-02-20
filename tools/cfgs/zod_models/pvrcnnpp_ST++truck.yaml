@@ -22,7 +22,7 @@ DATA_CONFIG:
   _BASE_CONFIG_: cfgs/dataset_configs/zod/OD/zod_dataset.yaml
 
   DATA_AUGMENTOR:
-    DISABLE_AUG_LIST: ["gt_sampling", "random_object_scaling", "normalize_object_size_multiclass"]
+    DISABLE_AUG_LIST: ["gt_sampling", "normalize_object_size_multiclass"]
 
     AUG_CONFIG_LIST:
       - NAME: gt_sampling
@@ -72,10 +72,14 @@ DATA_CONFIG:
         WORLD_ROT_ANGLE: [-0.78539816, 0.78539816]
 
       - NAME: random_world_scaling
-        WORLD_SCALE_RANGE: [0.95, 1.05]
+        WORLD_SCALE_RANGE: [0.97, 1.03]
 
       - NAME: random_object_scaling
-        SCALE_UNIFORM_NOISE: [0.9, 1.10]
+        SCALE_UNIFORM_NOISE: [0.95, 1.05]
+
+      - NAME: random_object_rotation
+        ROT_PROB: 0.8
+        ROT_UNIFORM_NOISE: [ -0.38539816, 0.38539816 ]
 
       - NAME: normalize_object_size_multiclass
         SIZE_RES: [[0.225, 0.183, 0.068], [0.14, 0.144, 0.093], [0.231, 0.055, 0.165], [0.502, 0.456, 0.203]]   #Vehicle, Pedestrian, Bicycle, Truck
@@ -143,28 +147,30 @@ DATA_CONFIG_TAR:
 
 SELF_TRAIN:
     SRC:
-        USE_DATA: False
-        USE_GRAD: False
+        USE_DATA: True
+        USE_GRAD: True
         LOSS_WEIGHT: 1.0
+        SEP_LOSS_WEIGHTS: [3.0, 1.0, 1.0]
     TAR:
         USE_DATA: True
         LOSS_WEIGHT: 1.0
+        SEP_LOSS_WEIGHTS: [1.0, 1.0, 1.0]
 
-
-    SCORE_THRESH: [0.4, 0.75, 0.75, 0.85]             #Threshold per class
+    SCORE_THRESH: [0.45, 0.75, 0.75, 0.85]             #Threshold per class
     NEG_THRESH: [0.25, 0.45, 0.5, 0.4]
 
     UPDATE_PSEUDO_LABEL: [0,1]
-    UPDATE_PSEUDO_LABEL_INTERVAL: 15
+    UPDATE_PSEUDO_LABEL_INTERVAL: 10
     INIT_PS: None
+    DSNORM: True
     
     PROG_AUG:
-        ENABLED: True
+        ENABLED: False
         UPDATE_AUG: [5, 10, 20, 25]
-        SCALE: 1.2
+        SCALE: 1.05
 
     MEMORY_ENSEMBLE:
-        ENABLED: False
+        ENABLED: True
         NAME: consistency_ensemble
         IOU_THRESH: 0.1
 
@@ -176,15 +182,15 @@ SELF_TRAIN:
             NMS_THRESH: 0.1
 
         MEMORY_VOTING:
-            ENABLED: False
-            IGNORE_THRESH: 2
-            RM_THRESH: 3
+            ENABLED: True
+            IGNORE_THRESH: 10
+            RM_THRESH: 12
 
 
 OPTIMIZATION:
     OPTIMIZER: adam_onecycle
-    LR: 0.0005
-    WEIGHT_DECAY: 0.002
+    LR: 0.0015
+    WEIGHT_DECAY: 0.001
     MOMENTUM: 0.9
 
     MOMS: [0.95, 0.85]

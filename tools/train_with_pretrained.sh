@@ -1,15 +1,20 @@
+
+#########################################################################################################################################
+'''
+TO AVLTRUCK 0.5%
+'''
 #################FINETUNING#################
 # Finetune a single detector on an arbitrary dataset
 
 
-DATASET=avlrooftop
-MODEL=pvrcnnpp_ros_rbus
-EXTRA_TAG=D1_50epochs_D1_2epochs_R2
-PRETRAINED=/home/cgriesbacher/thesis/3DTrans/output/avlrooftop_models/pvrcnnpp_ros/D1_50epochs/ckpt/checkpoint_epoch_50.pth
+DATASET=avltruck
+MODEL=pvrcnnpp
+EXTRA_TAG=D1200_50epochs_ft_D1_50epochs
+PRETRAINED=/home/cgriesbacher/thesis/3DTrans/output/avlrooftop_models/pvrcnnpp/D1_50epochs/ckpt/checkpoint_epoch_50.pth
 
-EPOCHS=2
-CKPT_SAVE_INTERVAL=2
-BATCHSIZE=8
+EPOCHS=50
+CKPT_SAVE_INTERVAL=50
+BATCHSIZE=4
 WORKERS=4
 
 NUM_GPUS=1
@@ -17,10 +22,95 @@ NUM_GPUS=1
 
 CONFIG_FILE=${DATASET}_models/$MODEL.yaml
 
+SUBSAMPLEFACTOR=1200
 
 #single gpu training
-#python train.py --cfg_file cfgs/$CONFIG_FILE --extra_tag $EXTRA_TAG  --epochs $EPOCHS --ckpt_save_interval $CKPT_SAVE_INTERVAL --batch_size $BATCHSIZE --workers $WORKERS --pretrained_model $PRETRAINED
+python train.py --cfg_file cfgs/$CONFIG_FILE --extra_tag $EXTRA_TAG  --epochs $EPOCHS --ckpt_save_interval $CKPT_SAVE_INTERVAL --batch_size $BATCHSIZE --workers $WORKERS --pretrained_model $PRETRAINED --set DATA_CONFIG.SUBSAMPLEFACTOR $SUBSAMPLEFACTOR
+#################CROSS DATASET TESTING#################
+# Test a single detector on a single arbitrary dataset
+OUTPUT_FOLDER=output
+
+TRAIN_DATASET=avltruck
+MODEL=pvrcnnpp
+EXTRA_TAG=D1200_50epochs_ft_D1_50epochs
+EPOCH=50
+
+EVAL_DATASET=avltruck
+
+BATCHSIZE=4
+NUM_WORKERS=2
+
+
+#-----------------------------------------------------
+EVAL_DATASET_CFG_PATH=cfgs/dataset_configs/$EVAL_DATASET/DA/${EVAL_DATASET}_dataset.yaml
+
+ROOT_PATH=/home/cgriesbacher/thesis/3DTrans
+RUN_PATH=${TRAIN_DATASET}_models/$MODEL/$EXTRA_TAG
+CHECKPOINT_PATH=$ROOT_PATH/$OUTPUT_FOLDER/$RUN_PATH/ckpt/checkpoint_epoch_$EPOCH.pth
+CFG_PATH=$ROOT_PATH/$OUTPUT_FOLDER/$RUN_PATH/$MODEL.yaml
 
 #multi gpu training
-bash scripts/dist_train.sh $NUM_GPUS --cfg_file cfgs/$CONFIG_FILE --extra_tag $EXTRA_TAG  --epochs $EPOCHS --ckpt_save_interval $CKPT_SAVE_INTERVAL --batch_size $BATCHSIZE --workers $WORKERS
+NUM_GPUS=1
+cd "/home/cgriesbacher/thesis/3DTrans/tools"
 
+bash scripts/dist_test.sh $NUM_GPUS --cfg_file $CFG_PATH --ckpt $CHECKPOINT_PATH --batch_size $BATCHSIZE --workers $NUM_WORKERS --extra_tag $EXTRA_TAG --crosseval_dataset_cfg $EVAL_DATASET_CFG_PATH --eval_tag $EVAL_DATASET
+
+#single gpu training for debugging
+#python test.py --cfg_file $CFG_PATH --ckpt $CHECKPOINT_PATH --batch_size $BATCHSIZE --workers $NUM_WORKERS --extra_tag $EXTRA_TAG --crosseval_dataset_cfg $EVAL_DATASET_CFG_PATH --eval_tag $EVAL_DATASET
+
+
+
+#################FINETUNING#################
+# Finetune a single detector on an arbitrary dataset
+
+
+DATASET=avltruck
+MODEL=pvrcnnpp
+EXTRA_TAG=D1200_50epochs_ft_D16_50epochs
+PRETRAINED=/home/cgriesbacher/thesis/3DTrans/output/zod_models/pvrcnnpp/D16_50epochs/ckpt/checkpoint_epoch_50.pth
+
+EPOCHS=50
+CKPT_SAVE_INTERVAL=50
+BATCHSIZE=4
+WORKERS=4
+
+NUM_GPUS=1
+#export CUDA_VISIBLE_DEVICES=0,1
+
+CONFIG_FILE=${DATASET}_models/$MODEL.yaml
+
+SUBSAMPLEFACTOR=1200
+
+#single gpu training
+python train.py --cfg_file cfgs/$CONFIG_FILE --extra_tag $EXTRA_TAG  --epochs $EPOCHS --ckpt_save_interval $CKPT_SAVE_INTERVAL --batch_size $BATCHSIZE --workers $WORKERS --pretrained_model $PRETRAINED --set DATA_CONFIG.SUBSAMPLEFACTOR $SUBSAMPLEFACTOR
+#################CROSS DATASET TESTING#################
+# Test a single detector on a single arbitrary dataset
+OUTPUT_FOLDER=output
+
+TRAIN_DATASET=avltruck
+MODEL=pvrcnnpp
+EXTRA_TAG=D1200_50epochs_ft_D16_50epochs
+EPOCH=50
+
+EVAL_DATASET=avltruck
+
+BATCHSIZE=4
+NUM_WORKERS=2
+
+
+#-----------------------------------------------------
+EVAL_DATASET_CFG_PATH=cfgs/dataset_configs/$EVAL_DATASET/DA/${EVAL_DATASET}_dataset.yaml
+
+ROOT_PATH=/home/cgriesbacher/thesis/3DTrans
+RUN_PATH=${TRAIN_DATASET}_models/$MODEL/$EXTRA_TAG
+CHECKPOINT_PATH=$ROOT_PATH/$OUTPUT_FOLDER/$RUN_PATH/ckpt/checkpoint_epoch_$EPOCH.pth
+CFG_PATH=$ROOT_PATH/$OUTPUT_FOLDER/$RUN_PATH/$MODEL.yaml
+
+#multi gpu training
+NUM_GPUS=1
+cd "/home/cgriesbacher/thesis/3DTrans/tools"
+
+bash scripts/dist_test.sh $NUM_GPUS --cfg_file $CFG_PATH --ckpt $CHECKPOINT_PATH --batch_size $BATCHSIZE --workers $NUM_WORKERS --extra_tag $EXTRA_TAG --crosseval_dataset_cfg $EVAL_DATASET_CFG_PATH --eval_tag $EVAL_DATASET
+
+#single gpu training for debugging
+#python test.py --cfg_file $CFG_PATH --ckpt $CHECKPOINT_PATH --batch_size $BATCHSIZE --workers $NUM_WORKERS --extra_tag $EXTRA_TAG --crosseval_dataset_cfg $EVAL_DATASET_CFG_PATH --eval_tag $EVAL_DATASET
