@@ -1,0 +1,166 @@
+#AVL truck dataset classes
+# 'Vehicle_Drivable_Car'
+# 'Vehicle_Drivable_Van'
+# 'Vehicle_Ridable_Motorcycle'
+# 'Vehicle_Ridable_Bicycle'
+# 'Human'
+# 'LargeVehicle_Bus'
+# 'LargeVehicle_TruckCab'
+# 'LargeVehicle_Truck'
+# 'Trailer'
+
+DATASET: "AVLTruckDataset"
+DATA_PATH: "../data/avltruck"
+PROCESSED_DATA_TAG: "avl_processed_data_v0_5_0"
+
+#{x, y}/0.1 range need to be divisible by voxel size and anchor stride (8)
+#POINT_CLOUD_RANGE: [-50, -76, -5, 150, 76, 1]         # old AVLTruck
+POINT_CLOUD_RANGE: [-75.2, -75.2, -2, 123.2, 75.2, 4] # AVLTruck
+
+DATA_SPLIT: { "train": train, "test": val }
+
+INFO_PATH: { "train": [avl_infos_train.pkl], "val": [avl_infos_val.pkl] }
+
+#maps the classes form the dataset info files to classes from the detector
+#the right-hand names need to match the class names in the detector config
+#waymo-like mapping
+MAP_MERGE_CLASS: {
+    "Vehicle_Drivable_Car": "Vehicle",
+    "Vehicle_Drivable_Van": "Vehicle",
+    "Vehicle_Ridable_Motorcycle": "Cyclist",
+    "Vehicle_Ridable_Bicycle": "Cyclist",
+    "Human": "Pedestrian",
+    "LargeVehicle_Bus": "Truck",
+    "LargeVehicle_TruckCab": "Truck",
+    "LargeVehicle_Truck": "Truck",
+    "Trailer": "Truck",
+    "Dont_Care": "DontCare",
+    "Other": "DontCare",
+    #'Placeholder': 'DontCare',
+  }
+
+#maps detector classes to kitti classes (kitti eval needs kitti class names)
+MAP_CLASS_TO_KITTI:
+  { "Vehicle": "Car", "Pedestrian": "Pedestrian", "Cyclist": "Cyclist" }
+
+  # {
+  #   "Vehicle_Drivable_Car": "Vehicle",
+  #   "Vehicle_Drivable_Van": "Vehicle",
+  #   "Vehicle_Ridable_Motorcycle": "Vehicle",
+  #   "Vehicle_Ridable_Bicycle": "Cyclist",
+  #   "Human": "Pedestrian",
+  #   "LargeVehicle_Bus": "Vehicle",
+  #   "LargeVehicle_TruckCab": "Vehicle",
+  #   "LargeVehicle_Truck": "Vehicle",
+  #   "Trailer": "Vehicle",
+  # }
+
+#position of the groundplane relative to data origin (usually lidar sensor)
+#negative z value means the ground plane is below the sensor
+#used to shift data to the ground plane when generating infos and at training time (get_lidar)
+LIDAR_Z_SHIFT: -3.4097
+
+#set label of all truncated or not in fov labels to -1 which means disregard
+#also removes point that are not in fov
+TRAIN_FOV_ONLY: True
+LIDAR_FOV: 120
+LIDAR_HEADING: 0
+DISREGARD_TRUNCATED: True
+
+#removed dets and gts that are truncated not in fov before evaluation
+EVAL_FOV_ONLY: True
+EVAL_MAX_DISTANCE: [0, 1000]
+
+#Subsample the dataset by the given factor
+SUBSAMPLEFACTOR: 6
+
+#height of the data origin above ground plane during detector training, should be at 0.0 if trained correctly
+#positive z value means the data origin is above the ground plane
+#shifts the detected boxes to match the ground truth boxes
+#TRAINING_Z_SHIFT: 3.4097
+
+FILTER_EMPTY_BOXES_FOR_TRAIN: True
+DISABLE_NLZ_FLAG_ON_POINTS: True
+
+USE_SHARED_MEMORY: False # it will load the data to shared memory to speed up (DO NOT USE IT IF YOU DO NOT FULLY UNDERSTAND WHAT WILL HAPPEN)
+SHARED_MEMORY_FILE_LIMIT: 35000 # set it based on the size of your shared memory
+
+DATA_AUGMENTOR:
+  DISABLE_AUG_LIST: ["gt_sampling"]
+  #DISABLE_AUG_LIST: ['gt_sampling', 'random_world_flip', 'random_world_rotation', 'random_world_scaling']
+  AUG_CONFIG_LIST:
+    - NAME: gt_sampling
+      USE_ROAD_PLANE: False
+      DB_INFO_PATH:
+        - avl_dbinfos_train.pkl
+      PREPARE:
+        {
+          filter_by_min_points:
+            [
+              "Vehicle_Drivable_Car:5",
+              "Vehicle_Drivable_Van:5",
+              "Human:5",
+              "Vehicle_Ridable_Motorcycle:5",
+              "Vehicle_Ridable_Bicycle:5",
+              "LargeVehicle_Bus:5",
+              "LargeVehicle_Truck:5",
+              "LargeVehicle_TruckCab:5",
+              "Trailer:5",
+            ],
+        }
+
+      SAMPLE_GROUPS:
+        #Vehicle: 15, Cyclist: 10, Pedestrian: 10
+
+        [
+          "Vehicle_Drivable_Car:11",
+          "Vehicle_Drivable_Van:2",
+          "Human:10",
+          "Vehicle_Ridable_Motorcycle:5",
+          "Vehicle_Ridable_Bicycle:5",
+          "LargeVehicle_Bus:1",
+          "LargeVehicle_Truck:1",
+          "LargeVehicle_TruckCab:0",
+          "Trailer:0",
+        ]
+        #"Vehicle_Drivable_Car:20",
+        #"Vehicle_Drivable_Van:10",
+        #"Human:15",
+        #"Vehicle_Ridable_Motorcycle:10",
+        #"Vehicle_Ridable_Bicycle:10",
+        #"LargeVehicle_Bus:0",
+        #"LargeVehicle_Truck:0",
+        #"LargeVehicle_TruckCab:0",
+        #"Trailer:0",
+      NUM_POINT_FEATURES: 4
+      DATABASE_WITH_FAKELIDAR: False
+      REMOVE_EXTRA_WIDTH: [0.0, 0.0, 0.0]
+      LIMIT_WHOLE_SCENE: True
+
+    - NAME: random_world_flip
+      ALONG_AXIS_LIST: ["x", "y"]
+
+    - NAME: random_world_rotation
+      WORLD_ROT_ANGLE: [-0.78539816, 0.78539816]
+
+    - NAME: random_world_scaling
+      WORLD_SCALE_RANGE: [0.95, 1.05]
+
+POINT_FEATURE_ENCODING:
+  {
+    encoding_type: absolute_coordinates_encoding,
+    used_feature_list: ["x", "y", "z", "intensity"],
+    src_feature_list: ["x", "y", "z", "intensity"],
+  }
+
+DATA_PROCESSOR:
+  - NAME: mask_points_and_boxes_outside_range
+    REMOVE_OUTSIDE_BOXES: True
+
+  - NAME: shuffle_points
+    SHUFFLE_ENABLED: { "train": True, "test": False }
+
+  - NAME: transform_points_to_voxels
+    VOXEL_SIZE: [0.1, 0.1, 0.15]
+    MAX_POINTS_PER_VOXEL: 5
+    MAX_NUMBER_OF_VOXELS: { "train": 150000, "test": 150000 }

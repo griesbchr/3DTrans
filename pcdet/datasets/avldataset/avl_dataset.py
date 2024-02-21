@@ -35,7 +35,7 @@ class AVLDataset(DatasetTemplate):
         self.avl_infos = []
         self.include_avl_data(self.split)
         self.avl_infos = [ai for ai in self.avl_infos
-                          if 'annos' in ai]  # filter out frames wituoht labels
+                          if 'annos' in ai]  # filter out frames without 'anno' attribute 
         
         self.train_fov_only = self.dataset_cfg.get('TRAIN_FOV_ONLY', False)
         self.fov_angle_deg = self.dataset_cfg.get('LIDAR_FOV', 120)

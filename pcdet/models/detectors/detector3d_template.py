@@ -358,13 +358,13 @@ class Detector3DTemplate(nn.Module):
                     if val_implicit.shape == state_dict[key].shape:
                         val = val_implicit.contiguous()
 
-            #module_name = key.split('.')[-1]
-            #if "DSNorm" in self.__repr__() and (module_name == "running_mean"  or module_name == 'running_var'):    #model was pretrained without DSNorm layer
-            #    update_model_state[key+"_source"] = val
-            #    update_model_state[key+"_target"] = val
-            #elif key in state_dict and state_dict[key].shape == val.shape:
+            module_name = key.split('.')[-1]
+            if "DSNorm" in self.__repr__() and (module_name == "running_mean"  or module_name == 'running_var'):    #model was pretrained without DSNorm layer
+                update_model_state[key+"_source"] = val
+                update_model_state[key+"_target"] = val
+            elif key in state_dict and state_dict[key].shape == val.shape:
 
-            if key in state_dict and state_dict[key].shape == val.shape:
+            #if key in state_dict and state_dict[key].shape == val.shape:
                 update_model_state[key] = val
                 # logger.info('Update weight %s: %s' % (key, str(val.shape)))
 

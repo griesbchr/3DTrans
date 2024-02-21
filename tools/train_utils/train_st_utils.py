@@ -39,32 +39,57 @@ def train_one_epoch_st(model, optimizer, source_reader, target_loader, model_fun
         model.train()
 
         optimizer.zero_grad()
-        try:
-            target_batch = next(dataloader_iter)
-        except StopIteration:
-            dataloader_iter = iter(target_loader)
-            target_batch = next(dataloader_iter)
-            print('new iters')
+        if cfg.SELF_TRAIN.SRC.USE_DATA:
+            # forward source data with labels
+            source_batch = source_reader.read_data()
 
-        #if cfg.SELF_TRAIN.get('DSNORM', None):
-        #model.apply(set_ds_target)
+            if cfg.SELF_TRAIN.get('DSNORM', None):
+                model.apply(set_ds_source)
 
-        # parameters for save pseudo label on the fly
-        st_loss, st_tb_dict, st_disp_dict = model_func(model, target_batch)
-        st_loss.backward()
-        st_loss_meter.update(st_loss.item())
+            if cfg.SELF_TRAIN.SRC.get('SEP_LOSS_WEIGHTS', None):
+                source_batch['SEP_LOSS_WEIGHTS'] = cfg.SELF_TRAIN.SRC.SEP_LOSS_WEIGHTS
 
-        # count number of used ps bboxes in this batch
-        pos_pseudo_bbox = target_batch['pos_ps_bbox'].mean().item()
-        ign_pseudo_bbox = target_batch['ign_ps_bbox'].mean().item()
-        ps_bbox_meter.update(pos_pseudo_bbox)
-        ignore_ps_bbox_meter.update(ign_pseudo_bbox)
+            loss, tb_dict, disp_dict = model_func(model, source_batch)
+            loss = cfg.SELF_TRAIN.SRC.get('LOSS_WEIGHT', 1.0) * loss
+            loss.backward()
+            st_loss_meter.update(loss.item())
+            disp_dict.update({'loss': "{:.3f}({:.3f})".format(st_loss_meter.val, st_loss_meter.avg)})
 
-        st_tb_dict = common_utils.add_prefix_to_dict(st_tb_dict, 'st_')
-        disp_dict.update(common_utils.add_prefix_to_dict(st_disp_dict, 'st_'))
-        disp_dict.update({'st_loss': "{:.3f}({:.3f})".format(st_loss_meter.val, st_loss_meter.avg),
-                          'pos_ps_box': ps_bbox_meter.avg,
-                          'ign_ps_box': ignore_ps_bbox_meter.avg})
+            if not cfg.SELF_TRAIN.SRC.get('USE_GRAD', None):
+                optimizer.zero_grad()
+
+        if cfg.SELF_TRAIN.TAR.USE_DATA:
+            try:
+                target_batch = next(dataloader_iter)
+            except StopIteration:
+                dataloader_iter = iter(target_loader)
+                target_batch = next(dataloader_iter)
+                print('new iters')
+
+            if cfg.SELF_TRAIN.get('DSNORM', None):
+                model.apply(set_ds_target)
+
+            if cfg.SELF_TRAIN.TAR.get('SEP_LOSS_WEIGHTS', None):
+                target_batch['SEP_LOSS_WEIGHTS'] = cfg.SELF_TRAIN.TAR.SEP_LOSS_WEIGHTS
+
+            # parameters for save pseudo label on the fly
+            st_loss, st_tb_dict, st_disp_dict = model_func(model, target_batch)
+            st_loss = cfg.SELF_TRAIN.TAR.get('LOSS_WEIGHT', 1.0) * st_loss
+            st_loss.backward()
+            st_loss_meter.update(st_loss.item())
+
+            # count number of used ps bboxes in this batch
+            pos_pseudo_bbox = target_batch['pos_ps_bbox'].mean(dim=0).cpu().numpy()
+            ign_pseudo_bbox = target_batch['ign_ps_bbox'].mean(dim=0).cpu().numpy()
+            ps_bbox_meter.update(pos_pseudo_bbox.tolist())
+            ignore_ps_bbox_meter.update(ign_pseudo_bbox.tolist())
+
+
+            st_tb_dict = common_utils.add_prefix_to_dict(st_tb_dict, 'st_')
+            disp_dict.update(common_utils.add_prefix_to_dict(st_disp_dict, 'st_'))
+            disp_dict.update({'st_loss': "{:.3f}({:.3f})".format(st_loss_meter.val, st_loss_meter.avg),
+                              'pos_ps_box': ps_bbox_meter.avg,
+                              'ign_ps_box': ignore_ps_bbox_meter.avg})
 
         clip_grad_norm_(model.parameters(), optim_cfg.GRAD_NORM_CLIP)
         optimizer.step()

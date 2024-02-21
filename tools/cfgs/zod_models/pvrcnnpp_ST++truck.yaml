@@ -159,8 +159,8 @@ SELF_TRAIN:
     SCORE_THRESH: [0.45, 0.75, 0.75, 0.85]             #Threshold per class
     NEG_THRESH: [0.25, 0.45, 0.5, 0.4]
 
-    UPDATE_PSEUDO_LABEL: [0,1]
-    UPDATE_PSEUDO_LABEL_INTERVAL: 10
+    UPDATE_PSEUDO_LABEL: [0]
+    UPDATE_PSEUDO_LABEL_INTERVAL: 2
     INIT_PS: None
     DSNORM: True
     
@@ -183,8 +183,8 @@ SELF_TRAIN:
 
         MEMORY_VOTING:
             ENABLED: True
-            IGNORE_THRESH: 10
-            RM_THRESH: 12
+            IGNORE_THRESH: 2
+            RM_THRESH: 3
 
 
 OPTIMIZATION:

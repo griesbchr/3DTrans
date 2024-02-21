@@ -146,8 +146,8 @@ def main():
     model = build_network(model_cfg=cfg.MODEL, num_class=len(cfg.CLASS_NAMES), dataset=source_set)
     if args.sync_bn:
         model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
-    #elif cfg.get('SELF_TRAIN', None) and cfg.SELF_TRAIN.get('DSNORM', None):
-    #model = DSNorm.convert_dsnorm(model)
+    elif cfg.get('SELF_TRAIN', None) and cfg.SELF_TRAIN.get('DSNORM', None):
+        model = DSNorm.convert_dsnorm(model)
     model.cuda()
     n_parameters = sum(p.numel() for p in model.parameters() if p.requires_grad)
     optimizer = build_optimizer(model, cfg.OPTIMIZATION)

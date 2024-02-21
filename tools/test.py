@@ -231,8 +231,8 @@ def main():
 
     model = build_network(model_cfg=cfg.MODEL, num_class=len(cfg.CLASS_NAMES), dataset=test_set)
 
-    #if cfg.get('SELF_TRAIN', None) and cfg.SELF_TRAIN.get('DSNORM', None):
-    #model = DSNorm.convert_dsnorm(model)
+    if cfg.get('SELF_TRAIN', None) and cfg.SELF_TRAIN.get('DSNORM', None):
+        model = DSNorm.convert_dsnorm(model)
 
     with torch.no_grad():
         if args.eval_all:

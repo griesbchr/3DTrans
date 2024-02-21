@@ -48,8 +48,8 @@ def eval_one_epoch(cfg, model, dataloader, epoch_id, logger, dist_test=False, sa
                 broadcast_buffers=False
         )
     model.eval()
-    #if cfg.get('SELF_TRAIN', None) and cfg.SELF_TRAIN.get('DSNORM', None):
-    #model.apply(set_ds_target)
+    if cfg.get('SELF_TRAIN', None) and cfg.SELF_TRAIN.get('DSNORM', None):
+        model.apply(set_ds_target)
     ret_dict = {}
 
     #check if there is results.pkl in result_dir
