@@ -4,12 +4,12 @@
 
 DATASET=avltruck
 MODEL=pvrcnnpp_nogtsampling
-EXTRA_TAG=EmptyFrames_0epochs_ft_D16_50epochs_nogtsampling
+EXTRA_TAG=EmptyFrames_1epochs_ft_D16_50epochs_nogtsampling
 PRETRAINED=/home/cgriesbacher/thesis/3DTrans/output/zod_models/pvrcnnpp/D16_50epochs/ckpt/checkpoint_epoch_50.pth
 
-EPOCHS=0
-CKPT_SAVE_INTERVAL=0
-BATCHSIZE=4
+EPOCHS=1
+CKPT_SAVE_INTERVAL=1
+BATCHSIZE=1
 WORKERS=4
 
 NUM_GPUS=1
@@ -27,8 +27,8 @@ OUTPUT_FOLDER=output
 
 TRAIN_DATASET=avltruck
 MODEL=pvrcnnpp_nogtsampling
-EXTRA_TAG=EmptyFrames_0epochs_ft_D16_50epochs_nogtsampling
-EPOCH=0
+EXTRA_TAG=EmptyFrames_1epochs_ft_D16_50epochs_nogtsampling
+EPOCH=1
 
 EVAL_DATASET=avltruck
 

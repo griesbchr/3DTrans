@@ -2,10 +2,10 @@
 # Test a single detector on a single arbitrary dataset
 OUTPUT_FOLDER=output
 
-TRAIN_DATASET=avltruck
-MODEL=pvrcnnpp
-EXTRA_TAG=EmptyFrames_50epochs_ft_D1_50epochs
-EPOCHS=(50)
+TRAIN_DATASET=zod
+MODEL=pvrcnnpp_ST++truck
+EXTRA_TAG=D16_30epochs_STzod_ft_D6_50epochs_2
+EPOCHS=(1 2 3 4 5 6 7 8 9 10 11 12 14 16 18 20 22 24 26 28 29)
 
 EVAL_DATASET=avltruck
 

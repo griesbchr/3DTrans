@@ -49,11 +49,63 @@ class AVLDataset(DatasetTemplate):
         self.map_class_to_kitti = self.dataset_cfg.get('MAP_CLASS_TO_KITTI',None)
 
         subsamplefactor = self.dataset_cfg.get('SUBSAMPLEFACTOR', None)
-        if subsamplefactor is not None and subsamplefactor > 1:
-            self.sample_id_list = self.sample_id_list[::subsamplefactor]
+
+
+        if self.training and self.dataset_cfg.get('SET_TRAINING_FRAMES', False):
+                self.sample_id_list = self.dataset_cfg.TRAINING_FRAMES
+                self.avl_infos = [info for info in self.avl_infos if info['point_cloud']['lidar_idx'] in self.sample_id_list]
+        elif subsamplefactor is not None and subsamplefactor > 1:
+            #self.sample_id_list = self.sample_id_list[::subsamplefactor]
+            #randomly subsample
+            self.sample_id_list = np.random.choice(self.sample_id_list, int(len(self.sample_id_list)/subsamplefactor), replace=False)
 
             #filter infors for subsampled samples
             self.avl_infos = [info for info in self.avl_infos if info['point_cloud']['lidar_idx'] in self.sample_id_list]
+
+        
+        #if self.training:
+        #    # XXX: Overwrite sample id list with hardcoded list
+        #    self.sample_id_list = ['sequences/MinorRoad_dgt_2021-11-03-11-50-37_0_s0/dataset/logical_frame_000005.json',
+        #                            'sequences/MinorRoad_dgt_2021-11-03-11-50-37_0_s0/dataset/logical_frame_000001.json',
+        #                            #'sequences/MinorRoad_dgt_2021-11-03-11-50-37_0_s0/dataset/logical_frame_000002.json',
+        #                            #'sequences/MinorRoad_dgt_2021-11-03-11-50-37_0_s0/dataset/logical_frame_000004.json',
+        #                            #'sequences/MinorRoad_dgt_2021-11-03-11-50-37_0_s0/dataset/logical_frame_000006.json',
+        #                            #'sequences/MinorRoad_dgt_2021-11-03-11-50-37_0_s0/dataset/logical_frame_000003.json',
+        #                            #'sequences/MinorRoad_dgt_2021-11-04-11-46-20_0_s0/dataset/logical_frame_000016.json',
+        #                            #'sequences/MinorRoad_dgt_2021-11-04-11-46-20_0_s0/dataset/logical_frame_000018.json',
+        #                            #'sequences/MinorRoad_dgt_2021-11-04-11-46-20_0_s0/dataset/logical_frame_000017.json',
+        #                            #'sequences/MinorRoad_dgt_2021-11-04-11-46-20_0_s0/dataset/logical_frame_000020.json',
+        #                            #'sequences/MinorRoad_dgt_2021-11-04-11-46-20_0_s0/dataset/logical_frame_000019.json',
+        #                            #'sequences/MinorRoad_dgt_2021-11-03-12-59-27_0_s0/dataset/logical_frame_000005.json',
+        #                            #'sequences/MinorRoad_dgt_2021-11-03-12-59-27_0_s0/dataset/logical_frame_000001.json',
+        #                            'sequences/MinorRoad_dgt_2021-11-03-12-59-27_0_s0/dataset/logical_frame_000002.json',
+        #                            #'sequences/MinorRoad_dgt_2021-11-03-12-59-27_0_s0/dataset/logical_frame_000004.json',
+        #                            #'sequences/MinorRoad_dgt_2021-11-03-12-59-27_0_s0/dataset/logical_frame_000003.json',
+        #                            #'sequences/PrimaryHighway_dgt_2021-07-23-11-53-02_0_s0/dataset/logical_frame_000008.json',
+        #                            #'sequences/PrimaryHighway_dgt_2021-07-23-11-53-02_0_s0/dataset/logical_frame_000007.json',
+        #                            #'sequences/PrimaryHighway_dgt_2021-07-23-11-53-02_0_s0/dataset/logical_frame_000005.json',
+        #                            #'sequences/PrimaryHighway_dgt_2021-07-23-11-53-02_0_s0/dataset/logical_frame_000001.json',
+        #                            #'sequences/PrimaryHighway_dgt_2021-07-23-11-53-02_0_s0/dataset/logical_frame_000002.json',
+        #                            #'sequences/PrimaryHighway_dgt_2021-07-23-11-53-02_0_s0/dataset/logical_frame_000004.json',
+        #                            #'sequences/PrimaryHighway_dgt_2021-07-23-11-53-02_0_s0/dataset/logical_frame_000006.json',
+        #                            #'sequences/PrimaryHighway_dgt_2021-07-23-11-53-02_0_s0/dataset/logical_frame_000003.json',
+        #                            #'sequences/SecondaryHighway_dgt_2021-07-29-11-46-58_0_s0/dataset/logical_frame_000008.json',
+        #                            #'sequences/SecondaryHighway_dgt_2021-07-29-11-46-58_0_s0/dataset/logical_frame_000007.json',
+        #                            #'sequences/SecondaryHighway_dgt_2021-07-29-11-46-58_0_s0/dataset/logical_frame_000005.json',
+        #                            #'sequences/SecondaryHighway_dgt_2021-07-29-11-46-58_0_s0/dataset/logical_frame_000001.json',
+        #                            #'sequences/SecondaryHighway_dgt_2021-07-29-11-46-58_0_s0/dataset/logical_frame_000002.json',
+        #                            #'sequences/SecondaryHighway_dgt_2021-07-29-11-46-58_0_s0/dataset/logical_frame_000004.json',
+        #                            #'sequences/SecondaryHighway_dgt_2021-07-29-11-46-58_0_s0/dataset/logical_frame_000006.json',
+        #                            'sequences/SecondaryHighway_dgt_2021-07-29-11-46-58_0_s0/dataset/logical_frame_000003.json']
+        #    
+        #    self.avl_infos = [info for info in self.avl_infos if info['point_cloud']['lidar_idx'] in self.sample_id_list]
+        #else:
+        #    if subsamplefactor is not None and subsamplefactor > 1:
+        #        self.sample_id_list = self.sample_id_list[::subsamplefactor]
+#
+        #        #filter infors for subsampled samples
+        #        self.avl_infos = [info for info in self.avl_infos if info['point_cloud']['lidar_idx'] in self.sample_id_list]
+
 
         #get eval params
         self.eval_fov_only = self.dataset_cfg.get('EVAL_FOV_ONLY', False)
