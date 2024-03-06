@@ -21,6 +21,10 @@ SUBSAMPLEFACTOR=6
 
 #single gpu training
 python train.py --cfg_file cfgs/$CONFIG_FILE --extra_tag $EXTRA_TAG  --epochs $EPOCHS --ckpt_save_interval $CKPT_SAVE_INTERVAL --batch_size $BATCHSIZE --workers $WORKERS --pretrained_model $PRETRAINED --no_eval "True" --set DATA_CONFIG.SUBSAMPLEFACTOR $SUBSAMPLEFACTOR
+
+
+
+
 #################CROSS DATASET TESTING#################
 # Test a single detector on a single arbitrary dataset
 OUTPUT_FOLDER=output

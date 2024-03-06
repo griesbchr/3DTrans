@@ -82,7 +82,7 @@ def main():
     fov=True
     training = False             #enable augmentations
     no_detection = False
-    dataset = "avltruck"
+    dataset = "avlrooftop"
     checkpoint_path = None
     
     select_random_frame = False
@@ -96,19 +96,20 @@ def main():
 
     #zod 
     #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output/zod_models/dsvt_pillar/D16_100epochs/ckpt/checkpoint_epoch_100.pth"
-    checkpoint_path1 = "/home/cgriesbacher/thesis/3DTrans/output/zod_models/pvrcnnpp/D16_50epochs/ckpt/checkpoint_epoch_50.pth"
+    #checkpoint_path1 = "/home/cgriesbacher/thesis/3DTrans/output/zod_models/pvrcnnpp_ros/D16_50epochs/ckpt/checkpoint_epoch_50.pth"
     #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output/zod_models/pvrcnnpp_ros_rbds/D6_50epochs_rbds0.25/ckpt/checkpoint_epoch_50.pth"
     #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output_okeanos/output/zod_models/pvrcnnpp_ros_ubds/D16_50epochs_ubds4/ckpt/checkpoint_epoch_50.pth"
     
     #avltruck
     #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output/avltruck_models/centerpoint/D6_100epochs_4classes/ckpt/checkpoint_epoch_100.pth"
-    #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output/avltruck_models/pvrcnnpp/D6_50epochs/ckpt/checkpoint_epoch_50.pth"
+    checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output/avltruck_models/pvrcnnpp/D6_50epochs/ckpt/checkpoint_epoch_50.pth"
+    #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output_okeanos/avltruck_models/pvrcnnpp_sn2rooftop/D6_50epochs/ckpt/checkpoint_epoch_50.pth"
     #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output_okeanos/output/avltruck_models/pvrcnnpp_STzod/D6_5epochs_STzod_ft_D16_50epochs_ros/ckpt/checkpoint_epoch_3.pth"
     
     # ST avltruck -> zod
     #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output_okeanos/output/avltruck_models/pvrcnnpp_STzod/D16_20epochs_STzod_ft_D6_50epochs_fov_gace_labelupdate_nogaceretrain_1/ckpt/checkpoint_epoch_1.pth"
     
-    checkpoint_path = [checkpoint_path1]
+    checkpoint_path = [checkpoint_path]
 
     if (args.dataset == None):
         args.dataset = dataset
@@ -184,7 +185,7 @@ def main():
             if training:
                 args.frame_idx = 'sequences/CITY_Rain_junction_20200511124748_1/unpacked/lidar/0019.pkl'
             else:
-                args.frame_idx = 'sequences/CITY_Normal_roundabout_20200309145930/unpacked/lidar/0026.pkl'
+                args.frame_idx = 'sequences/CITY_Normal_roundabout_20200320100220_2/unpacked/lidar/0045.pkl'
         
         image_path_frame = args.frame_idx.split("/")[1] + "_" + args.frame_idx.split("/")[-1].split(".")[0]
     elif (args.dataset == "kitti"):
@@ -264,7 +265,7 @@ def main():
                                         logger=logger,
                                         training=training) 
             #find sample index for frame
-            sample_id_list = dataset.sample_id_list.copy()
+            sample_id_list = list(dataset.sample_id_list.copy())
             if select_random_frame and not random_frame_set:
                 #filter frame ids that contain a keyword
                 if frame_keyword is not None:

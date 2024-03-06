@@ -61,6 +61,7 @@ class ZODDataset(DatasetTemplate):
                 self.sample_id_list = self.dataset_cfg.TRAINING_FRAMES
                 self.zod_infos = [info for info in self.zod_infos if info['point_cloud']['lidar_idx'] in self.sample_id_list]
         elif subsamplefactor is not None and subsamplefactor > 1:
+            #evently subsample
             #self.sample_id_list = self.sample_id_list[::subsamplefactor]
             #randomly subsample
             self.sample_id_list = np.random.choice(self.sample_id_list, int(len(self.sample_id_list)/subsamplefactor), replace=False)
