@@ -3,8 +3,8 @@ DATASET: "KittiDataset"
 DATA_PATH: "../data/kitti"
 # OSS_PATH: 's3://${PATH_TO_DATASET}/kitti'
 
-POINT_CLOUD_RANGE: [0, -20, -3, 40.4, 40, 1]
-#POINT_CLOUD_RANGE: [-75.2, -75.2, -2, 123.2, 75.2, 4]
+#POINT_CLOUD_RANGE: [0, -20, -3, 40.4, 40, 1]
+POINT_CLOUD_RANGE: [-75.2, -75.2, -2, 123.2, 75.2, 4]
 
 SHIFT_COOR: [0.0, 0.0, 1.8]
 
