@@ -61,9 +61,10 @@ class ZODDataset(DatasetTemplate):
                 self.sample_id_list = self.dataset_cfg.TRAINING_FRAMES
                 self.zod_infos = [info for info in self.zod_infos if info['point_cloud']['lidar_idx'] in self.sample_id_list]
         elif subsamplefactor is not None and subsamplefactor > 1:
-            #self.sample_id_list = self.sample_id_list[::subsamplefactor]
+            #evently subsample
+            self.sample_id_list = self.sample_id_list[::subsamplefactor]
             #randomly subsample
-            self.sample_id_list = np.random.choice(self.sample_id_list, int(len(self.sample_id_list)/subsamplefactor), replace=False)
+            #self.sample_id_list = np.random.choice(self.sample_id_list, int(len(self.sample_id_list)/subsamplefactor), replace=False)
 
             #filter infors for subsampled samples
             self.zod_infos = [info for info in self.zod_infos if info['point_cloud']['lidar_idx'] in self.sample_id_list]
@@ -683,7 +684,6 @@ class ZODDataset(DatasetTemplate):
             annotations = common_utils.drop_info_with_name(annotations, name=class_names)
 
             if count_inside_pts:   
-                
                 # use truncated pc to get points in gt boxes
                 points = self.get_lidar(sample_idx, num_features=num_features)
 

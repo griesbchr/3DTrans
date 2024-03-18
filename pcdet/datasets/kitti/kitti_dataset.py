@@ -53,6 +53,11 @@ class KittiDataset(DatasetTemplate):
 
         self.map_class_to_waymo = self.dataset_cfg.get('MAP_CLASS_TO_WAYMO',None)
         self.map_kitti_to_waymo = self.dataset_cfg.get('MAP_KITTI_TO_WAYMO',None)
+        self.eval_truck_as_car = True
+
+        self.post_sn = self.dataset_cfg.get('POST_SN_ENABLED', False)
+        self.post_sn_source = self.dataset_cfg.get('POST_SN_SOURCE', None)
+        self.post_sn_map = self.dataset_cfg.get('POST_SN_MAP', None)
 
     def include_kitti_data(self, mode):
         if self.logger is not None:
@@ -76,8 +81,39 @@ class KittiDataset(DatasetTemplate):
 
         self.kitti_infos.extend(kitti_infos)
 
+        #XXX add create 
+        #if not self.creating_infos:
+        self.map_merge_classes()
+
         if self.logger is not None:
             self.logger.info('Total samples for KITTI dataset: %d' % (len(kitti_infos)))
+
+    def map_merge_classes(self):
+        if self.dataset_cfg.get('MAP_MERGE_CLASS', None) is None:
+            return
+
+        #update class names in kitti_infos
+        map_merge_class = self.dataset_cfg.MAP_MERGE_CLASS
+        for info in self.kitti_infos:
+            if 'annos' not in info:
+                continue
+            info['annos']['name'] = np.vectorize(lambda name: map_merge_class[name], otypes=[str])(info['annos']['name'])
+        
+        if not(hasattr(self, 'data_augmentor')) or self.data_augmentor is None:
+            return
+        if self.dataset_cfg.get('DATA_AUGMENTOR', None) is None:
+            return
+        #get aug name list
+        aug_name_list = [aug["NAME"] for aug in self.data_augmentor.augmentor_configs.AUG_CONFIG_LIST]
+        data_augmentor = self.dataset_cfg.get('DATA_AUGMENTOR', {})
+        disable_aug_list = data_augmentor.get('DISABLE_AUG_LIST', [])
+        if "gt_sampling" in aug_name_list and "gt_sampling" not in disable_aug_list:
+            aug_idx = aug_name_list.index("gt_sampling")
+            db_infos = self.data_augmentor.data_augmentor_queue[aug_idx].db_infos
+            for info_key in db_infos:
+                infos = db_infos[info_key]
+                for info in infos:
+                    info["name"] = map_merge_class[info["name"]]
 
     def set_split(self, split):
         super().__init__(
@@ -452,10 +488,10 @@ class KittiDataset(DatasetTemplate):
                     for k in range(anno['name'].shape[0]):
                         anno['name'][k] = self.map_class_to_waymo[anno['name'][k]]
 
-            for anno in eval_gt_annos:
-                if self.map_kitti_to_waymo is not None:   
-                    for k in range(anno['name'].shape[0]):
-                        anno['name'][k] = self.map_kitti_to_waymo[anno['name'][k]]
+            #for anno in eval_gt_annos:
+            #    if self.map_kitti_to_waymo is not None:   
+            #        for k in range(anno['name'].shape[0]):
+            #            anno['name'][k] = self.map_kitti_to_waymo[anno['name'][k]]
 
             for anno in eval_gt_annos:
                 anno['difficulty'] = np.zeros([anno['name'].shape[0]], dtype=np.int32)
@@ -574,7 +610,18 @@ class KittiDataset(DatasetTemplate):
                 det_count += sum(anno['name'] == class_name)
             print("Post Drop: Class:", class_name, "avg. gt_count/frame:", round(gt_count/len(eval_gt_annos),2), "avg. det_count/frame:", round(det_count/len(eval_det_annos),2))
 
-        print("\ndropped", round(sum_gt/len(eval_gt_annos),2), "gt objects/frame and", round(sum_det/len(eval_det_annos),2), "det objects/frame")
+        #change all truck labels to car labels
+        if self.eval_truck_as_car:
+            for anno in eval_gt_annos:
+                if len(anno['name'][anno['name'] == 'Truck']) > 0:
+                    anno['name'][anno['name'] == 'Truck'] = 'Vehicle'
+            for anno in eval_det_annos:
+                if len(anno['name'][anno['name'] == 'Truck']) > 0:
+                    anno['name'][anno['name'] == 'Truck'] = 'Vehicle'   
+                    
+        if (sum_gt > 0 and sum_det > 0):
+            print("dropped", sum_gt/len(eval_gt_annos), "gt objects/frame and", sum_det/len(eval_det_annos), "det objects/frame")
+
         
         if self.eval_fov_only:
             print("\ndoing fov only evaluation\n")
@@ -584,7 +631,22 @@ class KittiDataset(DatasetTemplate):
         #     for anno in eval_det_annos:
         #         anno['boxes_lidar'][:, 2] += z_shift
     
-
+        #apply post-statistical normalization
+        if self.post_sn:
+            self.logger.info("post-statistical normalization enabled")
+            if self.post_sn_source is None:
+                raise ValueError("post-statistical normalization is enabled but no source is defined")
+            if self.post_sn_map is None:
+                raise ValueError("post-statistical normalization is enabled but no map is defined")
+            
+            sn_map = self.post_sn_map[self.post_sn_source]
+            #apply sn to all det boxes
+            for anno in eval_det_annos:
+                lwh_offset = np.zeros_like(anno['boxes_lidar'][:, 3:6])
+                for clss in sn_map:
+                    lwh_offset[anno['name'] == clss] = sn_map[clss]
+                anno['boxes_lidar'][:, 3:6] += lwh_offset
+                
         if kwargs['eval_metric'] == 'kitti':
             ap_result_str, ap_dict = kitti_eval(eval_det_annos, eval_gt_annos, self.map_class_to_kitti, class_names)
         elif kwargs['eval_metric'] == 'waymo':

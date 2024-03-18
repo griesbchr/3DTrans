@@ -61,6 +61,9 @@ POINT_FEATURE_ENCODING:
 
 INFO_PATH: { "train": zod_infos_train_full.pkl, "test": zod_infos_val_full.pkl }
 
+SET_TRAINING_FRAMES: False
+TRAINING_FRAMES: []
+
 DATA_AUGMENTOR:
   DISABLE_AUG_LIST: ["gt_sampling"]
   #DISABLE_AUG_LIST: ["random_world_flip", "random_world_rotation", "random_world_scaling"]

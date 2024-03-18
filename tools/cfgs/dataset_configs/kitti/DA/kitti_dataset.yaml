@@ -46,7 +46,18 @@ MAP_CLASS_TO_WAYMO:
   }
 
 GET_ITEM_LIST: ["points"]
+
 FOV_POINTS_ONLY: True
+
+POST_SN_ENABLED: True
+POST_SN_SOURCE: "AVLRooftop"
+POST_SN_MAP: { 
+  "AVLRooftop":   
+    {"Vehicle": [-0.525, -0.183, -0.068],
+    "Cyclist": [-0.231, -0.055, -0.165],
+    "Pedestrian": [-0.14, -0.144, -0.093],
+    "Truck": [-0.502, -0.456, -0.203]},
+}
 
 SUBSAMPLEFACTOR: 1
 
