@@ -2,12 +2,12 @@
 # Test a single detector on a single arbitrary dataset
 OUTPUT_FOLDER=output
 
-TRAIN_DATASETS=(avltruck avlrooftop zod)
+TRAIN_DATASETS=(zod)
 MODEL=pvrcnnpp
-EXTRA_TAG=(D6_50epochs D1_50epochs D16_50epochs)
-EPOCH=50
+EXTRA_TAG=(D16_100epochs)
+EPOCH=100
 
-EVAL_DATASET=kitti
+EVAL_DATASET=zod
 
 BATCHSIZE=4
 NUM_WORKERS=2

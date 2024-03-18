@@ -20,6 +20,7 @@ build/
 **build**
 **egg-info**
 output/*
+output/
 
 *.err
 *.out

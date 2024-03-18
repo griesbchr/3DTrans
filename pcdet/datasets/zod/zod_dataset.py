@@ -128,6 +128,13 @@ class ZODDataset(DatasetTemplate):
         assert self.num_aug_beams - 1 == sorted(list(self.beam_map.values()))[-1], "beam_map should be strictly increasing"
         assert self.num_aug_beams not in list(self.beam_map.values()), "beam_map should not have any gaps"
 
+
+        self.enable_beam_downsample = self.dataset_cfg.get('ENABLE_BEAM_DOWNSAMPLE', False)
+        self.beam_downsample_factor = self.dataset_cfg.get('BEAM_DOWNSAMPLE_FACTOR', None)
+        if self.enable_beam_downsample:
+            self.logger.info('Beam downsample enabled with factor %d' % self.beam_downsample_factor)
+
+
     def map_merge_classes(self):
         if self.dataset_cfg.get('MAP_MERGE_CLASS', None) is None:
             return
@@ -257,7 +264,7 @@ class ZODDataset(DatasetTemplate):
             mask = self.get_fov_points_only(pc.points, zod_frame.calibration)
             pc.points = pc.points[mask]
             pc.intensity = pc.intensity[mask]
-            if with_beam_label:
+            if with_beam_label or self.enable_beam_downsample:
                 pc.diode_idx = pc.diode_idx[mask]
         
         if num_features == 4:
@@ -281,7 +288,18 @@ class ZODDataset(DatasetTemplate):
 
             #concat points and beam labels
             points = np.concatenate((points, beam_labels.reshape(-1,1)), axis=1)
+
+        if self.enable_beam_downsample:
+            #determine which beams to keep
+            beam_mask = np.arange(self.num_aug_beams) % self.beam_downsample_factor == 0
         
+            #always keep points with beam_label == -1
+            beam_mask = np.append(beam_mask, True) 
+            
+            beam_labels = self.beam_label_mapper(pc.diode_idx-1)
+            points_mask = beam_mask[beam_labels]
+            points = points[points_mask]
+
         return points
     
     def get_label(self, sample_idx):

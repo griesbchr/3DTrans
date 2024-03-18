@@ -61,9 +61,9 @@ POINT_FEATURE_ENCODING:
 
 INFO_PATH: { "train": zod_infos_train_full.pkl, "test": zod_infos_val_full.pkl }
 
-#placeholder to mimic sparse lidar
-ENABLE_BEAM_DOWNSAMPLE: False
-BEAM_DOWNSAMPLE_FACTOR: 1
+#to mimic sparse lidar
+ENABLE_BEAM_DOWNSAMPLE: True
+BEAM_DOWNSAMPLE_FACTOR: 4
 
 DATA_AUGMENTOR:
   DISABLE_AUG_LIST: ["placeholder"]

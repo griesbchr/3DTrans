@@ -82,7 +82,7 @@ def main():
     fov=True
     training = False             #enable augmentations
     no_detection = False
-    dataset = "kitti"
+    dataset = "zod"
     checkpoint_path = None
     
     select_random_frame = True
@@ -90,13 +90,13 @@ def main():
 
     #avlrooftop
     #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output_okeanos/output/avltruck_models/pvrcnnpp_STrooftop/D1_5epochs_STrooftop_ft_D6_50epochs_ros_06_015_thresh_high_lr/ckpt/checkpoint_epoch_4.pth"
-    checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output/avlrooftop_models/pvrcnnpp/D1_50epochs/ckpt/checkpoint_epoch_50.pth"
+    #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output/avlrooftop_models/pvrcnnpp/D1_50epochs/ckpt/checkpoint_epoch_50.pth"
     #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output/avlrooftop_models/pvrcnnpp_ros_ubus2/D1_50epochs_R2/ckpt/checkpoint_epoch_50.pth"
     #checkpoint_path1 = "/home/cgriesbacher/thesis/3DTrans/output/avlrooftop_models/iassd/D1_50epochs/ckpt/checkpoint_epoch_50.pth"
 
     #zod 
     #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output/zod_models/dsvt_pillar/D16_100epochs/ckpt/checkpoint_epoch_100.pth"
-    #checkpoint_path1 = "/home/cgriesbacher/thesis/3DTrans/output/zod_models/pvrcnnpp_ros/D16_50epochs/ckpt/checkpoint_epoch_50.pth"
+    checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output/zod_models/pvrcnnpp_ros/D16_50epochs/ckpt/checkpoint_epoch_50.pth"
     #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output/zod_models/pvrcnnpp_ros_rbds/D6_50epochs_rbds0.25/ckpt/checkpoint_epoch_50.pth"
     #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output_okeanos/output/zod_models/pvrcnnpp_ros_ubds/D16_50epochs_ubds4/ckpt/checkpoint_epoch_50.pth"
     
@@ -122,7 +122,7 @@ def main():
         args.ckpt = [args.ckpt]
 
     if (args.dataset == "avltruck"):
-        cfg_path =  "/home/cgriesbacher/thesis/3DTrans/tools/cfgs/dataset_configs/avltruck/DA/avltruck_dataset.yaml"
+        cfg_path =  "/home/cgriesbacher/thesis/3DTrans/tools/cfgs/dataset_configs/avltruck/OD/avltruck_dataset.yaml"
         dataset_cfg = EasyDict(yaml.safe_load(open(cfg_path)))
         dataset_class_names = ['Vehicle_Drivable_Car',
                        'Vehicle_Drivable_Van', 
@@ -143,7 +143,7 @@ def main():
         image_path_frame = args.frame_idx.split("/")[1] + "_" + args.frame_idx.split("/")[-1].split(".")[0] 
 
     elif (args.dataset == "zod"):
-        cfg_path =  "/home/cgriesbacher/thesis/3DTrans/tools/cfgs/dataset_configs/zod/DA/zod_dataset.yaml"
+        cfg_path =  "/home/cgriesbacher/thesis/3DTrans/tools/cfgs/dataset_configs/zod/OD/zod_dataset.yaml"
         dataset_cfg = EasyDict(yaml.safe_load(open(cfg_path)))
         
         dataset_class_names = ["Vehicle_Car", 
@@ -165,7 +165,7 @@ def main():
         image_path_frame = args.frame_idx
 
     elif (args.dataset == "avlrooftop"):
-        cfg_path =  "/home/cgriesbacher/thesis/3DTrans/tools/cfgs/dataset_configs/avlrooftop/DA/avlrooftop_dataset.yaml"
+        cfg_path =  "/home/cgriesbacher/thesis/3DTrans/tools/cfgs/dataset_configs/avlrooftop/OD/avlrooftop_dataset.yaml"
         dataset_cfg = EasyDict(yaml.safe_load(open(cfg_path)))
     
         dataset_class_names = ["Vehicle_Drivable_Car",
@@ -189,7 +189,7 @@ def main():
         
         image_path_frame = args.frame_idx.split("/")[1] + "_" + args.frame_idx.split("/")[-1].split(".")[0]
     elif (args.dataset == "kitti"):
-        cfg_path =  "/home/cgriesbacher/thesis/3DTrans/tools/cfgs/dataset_configs/kitti/DA/kitti_dataset.yaml"
+        cfg_path =  "/home/cgriesbacher/thesis/3DTrans/tools/cfgs/dataset_configs/kitti/OD/kitti_dataset.yaml"
         dataset_cfg = EasyDict(yaml.safe_load(open(cfg_path)))
     
         dataset_class_names = ["Car",
