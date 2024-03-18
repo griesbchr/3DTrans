@@ -1,21 +1,24 @@
 #################CROSS DATASET TESTING#################
 # Test a single detector on a single arbitrary dataset
-OUTPUT_FOLDER=output_okeanos
+OUTPUT_FOLDER=output
 
-TRAIN_DATASET=avlrooftop
-MODEL=pvrcnnpp_STzod
-EXTRA_TAG=D16_10epochs_STzod_ft_D1_50epochs_ros
-EPOCH=2
+TRAIN_DATASETS=(avltruck avlrooftop zod)
+MODEL=pvrcnnpp
+EXTRA_TAG=(D6_50epochs D1_50epochs D16_50epochs)
+EPOCH=50
 
-EVAL_DATASETS=(zod)
+EVAL_DATASET=kitti
 
 BATCHSIZE=4
 NUM_WORKERS=2
 
 
 #loop over eval datasets
-for EVAL_DATASET in "${EVAL_DATASETS[@]}"
-do
+for i in "${!TRAIN_DATASETS[@]}"; do
+    TRAIN_DATASET=${TRAIN_DATASETS[$i]}
+    EXTRA_TAG=${EXTRA_TAG[$i]}
+     
+#for EVAL_DATASET in "${EVAL_DATASETS[@]}"do
     #-----------------------------------------------------
     EVAL_DATASET_CFG_PATH=cfgs/dataset_configs/$EVAL_DATASET/OD/${EVAL_DATASET}_dataset.yaml
 

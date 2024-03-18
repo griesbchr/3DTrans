@@ -82,15 +82,15 @@ def main():
     fov=True
     training = False             #enable augmentations
     no_detection = False
-    dataset = "avlrooftop"
+    dataset = "kitti"
     checkpoint_path = None
     
-    select_random_frame = False
+    select_random_frame = True
     frame_keyword = None
 
     #avlrooftop
     #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output_okeanos/output/avltruck_models/pvrcnnpp_STrooftop/D1_5epochs_STrooftop_ft_D6_50epochs_ros_06_015_thresh_high_lr/ckpt/checkpoint_epoch_4.pth"
-    #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output/avlrooftop_models/pvrcnnpp/D1_50epochs/ckpt/checkpoint_epoch_50.pth"
+    checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output/avlrooftop_models/pvrcnnpp/D1_50epochs/ckpt/checkpoint_epoch_50.pth"
     #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output/avlrooftop_models/pvrcnnpp_ros_ubus2/D1_50epochs_R2/ckpt/checkpoint_epoch_50.pth"
     #checkpoint_path1 = "/home/cgriesbacher/thesis/3DTrans/output/avlrooftop_models/iassd/D1_50epochs/ckpt/checkpoint_epoch_50.pth"
 
@@ -102,7 +102,7 @@ def main():
     
     #avltruck
     #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output/avltruck_models/centerpoint/D6_100epochs_4classes/ckpt/checkpoint_epoch_100.pth"
-    checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output/avltruck_models/pvrcnnpp/D6_50epochs/ckpt/checkpoint_epoch_50.pth"
+    #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output/avltruck_models/pvrcnnpp/D6_50epochs/ckpt/checkpoint_epoch_50.pth"
     #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output_okeanos/avltruck_models/pvrcnnpp_sn2rooftop/D6_50epochs/ckpt/checkpoint_epoch_50.pth"
     #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output_okeanos/output/avltruck_models/pvrcnnpp_STzod/D6_5epochs_STzod_ft_D16_50epochs_ros/ckpt/checkpoint_epoch_3.pth"
     
@@ -189,7 +189,7 @@ def main():
         
         image_path_frame = args.frame_idx.split("/")[1] + "_" + args.frame_idx.split("/")[-1].split(".")[0]
     elif (args.dataset == "kitti"):
-        cfg_path =  "/home/cgriesbacher/thesis/3DTrans/tools/cfgs/dataset_configs/kitti/OD/kitti_dataset.yaml"
+        cfg_path =  "/home/cgriesbacher/thesis/3DTrans/tools/cfgs/dataset_configs/kitti/DA/kitti_dataset.yaml"
         dataset_cfg = EasyDict(yaml.safe_load(open(cfg_path)))
     
         dataset_class_names = ["Car",
