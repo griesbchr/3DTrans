@@ -1,0 +1,141 @@
+#classes in this dataset are:
+# ["Vehicle_Car", "Vehicle_Van", "Vehicle_Truck", "Vehicle_Trailer",
+#  "Vehicle_Bus", "Vehicle_HeavyEquip", "Vehicle_TramTrain",
+#  "VulnerableVehicle_Bicycle", "VulnerableVehicle_Motorcycle",
+#  "Pedestrian"]
+DATASET: "ZODDataset"
+DATA_PATH: "../data/zod"
+
+VERSION: "full" # 'mini', 'small' or 'full'    #dont forget to change info paths below!
+
+#maps the classes form the dataset info files to classes from the detector
+#the right-hand names need to match the class names in the detector config
+#waymo-like mapping
+MAP_MERGE_CLASS: {
+    "Vehicle_Car": "Vehicle",
+    "Vehicle_Van": "Vehicle",
+    "Vehicle_Truck": "Truck",
+    "Vehicle_Trailer": "Truck",
+    "Vehicle_Bus": "Truck",
+    "Vehicle_HeavyEquip": "Truck",
+    "Vehicle_TramTrain": "Truck",
+    "VulnerableVehicle_Motorcycle": "Cyclist",
+    "VulnerableVehicle_Bicycle": "Cyclist",
+    "Pedestrian": "Pedestrian",
+    #'Placeholder': 'DontCare',
+  }
+
+MAP_CLASS_TO_KITTI:
+  { "Vehicle": "Car", "Pedestrian": "Pedestrian", "Cyclist": "Cyclist" }
+
+#ZOD supports up to range 245m
+#POINT_CLOUD_RANGE: [-75.2, -75.2, -5, 123.2, 75.2, 1]            # AVLTruck
+POINT_CLOUD_RANGE: [-75.2, -75.2, -2, 123.2, 75.2, 4] # ZOD
+#POINT_CLOUD_RANGE: [0, -40, -3, 70.4, 40, 1]                     # KITTI
+
+FOV_POINTS_ONLY: True
+EVAL_MAX_DISTANCE: [0, 1000]
+
+#dont calculate loss for boxes that are truncated
+DISREGARD_TRUNCATED: True
+
+#position of the groundplane relative to data origin (usually lidar sensor)
+#used to shift data to the ground plane when generating infos and at training time (get_lidar)
+LIDAR_Z_SHIFT: -2.08702246
+
+#Subsample the dataset by the given factor
+SUBSAMPLEFACTOR: 16
+
+#height of the data origin above ground plane during detector training, should be at 0.0 if trained correctly
+#shifts the detected boxes to match the ground truth boxes when evaluating a detector
+#TRAINING_Z_SHIFT: 2.08702246
+
+DATA_SPLIT: { "train": train, "test": val }
+
+POINT_FEATURE_ENCODING:
+  {
+    encoding_type: absolute_coordinates_encoding,
+    used_feature_list: ["x", "y", "z", "intensity"],
+    src_feature_list: ["x", "y", "z", "intensity"],
+  }
+
+INFO_PATH: { "train": zod_infos_train_full.pkl, "test": zod_infos_val_full.pkl }
+
+#to mimic sparse lidar
+ENABLE_BEAM_DOWNSAMPLE: True
+BEAM_DOWNSAMPLE_FACTOR: 1
+
+DATA_AUGMENTOR:
+  DISABLE_AUG_LIST: ["placeholder"]
+  #DISABLE_AUG_LIST: ["random_world_flip", "random_world_rotation", "random_world_scaling"]
+  AUG_CONFIG_LIST:
+    - NAME: gt_sampling
+      USE_ROAD_PLANE: False
+      DB_INFO_PATH:
+        - zod_dbinfos_train_full.pkl
+      PREPARE:
+        {
+          filter_by_min_points:
+            [
+              "Vehicle_Car: 5",
+              "Vehicle_Van: 5",
+              "Vehicle_Truck: 5",
+              "Vehicle_Trailer: 5",
+              "Vehicle_Bus: 5",
+              "Vehicle_HeavyEquip: 5",
+              "Vehicle_TramTrain: 5",
+              "VulnerableVehicle_Motorcycle: 5",
+              "VulnerableVehicle_Bicycle: 5",
+              "Pedestrian: 5",
+            ],
+        }
+
+      SAMPLE_GROUPS:
+        #Vehicle: 15, Cyclist: 10, Pedestrian: 10
+        [
+          "Vehicle_Car: 11",
+          "Vehicle_Van: 2",
+          "Vehicle_Truck: 1",
+          "Vehicle_Trailer: 0",
+          "Vehicle_Bus: 1",
+          "Vehicle_HeavyEquip: 0",
+          "Vehicle_TramTrain: 0",
+          "VulnerableVehicle_Motorcycle: 5",
+          "VulnerableVehicle_Bicycle: 5",
+          "Pedestrian: 10",
+        ]
+        # [Vehicle_Car:18, Vehicle_Van:2, VulnerableVehicle_Bicycle:10, Pedestrian:20]
+      NUM_POINT_FEATURES: 4
+      DATABASE_WITH_FAKELIDAR: False
+      REMOVE_EXTRA_WIDTH: [0.0, 0.0, 0.0]
+      LIMIT_WHOLE_SCENE: True
+
+    - NAME: random_world_flip
+      ALONG_AXIS_LIST: ["x", "y"]
+
+    - NAME: random_world_rotation
+      WORLD_ROT_ANGLE: [-0.78539816, 0.78539816] # -45, 45 degrees
+
+    - NAME: random_world_scaling
+      WORLD_SCALE_RANGE: [0.95, 1.05]
+
+DATA_PROCESSOR:
+  - NAME: mask_points_and_boxes_outside_range
+    REMOVE_OUTSIDE_BOXES: True
+
+  - NAME: shuffle_points
+    SHUFFLE_ENABLED: { "train": True, "test": False }
+
+  - NAME: transform_points_to_voxels
+    VOXEL_SIZE: [0.1, 0.1, 0.15]
+    MAX_POINTS_PER_VOXEL: 5
+    MAX_NUMBER_OF_VOXELS: { "train": 150000, "test": 150000 }
+
+  #kitti
+#    - NAME: transform_points_to_voxels
+#      VOXEL_SIZE: [0.05, 0.05, 0.1]
+#      MAX_POINTS_PER_VOXEL: 5
+#      MAX_NUMBER_OF_VOXELS: {
+#        'train': 16000,
+#        'test': 40000
+#      }
