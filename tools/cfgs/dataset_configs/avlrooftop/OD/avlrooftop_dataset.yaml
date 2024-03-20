@@ -60,7 +60,7 @@ DISREGARD_TRUNCATED: True
 
 #removed dets and gts that are truncated not in fov before evaluation
 EVAL_FOV_ONLY: True
-EVAL_MAX_DISTANCE: [0, 1000]
+EVAL_MAX_DISTANCE: [0, 50]
 
 #Subsample the dataset by the given factor
 SUBSAMPLEFACTOR: 1 

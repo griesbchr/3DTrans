@@ -3,9 +3,9 @@
 set +e  # Suppress exit on errors
 
 #######
-DATASET=kitti
-MODEL=pvrcnnpp
-EXTRA_TAG=D1_100
+DATASET=zod
+MODEL=pvrcnnpp_128beams
+EXTRA_TAG=D1_100epochs
 
 EPOCHS=100
 CKPT_SAVE_INTERVAL=100

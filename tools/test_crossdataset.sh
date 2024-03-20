@@ -2,12 +2,12 @@
 # Test a single detector on a single arbitrary dataset
 OUTPUT_FOLDER=output
 
-TRAIN_DATASETS=(zod)
-MODEL=pvrcnnpp
-EXTRA_TAG=(D16_50epochs)
-EPOCH=50
+TRAIN_DATASETS=(zod zod zod)
+MODELS=(pvrcnnpp_128beams pvrcnnpp_64beams pvrcnnpp_32beams)
+EXTRA_TAGS=(D16_100epochs D16_100epochs D16_100epochs)
+EPOCH=100
 
-EVAL_DATASET=zod
+EVAL_DATASET=avltruck
 EVAL_DATASET_EXTRA_TAG=""
 
 BATCHSIZE=4
@@ -15,11 +15,15 @@ NUM_WORKERS=2
 
 
 #loop over eval datasets
-for i in "${!TRAIN_DATASETS[@]}"; do
+#for i in "${!TRAIN_DATASETS[@]}"; do
+#    TRAIN_DATASET=${TRAIN_DATASETS[$i]}
+#    EXTRA_TAG=${EXTRA_TAG[$i]}
+
+for i in "${!MODELS[@]}"; do
+    MODEL=${MODELS[$i]}
     TRAIN_DATASET=${TRAIN_DATASETS[$i]}
-    EXTRA_TAG=${EXTRA_TAG[$i]}
-     
-#for EVAL_DATASET in "${EVAL_DATASETS[@]}"do
+    EXTRA_TAG=${EXTRA_TAGS[$i]}
+
     #-----------------------------------------------------
     EVAL_DATASET_CFG_PATH=cfgs/dataset_configs/$EVAL_DATASET/OD/${EVAL_DATASET}${EVAL_DATASET_EXTRA_TAG}_dataset.yaml
 

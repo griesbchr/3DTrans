@@ -61,9 +61,7 @@ POINT_FEATURE_ENCODING:
 
 INFO_PATH: { "train": zod_infos_train_full.pkl, "test": zod_infos_val_full.pkl }
 
-#to mimic sparse lidar
-ENABLE_BEAM_DOWNSAMPLE: True
-BEAM_DOWNSAMPLE_FACTOR: 1
+INCLUDE_DIODE_IDS: True
 
 DATA_AUGMENTOR:
   DISABLE_AUG_LIST: ["placeholder"]
@@ -72,7 +70,7 @@ DATA_AUGMENTOR:
     - NAME: gt_sampling
       USE_ROAD_PLANE: False
       DB_INFO_PATH:
-        - zod_dbinfos_train_full.pkl
+        - zod_dbinfos_train_full_beamlabels.pkl
       PREPARE:
         {
           filter_by_min_points:
@@ -105,10 +103,15 @@ DATA_AUGMENTOR:
           "Pedestrian: 10",
         ]
         # [Vehicle_Car:18, Vehicle_Van:2, VulnerableVehicle_Bicycle:10, Pedestrian:20]
-      NUM_POINT_FEATURES: 4
+      NUM_POINT_FEATURES: 5
       DATABASE_WITH_FAKELIDAR: False
       REMOVE_EXTRA_WIDTH: [0.0, 0.0, 0.0]
       LIMIT_WHOLE_SCENE: True
+
+    - NAME: uniform_beam_downsample
+      BEAM_DOWNSAMPLEFACTOR: 1
+      FILTER_GT_BOXES: True
+      MIN_POINTS_OF_GT: 5
 
     - NAME: random_world_flip
       ALONG_AXIS_LIST: ["x", "y"]
