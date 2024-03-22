@@ -2,12 +2,12 @@
 # Test a single detector on a single arbitrary dataset
 OUTPUT_FOLDER=output
 
-TRAIN_DATASETS=(zod zod zod)
-MODELS=(pvrcnnpp_128beams pvrcnnpp_64beams pvrcnnpp_32beams)
-EXTRA_TAGS=(D16_100epochs D16_100epochs D16_100epochs)
+TRAIN_DATASETS=(zod)
+MODELS=(pvrcnnpp_32beams)
+EXTRA_TAGS=(D16_100epochs)
 EPOCH=100
 
-EVAL_DATASET=avltruck
+EVAL_DATASET=avlrooftop
 EVAL_DATASET_EXTRA_TAG=""
 
 BATCHSIZE=4
