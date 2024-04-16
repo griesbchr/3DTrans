@@ -2,15 +2,15 @@
 # Test a single detector on a single arbitrary dataset
 OUTPUT_FOLDER=output
 
-TRAIN_DATASETS=(zod)
-MODELS=(pvrcnnpp_32beams)
-EXTRA_TAGS=(D16_100epochs)
-EPOCH=100
+TRAIN_DATASETS=(avltruck)
+MODELS=(pvrcnnpp)
+EXTRA_TAGS=(D6_50epochs)
+EPOCH=50
 
-EVAL_DATASET=avlrooftop
+EVAL_DATASET=zod
 EVAL_DATASET_EXTRA_TAG=""
 
-BATCHSIZE=4
+BATCHSIZE=8
 NUM_WORKERS=2
 
 
@@ -25,7 +25,8 @@ for i in "${!MODELS[@]}"; do
     EXTRA_TAG=${EXTRA_TAGS[$i]}
 
     #-----------------------------------------------------
-    EVAL_DATASET_CFG_PATH=cfgs/dataset_configs/$EVAL_DATASET/OD/${EVAL_DATASET}${EVAL_DATASET_EXTRA_TAG}_dataset.yaml
+    EVAL_DATASET_CFG_PATH=cfgs/dataset_configs/$EVAL_DATASET/OD/${EVAL_DATASET}${EVAL_DATASET_EXTRA_TAG}_dataset.yaml                   
+    #EVAL_DATASET_CFG_PATH=cfgs/dataset_configs/$EVAL_DATASET/OD/${EVAL_DATASET}${EVAL_DATASET_EXTRA_TAG}_dataset_nogtsampling.yaml     #use this to eval ON downsampled zenseact dataset 
 
     ROOT_PATH=/home/cgriesbacher/thesis/3DTrans
     RUN_PATH=${TRAIN_DATASET}_models/$MODEL/$EXTRA_TAG

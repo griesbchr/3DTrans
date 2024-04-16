@@ -75,6 +75,10 @@ def show_scene(batch_dict, pred_dicts=None, pts_feature=None, batch=0):
 
     vis.add_geometry(pcd)
 
+    #add axis
+    axis_pcd = o3d.geometry.TriangleMesh.create_coordinate_frame(size=1.0, origin=[0, 0, 0])
+    vis.add_geometry(axis_pcd)
+    
     #add bounding boxes if results is not none
     if pred_dicts:
         boxes = pred_dicts[batch]["pred_boxes"]

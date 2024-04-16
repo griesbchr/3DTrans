@@ -258,14 +258,14 @@ def draw_scenes(points, gt_boxes=None, det_boxes=None, det_labels=None, det_scor
     #add_line(vis, point_start, point_end)
 
     # Circle parameters
-    radius = 50  # 50 meters
+    radius = 75  # 50 meters
     num_points = 5000  # Number of points to generate
-    #add_circle(vis, radius, num_points)
+    add_circle(vis, radius, num_points)
 
     # Circle parameters
-    radius = 100  # 50 meters
+    radius = 123  # 50 meters
     num_points = 20000  # Number of points to generate
-    #add_circle(vis, radius, num_points)
+    add_circle(vis, radius, num_points)
 
 
     if gt_boxes is not None:

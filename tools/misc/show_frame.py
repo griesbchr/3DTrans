@@ -7,7 +7,6 @@ import matplotlib.pyplot as plt
 
 from pcdet.models import build_network, load_data_to_gpu
 from pcdet.datasets import build_dataloader
-from pcdet.config import cfg, cfg_from_yaml_file
 import torch
 from pcdet.utils import common_utils, downsample_utils
 
@@ -72,8 +71,47 @@ def plot_pr_curve(result_dict, result_dir, filename="pr_curve.png"):
     plt.savefig(fig_path)
     print('Saved pr_curve.png to %s' % fig_path)
     plt.close(fig)   
+
+def plot_polar_image(phi, theta, beam_labels, ylim=None, xlim=None):
+    #beam labels to int
+    beam_labels = beam_labels.astype(int)
+
+    #convert beam label to color
+    colors = [0, 0.5, 1]
+    #alternate colors for visualization
+    color = np.zeros((beam_labels.shape[0]))
+    for i in range(beam_labels.shape[0]):
+        color[i] = colors[beam_labels[i] % 3]
+        
+    #plot polar image
+    plt.figure()
+    plt.scatter(phi, theta, s=0.1, c=color, cmap='turbo')
+    plt.ylabel('Theta (radians)')
+    plt.xlabel('Phi (radians)')
+    if ylim :
+        plt.ylim(ylim)
+    if xlim :
+        plt.xlim(xlim)
+    #plt.show()
+    #save image
+    plt.savefig("polar_image.png")
+    return
+
+def get_polar_image(points, z_offset=0.0):
+    #add offset
+    points = points.copy()
+    points[:,2] += z_offset
+    theta, phi = downsample_utils.compute_angles(points[:,:3])
+    r = np.sqrt(np.sum(points[:,:3]**2, axis=1))
+    polar_image = points.copy()
+    polar_image[:,0] = phi 
+    polar_image[:,1] = theta
+    polar_image[:,2] = r 
+    return polar_image
     
 def main():
+    from pcdet.config import cfg, cfg_from_yaml_file
+
     os.chdir("/home/cgriesbacher/thesis/3DTrans/tools")
     args = parse_args()
     
@@ -82,7 +120,7 @@ def main():
     fov=True
     training = False             #enable augmentations
     no_detection = False
-    dataset = "zod"
+    dataset = "avltruck"
     checkpoint_path = None
     
     select_random_frame = True
@@ -96,13 +134,13 @@ def main():
 
     #zod 
     #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output/zod_models/dsvt_pillar/D16_100epochs/ckpt/checkpoint_epoch_100.pth"
-    checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output/zod_models/pvrcnnpp_ros/D16_50epochs/ckpt/checkpoint_epoch_50.pth"
+    #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output/zod_models/pvrcnnpp_ros/D16_50epochs/ckpt/checkpoint_epoch_50.pth"
     #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output/zod_models/pvrcnnpp_ros_rbds/D6_50epochs_rbds0.25/ckpt/checkpoint_epoch_50.pth"
     #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output_okeanos/output/zod_models/pvrcnnpp_ros_ubds/D16_50epochs_ubds4/ckpt/checkpoint_epoch_50.pth"
     
     #avltruck
     #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output/avltruck_models/centerpoint/D6_100epochs_4classes/ckpt/checkpoint_epoch_100.pth"
-    #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output/avltruck_models/pvrcnnpp/D6_50epochs/ckpt/checkpoint_epoch_50.pth"
+    checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output/avltruck_models/pvrcnnpp/D6_50epochs/ckpt/checkpoint_epoch_50.pth"
     #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output_okeanos/avltruck_models/pvrcnnpp_sn2rooftop/D6_50epochs/ckpt/checkpoint_epoch_50.pth"
     #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output_okeanos/output/avltruck_models/pvrcnnpp_STzod/D6_5epochs_STzod_ft_D16_50epochs_ros/ckpt/checkpoint_epoch_3.pth"
     
@@ -143,7 +181,7 @@ def main():
         image_path_frame = args.frame_idx.split("/")[1] + "_" + args.frame_idx.split("/")[-1].split(".")[0] 
 
     elif (args.dataset == "zod"):
-        cfg_path =  "/home/cgriesbacher/thesis/3DTrans/tools/cfgs/dataset_configs/zod/OD/zod16_dataset_nogtsampling.yaml"
+        cfg_path =  "/home/cgriesbacher/thesis/3DTrans/tools/cfgs/dataset_configs/zod/OD/zod_dataset.yaml"
         dataset_cfg = EasyDict(yaml.safe_load(open(cfg_path)))
         
         dataset_class_names = ["Vehicle_Car", 
@@ -183,7 +221,7 @@ def main():
     
         if args.frame_idx is None:
             if training:
-                args.frame_idx = 'sequences/CITY_Rain_junction_20200511124748_1/unpacked/lidar/0019.pkl'
+                args.frame_idx ='sequences/CITY_Normal_roundabout_20200320092257/unpacked/lidar/0030.pkl'
             else:
                 args.frame_idx = 'sequences/CITY_Normal_roundabout_20200320100220_2/unpacked/lidar/0045.pkl'
         
@@ -369,6 +407,14 @@ def main():
         det_boxes=None
         det_labels=None
         det_scores = None
+
+    #calculate and save polar image
+    #z_offset = dataset_cfg.get("LIDAR_Z_SHIFT", 0.0)
+    #print("z_offset: ", z_offset)
+    #polar_image = get_polar_image(points, z_offset=z_offset)
+    #
+    #polar_image[:,0] = (polar_image[:,0] + 60*np.pi/180) % (2*np.pi)
+    #plot_polar_image(polar_image[:,0], polar_image[:,1], polar_image[:,2])#, ylim =(-0.1, 0.1))
 
     if save_image:
         #insert image view here, can be copied by pressing Ctrl+C in open3d window and paste in editor file
