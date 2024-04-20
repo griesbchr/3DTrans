@@ -2,23 +2,6 @@ _BASE_CONFIG_: cfgs/avltruck_models/pvrcnnpp.yaml
 
 CLASS_NAMES: ['Vehicle', 'Pedestrian', 'Cyclist', 'Truck']
 
-
-MODEL:
-
-    POST_PROCESSING:
-        RECALL_THRESH_LIST: [0.3, 0.5, 0.7]
-        SCORE_THRESH: 0.15
-        OUTPUT_RAW_SCORE: False
-
-        EVAL_METRIC: waymo
-
-        NMS_CONFIG:
-            MULTI_CLASSES_NMS: False
-            NMS_TYPE: nms_gpu
-            NMS_THRESH: 0.01
-            NMS_PRE_MAXSIZE: 4096
-            NMS_POST_MAXSIZE: 500
-
 DATA_CONFIG:
   _BASE_CONFIG_: cfgs/dataset_configs/avltruck/OD/avltruck_dataset.yaml
 
@@ -83,7 +66,7 @@ DATA_CONFIG:
 
 
 DATA_CONFIG_TAR:
-    _BASE_CONFIG_: cfgs/dataset_configs/zod/OD/zod_dataset.yaml
+    _BASE_CONFIG_: cfgs/dataset_configs/avlrooftop/OD/avlrooftop_dataset.yaml
     TARGET: True
     USE_PSEUDO_LABEL: True
     TRAIN_FOV_ONLY: True
@@ -157,6 +140,49 @@ SELF_TRAIN:
         USE_DATA: True
         LOSS_WEIGHT: 1.0
         SEP_LOSS_WEIGHTS: [1.0, 1.0, 1.0]
+
+    GACE:
+      ENABLED: True
+      STORE_DETECTIONS: True    # Works only single GPU training
+      STORE_GACE: True
+      RETRAIN_GACE: False
+      BATCH_SIZE: 2048
+      NUM_WORKERS: 4
+
+      NR_MAX_DET_PER_SAMPLE: 500
+      
+      NORM_FACTORS: {
+          'cx': 123.2,
+          'cy': 75.2,
+          'cz': 4.0,
+          #veh, ped, cyc, tru
+          'dx': [6.019, 1.142, 2.494, 27.699],
+          'dy': [2.394, 0.982, 1.072, 3.652], 
+          'dz': [2.661, 2.000, 2.000, 4.529],
+          'dist': 144.3,
+          'nr_pts': [5000.0, 1000.0, 1000.0, 60000.0],
+      }
+
+      NORM_FACTORS_CP: {
+          'dist': 249.0,
+      }
+      
+      CONTEXT_RADIUS: 20
+      MAX_NR_NEIGHBORS: 30
+    
+      MODEL:
+          H_I_HIDDEN_DIM: 256
+          H_I_OUTPUT_DIM: 128
+          H_C_HIDDEN_DIM: 256
+          H_C_OUTPUT_DIM: 64
+          H_F_HIDDEN_DIM: 256
+      
+      TRAIN:
+          NUM_EPOCHS: 10
+          LR: 0.002
+          IOU_LOSS_W: 0.5
+          SFL_ALPHA: 0.5
+          SFL_GAMMA: 1 
 
     SCORE_THRESH: [0.45, 0.75, 0.75, 0.85]             #    SCORE_THRESH: [0.45, 0.75, 0.75, 0.85]             #Threshold per class
     NEG_THRESH: [0.25, 0.45, 0.5, 0.4]

@@ -160,9 +160,8 @@ SELF_TRAIN:
 
     GACE:
       ENABLED: True
-      STORE_DETECTIONS: False    # Works only single GPU training
-      #CKPT: /home/griesbacher/thesis/3DTrans/gace/gace_output/2023-12-27_19-26-03_AVLTruckDataset_ZODDataset_5/gace_model.pth
-      STORE_GACE: False
+      STORE_DETECTIONS: True    # Works only single GPU training
+      STORE_GACE: True
       RETRAIN_GACE: False
       BATCH_SIZE: 2048
       NUM_WORKERS: 4

@@ -2,15 +2,15 @@
 # Test a single detector on a single arbitrary dataset
 OUTPUT_FOLDER=output
 
-TRAIN_DATASETS=(avltruck)
-MODELS=(pvrcnnpp)
-EXTRA_TAGS=(D6_50epochs)
-EPOCH=50
+TRAIN_DATASET=zod
+MODEL=pvrcnnpp_STrooftop
+EXTRA_TAG=D1_10epochs_STrooftop_ft_D16_50epochs_ros
+EPOCHS=(1 2 3 4 5 6 7 8 9 10)
 
-EVAL_DATASET=zod
+EVAL_DATASET=avlrooftop
 EVAL_DATASET_EXTRA_TAG=""
 
-BATCHSIZE=8
+BATCHSIZE=4
 NUM_WORKERS=2
 
 
@@ -19,10 +19,11 @@ NUM_WORKERS=2
 #    TRAIN_DATASET=${TRAIN_DATASETS[$i]}
 #    EXTRA_TAG=${EXTRA_TAG[$i]}
 
-for i in "${!MODELS[@]}"; do
-    MODEL=${MODELS[$i]}
-    TRAIN_DATASET=${TRAIN_DATASETS[$i]}
-    EXTRA_TAG=${EXTRA_TAGS[$i]}
+for i in "${!EPOCHS[@]}"; do
+    EPOCH=${EPOCHS[$i]}
+    #MODEL=${MODELS[$i]}
+    #TRAIN_DATASET=${TRAIN_DATASETS[$i]}
+    #EXTRA_TAG=${EXTRA_TAGS[$i]}
 
     #-----------------------------------------------------
     EVAL_DATASET_CFG_PATH=cfgs/dataset_configs/$EVAL_DATASET/OD/${EVAL_DATASET}${EVAL_DATASET_EXTRA_TAG}_dataset.yaml                   
