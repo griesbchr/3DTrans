@@ -2,12 +2,12 @@
 # Test a single detector on a single arbitrary dataset
 OUTPUT_FOLDER=output
 
-TRAIN_DATASET=zod
-MODEL=pvrcnnpp_STrooftop
-EXTRA_TAG=D1_10epochs_STrooftop_ft_D16_50epochs_ros
+TRAIN_DATASET=avlttruck
+MODEL=pvrcnnpp_STzod
+EXTRA_TAG=D6_10epochs_STzod_ft_D16_50epochs_ros
 EPOCHS=(1 2 3 4 5 6 7 8 9 10)
 
-EVAL_DATASET=avlrooftop
+EVAL_DATASET=avltruck
 EVAL_DATASET_EXTRA_TAG=""
 
 BATCHSIZE=4
@@ -43,3 +43,4 @@ for i in "${!EPOCHS[@]}"; do
     #single gpu training for debugging
     #python test.py --cfg_file $CFG_PATH --ckpt $CHECKPOINT_PATH --batch_size $BATCHSIZE --workers $NUM_WORKERS --extra_tag $EXTRA_TAG --crosseval_dataset_cfg $EVAL_DATASET_CFG_PATH --eval_tag $EVAL_DATASET
 done    
+
