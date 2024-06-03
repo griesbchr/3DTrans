@@ -29,9 +29,9 @@ class ZODDataset(DatasetTemplate):
         """
 
         super().__init__(dataset_cfg, class_names, training, root_path, logger)
-        
+    
+        #set ZOD parameters
         self.data_root = self.dataset_cfg.DATA_PATH
-
         self.data_split = self.dataset_cfg.DATA_SPLIT[self.mode]
         self.version = self.dataset_cfg.VERSION
         self.creating_infos = creating_infos
@@ -39,13 +39,19 @@ class ZODDataset(DatasetTemplate):
         
         self.zod_infos = []
         self.include_zod_infos(self.mode)
-
-        self.num_point_features = len(self.dataset_cfg.POINT_FEATURE_ENCODING["used_feature_list"])
-        self.fov_points_only = self.dataset_cfg.FOV_POINTS_ONLY
         
         self.load_version = 'mini' if self.version == 'mini' else 'full'
         self.zod_frames = ZodFrames(dataset_root=self.data_root, version=self.load_version)
  
+        self.set_config_params()
+
+        self.set_beam_labels()
+
+
+    def set_config_params(self):
+        self.num_point_features = len(self.dataset_cfg.POINT_FEATURE_ENCODING["used_feature_list"])
+        self.fov_points_only = self.dataset_cfg.FOV_POINTS_ONLY
+
         # Transformation from zod lidar frame to waymo lidar frame
         self.T_zod_lidar_to_waymo_lidar = np.array([[0, -1, 0],
                                                   [1,  0, 0],
@@ -79,6 +85,12 @@ class ZODDataset(DatasetTemplate):
         self.post_sn_source = self.dataset_cfg.get('POST_SN_SOURCE', None)
         self.post_sn_map = self.dataset_cfg.get('POST_SN_MAP', None)
 
+        self.enable_beam_downsample = self.dataset_cfg.get('ENABLE_BEAM_DOWNSAMPLE', False)
+        self.beam_downsample_factor = self.dataset_cfg.get('BEAM_DOWNSAMPLE_FACTOR', None)
+        if self.enable_beam_downsample:
+            self.logger.info('Beam downsample enabled with factor %d' % self.beam_downsample_factor)
+
+    def set_beam_labels(self):
         #diode indixes with INCREASING elevation angle
         #the angles between the diodes are uneven: for the first and last two blocks the 
         #angle decreases/increases. For the middle blocks the angle is roughly constant
@@ -128,13 +140,6 @@ class ZODDataset(DatasetTemplate):
         assert self.num_aug_beams - 1 == sorted(list(self.beam_map.values()))[-1], "beam_map should be strictly increasing"
         assert self.num_aug_beams not in list(self.beam_map.values()), "beam_map should not have any gaps"
 
-
-        self.enable_beam_downsample = self.dataset_cfg.get('ENABLE_BEAM_DOWNSAMPLE', False)
-        self.beam_downsample_factor = self.dataset_cfg.get('BEAM_DOWNSAMPLE_FACTOR', None)
-        if self.enable_beam_downsample:
-            self.logger.info('Beam downsample enabled with factor %d' % self.beam_downsample_factor)
-
-
     def map_merge_classes(self):
         if self.dataset_cfg.get('MAP_MERGE_CLASS', None) is None:
             return
@@ -161,27 +166,6 @@ class ZODDataset(DatasetTemplate):
                 for info in infos:
                     info["name"] = map_merge_class[info["name"]]
 
-
-
-        ##filter classes that are not in class_names
-        #if self.detector_class_names is not None:
-        #    filtered_labels = 0
-        #    for info in self.zod_infos:
-        #        if 'annos' not in info:
-        #            continue
-        #        num_labels_pre = info['annos']['name'].__len__()
-        #        
-        #        filtered_annos = {}
-        #        keep_indices = [i for i, name in enumerate(info['annos']['name']) if name in self.detector_class_names]
-        #        for key in info["annos"].keys():
-        #            filtered_annos[key] = info["annos"][key][keep_indices]
-        #        info["annos"] = filtered_annos
-#
-        #        num_labels_post = info['annos']['name'].__len__()
-        #        filtered_labels += num_labels_pre - num_labels_post
-        #    
-        #    print("Filtered out %d labels that are not in detector_class_names" % filtered_labels)
-          
     def include_zod_infos(self, mode):
         
         if self.logger is not None:
@@ -415,11 +399,6 @@ class ZODDataset(DatasetTemplate):
 
         data_dict = self.prepare_data(data_dict=input_dict)
 
-        #do z shift after data preparation to be able to use pc range and anchor sizes for unified coordinate system
-        # z_shift = self.dataset_cfg.get('TRAINING_Z_SHIFT', None)
-        # if z_shift is not None:
-        #         data_dict["gt_boxes"][:,2] -= z_shift
-        #         data_dict['points'][:,2] -= np.array(z_shift, dtype=np.float64)
 
         if "truncated" in data_dict:            
             #set truncated gt boxes to label (last entry) to -1
@@ -427,11 +406,6 @@ class ZODDataset(DatasetTemplate):
             truncated = data_dict['truncated'].astype(bool)
             gt_boxes[truncated, -1] = -1
             data_dict['gt_boxes'] = gt_boxes
-
-            #debug outputs
-            #num_truncated = truncated.sum()
-            #print("%d/%d gt boxes truncated" % (num_truncated, len(annos['name']))) 
-            #print("%d/%d gt+sampled boxes truncated" % (num_truncated, len(truncated)))
 
             data_dict.pop('truncated')
 
@@ -485,14 +459,6 @@ class ZODDataset(DatasetTemplate):
             if 'metadata' in batch_dict:
                 single_pred_dict['metadata'] = batch_dict['metadata'][index]
             annos.append(single_pred_dict)
-
-        #DEBUG
-        #add points to detections
-        #for batch in range(batch_dict["batch_size"]):
-        #    points = batch_dict['points'].detach().cpu().numpy()
-        #    points_batch = points[points[:,0] == batch][:,1:]
-        #    det_points = self.get_points_in_bboxes(points_batch, annos[batch]["boxes_lidar"])
-        #    annos[batch]["det_points"] = det_points
 
         return annos
     
@@ -796,20 +762,6 @@ class ZODDataset(DatasetTemplate):
         with open(db_info_save_path, 'wb') as f:
             pickle.dump(all_db_infos, f)
 
-    #@staticmethod
-    #def create_label_file_with_name_and_box(class_names, gt_names, gt_boxes, save_label_path):
-    #    with open(save_label_path, 'w') as f:
-    #        for idx in range(gt_boxes.shape[0]):
-    #            boxes = gt_boxes[idx]
-    #            name = gt_names[idx]
-    #            if name not in class_names:
-    #                continue
-    #            line = "{x} {y} {z} {l} {w} {h} {angle} {name}\n".format(
-    #                x=boxes[0], y=boxes[1], z=(boxes[2]), l=boxes[3],
-    #                w=boxes[4], h=boxes[5], angle=boxes[6], name=name
-    #            )
-    #            f.write(line)
-
 def split_zod_data(data_path, versions):
     faulty_train_frames = ['097451', '062073', '008896', '046291', '020452', '026378', '000410', '001554', '057300', '004782', '058043', '002639', '061077', '059396', '062628', '063518', '090283', '069293', '044369', '056545', '030924', '052151', '057144', '052749', '028087', '024391', '027256', '016020', '024304', '056158', '012439', '056269', '003027', '072719', '005912', '053347', '054192', '057435', '070476', '014942', '028927', '052528', '049713', '006494', '009277', '009608']
     faulty_val_frames = ['050949', '081704', '058346', '063667']
@@ -959,5 +911,5 @@ if __name__ == '__main__':
             training=False, logger=common_utils.create_logger(), creating_infos=True
         )
         dataset.set_split("train", "full")
-        info_path = "/home/cgriesbacher/thesis/3DTrans/data/zod/zod_infos_train_full.pkl"
+        info_path = "../data/zod/zod_infos_train_full.pkl"
         dataset.create_groundtruth_database(info_path, "full", split="train", num_point_features=4, with_beam_label=True)
