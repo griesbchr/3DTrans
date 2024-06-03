@@ -56,7 +56,7 @@ POINT_FEATURE_ENCODING:
   {
     encoding_type: absolute_coordinates_encoding,
     used_feature_list: ["x", "y", "z"],
-    src_feature_list: ["x", "y", "z"],
+    src_feature_list: ["x", "y", "z", "intensity"],
   }
 
 INFO_PATH: { "train": zod_infos_train_full.pkl, "test": zod_infos_val_full.pkl }
@@ -101,7 +101,7 @@ DATA_AUGMENTOR:
           "Pedestrian: 10",
         ]
         # [Vehicle_Car:18, Vehicle_Van:2, VulnerableVehicle_Bicycle:10, Pedestrian:20]
-      NUM_POINT_FEATURES: 3
+      NUM_POINT_FEATURES: 4
       DATABASE_WITH_FAKELIDAR: False
       REMOVE_EXTRA_WIDTH: [0.0, 0.0, 0.0]
       LIMIT_WHOLE_SCENE: True

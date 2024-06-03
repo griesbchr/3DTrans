@@ -132,7 +132,7 @@ DATA_AUGMENTOR:
         #"LargeVehicle_Truck:0",
         #"LargeVehicle_TruckCab:0",
         #"Trailer:0",
-      NUM_POINT_FEATURES: 3
+      NUM_POINT_FEATURES: 4
       DATABASE_WITH_FAKELIDAR: False
       REMOVE_EXTRA_WIDTH: [0.0, 0.0, 0.0]
       LIMIT_WHOLE_SCENE: True
@@ -150,7 +150,7 @@ POINT_FEATURE_ENCODING:
   {
     encoding_type: absolute_coordinates_encoding,
     used_feature_list: ["x", "y", "z"],
-    src_feature_list: ["x", "y", "z"],
+    src_feature_list: ["x", "y", "z", "intensity"],
   }
 
 DATA_PROCESSOR:

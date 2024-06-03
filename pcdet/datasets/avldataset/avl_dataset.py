@@ -743,7 +743,7 @@ class AVLDataset(DatasetTemplate):
                     
                     #assert that human label exists
                     if (len(human_index) == 0 or len(human_index) > 1):
-                        print("No or multiple human label found for bike label in sequence", bike_label["dataset_name"])
+                        #print("No or multiple human label found for bike label in sequence", bike_label["dataset_name"])
                         continue
                     
                     human_index = human_index[0]
@@ -754,13 +754,13 @@ class AVLDataset(DatasetTemplate):
                 try:  
                     human_label, dist = self.get_closest_bbox(bike_label, human_labels)
                 except:
-                    print("No human label found for bike label in sequence", bike_label["dataset_name"])
+                    #print("No human label found for bike label in sequence", bike_label["dataset_name"])
                     continue
                 human_index = labels.index(human_label)
                 #check if human belongs to bike 
                 #center of bboxes must be within 0.7 meters of each other
                 if dist > 0.7:
-                    print("No human label found for bike label in sequence", bike_label["dataset_name"], "with distance", dist)
+                    #print("No human label found for bike label in sequence", bike_label["dataset_name"], "with distance", dist)
                     delete_indices.append(bike_label_idx)
                     continue
             

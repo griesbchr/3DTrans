@@ -59,7 +59,7 @@ LIDAR_HEADING: 0
 DISREGARD_TRUNCATED: True
 
 #removed dets and gts that are truncated not in fov before evaluation
-EVAL_FOV_ONLY: True
+EVAL_FOV_ONLY: False
 EVAL_MAX_DISTANCE: [0, 1000]
 
 #Subsample the dataset by the given factor

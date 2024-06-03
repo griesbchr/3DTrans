@@ -198,14 +198,8 @@ def main():
 
     ckpt_dir = args.ckpt_dir if args.ckpt_dir is not None else output_dir / 'ckpt'
 
-    if cfg.get('DATA_CONFIG_TAR', None):
-        test_set, test_loader, sampler = build_dataloader(
-            dataset_cfg=cfg.DATA_CONFIG_TAR,
-            class_names=cfg.CLASS_NAMES,
-            batch_size=args.batch_size,
-            dist=dist_test, workers=args.workers, logger=logger, training=False
-        )
-    elif args.crosseval_dataset_cfg is not None:
+
+    if args.crosseval_dataset_cfg is not None:
         import yaml
         from easydict import EasyDict
         dataset_cfg = EasyDict(yaml.safe_load(open(args.crosseval_dataset_cfg)))
@@ -217,6 +211,13 @@ def main():
         cfg.DATA_CONFIG = dataset_cfg
         test_set, test_loader, sampler = build_dataloader(
             dataset_cfg=dataset_cfg,
+            class_names=cfg.CLASS_NAMES,
+            batch_size=args.batch_size,
+            dist=dist_test, workers=args.workers, logger=logger, training=False
+        )
+    elif cfg.get('DATA_CONFIG_TAR', None):
+        test_set, test_loader, sampler = build_dataloader(
+            dataset_cfg=cfg.DATA_CONFIG_TAR,
             class_names=cfg.CLASS_NAMES,
             batch_size=args.batch_size,
             dist=dist_test, workers=args.workers, logger=logger, training=False

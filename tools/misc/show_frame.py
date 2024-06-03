@@ -116,15 +116,18 @@ def main():
     args = parse_args()
     
     save_image = True
+    #save points and boxes for rendering
+    rendering = True
 
     fov=True
-    training = False             #enable augmentations
-    no_detection = False
-    dataset = "avltruck"
+    training = False          #enable augmentations
+    no_detection=True
+    dataset = "zod"
     checkpoint_path = None
     
-    select_random_frame = True
-    frame_keyword = None
+    select_random_frame=False
+    frame_keyword=None
+
 
     #avlrooftop
     #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output_okeanos/output/avltruck_models/pvrcnnpp_STrooftop/D1_5epochs_STrooftop_ft_D6_50epochs_ros_06_015_thresh_high_lr/ckpt/checkpoint_epoch_4.pth"
@@ -134,13 +137,15 @@ def main():
 
     #zod 
     #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output/zod_models/dsvt_pillar/D16_100epochs/ckpt/checkpoint_epoch_100.pth"
-    #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output/zod_models/pvrcnnpp_ros/D16_50epochs/ckpt/checkpoint_epoch_50.pth"
+    #checkpoint_path1 = "/home/cgriesbacher/thesis/3DTrans/output/zod_models/pvrcnnpp/D16_50epochs/ckpt/checkpoint_epoch_50.pth"
     #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output/zod_models/pvrcnnpp_ros_rbds/D6_50epochs_rbds0.25/ckpt/checkpoint_epoch_50.pth"
     #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output_okeanos/output/zod_models/pvrcnnpp_ros_ubds/D16_50epochs_ubds4/ckpt/checkpoint_epoch_50.pth"
-    
+    checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output_okeanos/zod_models/pvrcnnpp_ros/D1_50epochs/ckpt/checkpoint_epoch_50.pth"
+
+
     #avltruck
     #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output/avltruck_models/centerpoint/D6_100epochs_4classes/ckpt/checkpoint_epoch_100.pth"
-    checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output/avltruck_models/pvrcnnpp/D6_50epochs/ckpt/checkpoint_epoch_50.pth"
+    #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output/avltruck_models/pvrcnnpp/D6_50epochs/ckpt/checkpoint_epoch_50.pth"
     #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output_okeanos/avltruck_models/pvrcnnpp_sn2rooftop/D6_50epochs/ckpt/checkpoint_epoch_50.pth"
     #checkpoint_path = "/home/cgriesbacher/thesis/3DTrans/output_okeanos/output/avltruck_models/pvrcnnpp_STzod/D6_5epochs_STzod_ft_D16_50epochs_ros/ckpt/checkpoint_epoch_3.pth"
     
@@ -176,7 +181,7 @@ def main():
             if training:
                 args.frame_idx = 'sequences/CityStreet_dgt_2021-07-08-15-18-50_0_s0/dataset/logical_frame_000008.json'
             else:
-                args.frame_idx = 'sequences/Motorway_dgt_2021-09-14-14-21-32_0_s0/dataset/logical_frame_000011.json'
+                args.frame_idx = 'sequences/Motorway_dgt_2021-08-20-12-58-41_0_s0/dataset/logical_frame_000005.json'
         
         image_path_frame = args.frame_idx.split("/")[1] + "_" + args.frame_idx.split("/")[-1].split(".")[0] 
 
@@ -223,7 +228,7 @@ def main():
             if training:
                 args.frame_idx ='sequences/CITY_Normal_roundabout_20200320092257/unpacked/lidar/0030.pkl'
             else:
-                args.frame_idx = 'sequences/CITY_Normal_roundabout_20200320100220_2/unpacked/lidar/0045.pkl'
+                args.frame_idx = 'sequences/HIGHWAY_Rain_exit_20200511123505/unpacked/lidar/0004.pkl'
         
         image_path_frame = args.frame_idx.split("/")[1] + "_" + args.frame_idx.split("/")[-1].split(".")[0]
     elif (args.dataset == "kitti"):
@@ -319,7 +324,23 @@ def main():
             data_dict = dataset.__getitem__(list_index)
             if no_detection:
                 import tools.visual_utils.open3d_vis_utils as vis
-                vis.draw_scenes(data_dict["points"][:,:3], point_colors=data_dict["points"][:,3], gt_boxes=data_dict["gt_boxes"])
+                points = data_dict["points"][:,:3]
+                color = data_dict["points"][:,3]
+                gt_boxes_lidar = data_dict["gt_boxes"]
+                if rendering: 
+                    data_storeage_path = "/home/cgriesbacher/thesis/rendering/data"
+
+                    #store points and boxes as pkl file
+                    import pickle
+                    with open(data_storeage_path + "/points.pkl", 'wb') as f:
+                        pickle.dump(points, f)
+                    with open(data_storeage_path + "/color.pkl", 'wb') as f:
+                        pickle.dump(color, f)
+                    with open(data_storeage_path + "/gt_boxes.pkl", 'wb') as f:
+                        pickle.dump(gt_boxes_lidar, f)
+
+                vis.draw_scenes(points, point_colors=color, gt_boxes=gt_boxes_lidar)
+
                 return
             data_dict = dataset.collate_batch([data_dict])
 
@@ -412,9 +433,25 @@ def main():
     #z_offset = dataset_cfg.get("LIDAR_Z_SHIFT", 0.0)
     #print("z_offset: ", z_offset)
     #polar_image = get_polar_image(points, z_offset=z_offset)
-    #
+    ##
     #polar_image[:,0] = (polar_image[:,0] + 60*np.pi/180) % (2*np.pi)
     #plot_polar_image(polar_image[:,0], polar_image[:,1], polar_image[:,2])#, ylim =(-0.1, 0.1))
+
+    if rendering: 
+        data_storeage_path = "/home/cgriesbacher/thesis/rendering/data"
+
+        #store points and boxes as pkl file
+        import pickle
+        with open(data_storeage_path + "/points.pkl", 'wb') as f:
+            pickle.dump(points, f)
+        with open(data_storeage_path + "/color.pkl", 'wb') as f:
+            pickle.dump(color, f)
+        with open(data_storeage_path + "/gt_boxes.pkl", 'wb') as f:
+            pickle.dump(gt_boxes_lidar, f)
+        with open(data_storeage_path + "/det_boxes.pkl", 'wb') as f:
+            pickle.dump(det_boxes, f)
+        with open(data_storeage_path + "/det_labels.pkl", 'wb') as f:
+            pickle.dump(det_labels, f)
 
     if save_image:
         #insert image view here, can be copied by pressing Ctrl+C in open3d window and paste in editor file
