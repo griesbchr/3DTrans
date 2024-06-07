@@ -8,14 +8,16 @@ You may refer to [INSTALL.md](docs/INSTALL.md) for the installation of `3DTrans`
 
 ## Getting Started
 
-* Please refer to [Readme for Datasets](docs/GETTING_STARTED_DB.md) to prepare the dataset and convert the data into the 3DTrans format. Besides, 3DTrans supports the reading and writing data from **Ceph Petrel-OSS**, please refer to [Readme for Datasets](docs/GETTING_STARTED_DB.md) for more details.
+* Please refer to [Readme for Datasets](docs/GETTING_STARTED_DB.md) to prepare the dataset and convert the data into the 3DTrans format.
+
+* Training and testing can be started with the train.sh and test.sh
+* Zenseact dataset demo can be found in tools/zod_demo.py
 
 
 
 ## Visualization Tools for 3DTrans
 
 - Our `3DTrans` supports the sequence-level visualization function [Quick Sequence Demo](docs/QUICK_SEQUENCE_DEMO.md) to continuously display the prediction results of ground truth of a selected scene.
-
 
 
 ## Acknowledge
