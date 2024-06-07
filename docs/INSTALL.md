@@ -15,7 +15,7 @@ NOTE: Please re-install `3DTrans` by running `python setup.py develop` even if y
 
 a. Clone this repository.
 ```shell
-git clone https://github.com/PJLab-ADG/3DTrans.git
+git clone git@github.com:griesbchr/3DTrans.git
 ```
 
 b. Install the dependent libraries as follows:

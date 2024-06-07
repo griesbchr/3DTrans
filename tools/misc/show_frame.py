@@ -121,8 +121,8 @@ def main():
 
     fov=True
     training = False          #enable augmentations
-    no_detection=True
-    dataset = "zod"
+    no_detection=False
+    dataset = "avlrooftop"
     checkpoint_path = None
     
     select_random_frame=False

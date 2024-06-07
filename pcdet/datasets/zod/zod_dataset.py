@@ -827,11 +827,10 @@ def create_zod_infos(dataset_cfg, class_names, data_path, save_path, workers=4):
     
     print('------------------------Data preparation done------------------------')
 
-#  ~/thesis/3DTrans
-# python -m pcdet.datasets.zod.zod_dataset debug tools/cfgs/dataset_configs/zod/OD/zod_dataset.yaml
+#  cd ~/3DTrans
 # python -m pcdet.datasets.zod.zod_dataset create_zod_infos tools/cfgs/dataset_configs/zod/OD/zod_dataset.yaml
 
-#  ~/thesis/3DTrans/tools
+#  cd ~/3DTrans/tools
 #  python -m pcdet.datasets.zod.zod_dataset create_zod_gtdatabase_with_beamlabels cfgs/dataset_configs/zod/OD/zod_dataset.yaml
 
 if __name__ == '__main__':
